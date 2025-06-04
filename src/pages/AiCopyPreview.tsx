@@ -113,10 +113,10 @@ const AiCopyPreview = () => {
         // Only auto-generate if in edit mode and no saved copy exists
         setInfoBannerMessage("Generating content for the first time…");
         setShowInfoBanner(true);
-        startGeneration();
+        startGeneration(sessionId!);
       }
     }
-  }, [savedCopy, savedCopyLoading, noCopyFound, isEditMode, startGeneration]);
+  }, [savedCopy, savedCopyLoading, noCopyFound, isEditMode, startGeneration, sessionId]);
 
   // Handle streaming completion
   useEffect(() => {
@@ -157,7 +157,7 @@ const AiCopyPreview = () => {
   const handleRegenerate = () => {
     setInfoBannerMessage("Regenerating content…");
     setShowInfoBanner(true);
-    startGeneration();
+    startGeneration(sessionId!);
   };
 
   const handleCopyUpdated = (updatedCopy: GeneratedCopy) => {

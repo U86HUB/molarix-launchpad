@@ -6,20 +6,21 @@ import { StreamingService } from '@/services/streamingService';
 import { CopyGenerationService } from '@/services/copyGenerationService';
 import { useSaveCopy } from '@/hooks/useSaveCopy';
 
-export const useStreamingCopy = () => {
+export const useStreamingCopy = (sessionId: string | null) => {
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
   const [generatedCopy, setGeneratedCopy] = useState<GeneratedCopy | null>(null);
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { getSavedCopy } = useSaveCopy();
   
   const streamingService = useRef(new StreamingService());
   const copyGenerationService = useRef(new CopyGenerationService());
 
-  const loadSavedCopy = async (sessionId: string) => {
-    const result = await getSavedCopy(sessionId);
+  const loadSavedCopy = async (targetSessionId: string) => {
+    const result = await getSavedCopy(targetSessionId);
     if (result.success && result.copy) {
       setGeneratedCopy(result.copy);
       return true;
@@ -27,20 +28,12 @@ export const useStreamingCopy = () => {
     return false;
   };
 
-  const generateCopyWithStreaming = async (sessionId: string, checkSaved: boolean = true) => {
-    if (!sessionId) return;
+  const startGeneration = async (targetSessionId?: string) => {
+    const sessionIdToUse = targetSessionId || sessionId;
+    if (!sessionIdToUse) return;
 
     setLoading(true);
-
-    // Check for saved copy first if requested
-    if (checkSaved) {
-      const hasSavedCopy = await loadSavedCopy(sessionId);
-      if (hasSavedCopy) {
-        setLoading(false);
-        return;
-      }
-    }
-
+    setError(null);
     setIsStreaming(true);
     setStreamingContent('');
     setGeneratedCopy(null);
@@ -52,7 +45,7 @@ export const useStreamingCopy = () => {
     streamingService.current.setAbortController(abortController);
 
     try {
-      const response = await copyGenerationService.current.generateCopy(sessionId, true);
+      const response = await copyGenerationService.current.generateCopy(sessionIdToUse, true);
 
       if (!response.success) {
         throw new Error(response.error || 'Failed to generate copy');
@@ -80,7 +73,7 @@ export const useStreamingCopy = () => {
           });
         } else {
           // Fallback to non-streaming generation
-          await generateCopyFallback(sessionId);
+          await generateCopyFallback(sessionIdToUse);
         }
       } else {
         // Handle non-streaming response
@@ -95,6 +88,7 @@ export const useStreamingCopy = () => {
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Error generating copy:', error);
+        setError(error.message);
         toast({
           title: "Error",
           description: "Failed to generate copy. Please try again.",
@@ -107,9 +101,9 @@ export const useStreamingCopy = () => {
     }
   };
 
-  const generateCopyFallback = async (sessionId: string) => {
+  const generateCopyFallback = async (targetSessionId: string) => {
     try {
-      const response = await copyGenerationService.current.generateCopy(sessionId, false);
+      const response = await copyGenerationService.current.generateCopy(targetSessionId, false);
 
       if (!response.success) {
         throw new Error(response.error || 'Failed to generate copy');
@@ -148,7 +142,8 @@ export const useStreamingCopy = () => {
     streamingContent,
     isStreaming,
     loading,
-    generateCopyWithStreaming,
+    error,
+    startGeneration,
     stopGeneration,
     loadSavedCopy
   };
