@@ -1,5 +1,5 @@
 
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { GroupingType } from '@/hooks/useSessionGrouping';
 import DashboardEmpty from './DashboardEmpty';
 import DashboardModals from './DashboardModals';

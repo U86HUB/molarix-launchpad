@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { CardDescription, CardHeader } from "@/components/ui/card";
 import { Building, Calendar } from 'lucide-react';
 import { InlineEditableText } from '@/components/ui/inline-editable-text';
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { SessionStatus } from '@/hooks/useSessionStatus';
 
 interface SessionCardHeaderProps {

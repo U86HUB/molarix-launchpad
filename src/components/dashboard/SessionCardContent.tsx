@@ -1,6 +1,6 @@
 
 import { CardContent } from "@/components/ui/card";
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { SessionStatus } from '@/hooks/useSessionStatus';
 import { GeneratedCopy } from '@/types/copy';
 import TemplateThumbnail from './TemplateThumbnail';

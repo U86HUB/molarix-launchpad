@@ -1,5 +1,5 @@
 
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
 import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
 import { GroupingType } from '@/hooks/useSessionGrouping';

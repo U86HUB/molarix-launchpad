@@ -1,5 +1,5 @@
 
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import DashboardEmptyContent from './DashboardEmptyContent';
 import DashboardMainContent from './DashboardMainContent';

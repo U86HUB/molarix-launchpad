@@ -1,5 +1,5 @@
 
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { useClinicGrouping } from '@/hooks/useClinicGrouping';
 import EnhancedSessionCard from './EnhancedSessionCard';
 import { Building2 } from 'lucide-react';

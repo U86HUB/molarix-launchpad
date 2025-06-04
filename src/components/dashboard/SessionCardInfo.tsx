@@ -1,6 +1,6 @@
 
 import { Clock } from 'lucide-react';
-import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { DashboardSession } from '@/types/dashboard';
 import { SessionStatus } from '@/hooks/useSessionStatus';
 
 interface SessionCardInfoProps {
