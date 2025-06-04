@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,17 +24,24 @@ const Header = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
+    <header 
+      className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50"
+      role="banner"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <Link 
+              to="/" 
+              className="text-2xl font-bold text-blue-600 dark:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 rounded-sm"
+              aria-label="Molarix home"
+            >
               Molarix
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8 rtl:space-x-reverse">
+          <nav className="hidden md:flex space-x-8 rtl:space-x-reverse" role="navigation" aria-label="Main navigation">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -43,6 +51,7 @@ const Header = () => {
                     ? "text-blue-600 dark:text-blue-400" 
                     : "text-gray-700 dark:text-gray-300"
                 }`}
+                aria-current={isActive(item.href) ? "page" : undefined}
               >
                 {item.name}
               </Link>
@@ -56,12 +65,14 @@ const Header = () => {
               variant="ghost" 
               size="sm"
               className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              aria-label="Sign in to your account"
             >
               {t('signIn')}
             </Button>
             <Button 
               size="sm" 
               className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+              aria-label="Get started with Molarix"
             >
               {t('getStarted')}
             </Button>
@@ -77,17 +88,21 @@ const Header = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
-              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMenuOpen ? (
+                <X className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="h-6 w-6" aria-hidden="true" />
+              )}
             </Button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4" id="mobile-menu">
+          <div className="md:hidden pb-4" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
             <nav className="flex flex-col space-y-2">
               {navigation.map((item) => (
                 <Link
@@ -99,6 +114,7 @@ const Header = () => {
                       : "text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                   onClick={() => setIsMenuOpen(false)}
+                  aria-current={isActive(item.href) ? "page" : undefined}
                 >
                   {item.name}
                 </Link>
@@ -108,12 +124,14 @@ const Header = () => {
                   variant="ghost" 
                   size="sm" 
                   className="justify-start focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                  aria-label="Sign in to your account"
                 >
                   {t('signIn')}
                 </Button>
                 <Button 
                   size="sm" 
                   className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                  aria-label="Get started with Molarix"
                 >
                   {t('getStarted')}
                 </Button>
