@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2, RefreshCw, Copy, Check } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw, Copy, Check, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -21,20 +20,30 @@ interface OnboardingSession {
   selected_template: string;
 }
 
-interface HomepageCopy {
-  headline: string;
-  subheadline: string;
-  welcomeMessage: string;
-  ctaText: string;
-}
-
-interface ServicesCopy {
-  title: string;
-  intro: string;
-  services: Array<{
-    name: string;
-    description: string;
-  }>;
+interface GeneratedCopy {
+  homepage: {
+    headline: string;
+    subheadline: string;
+    welcomeMessage: string;
+    ctaText: string;
+  };
+  services: {
+    title: string;
+    intro: string;
+    services: Array<{
+      name: string;
+      description: string;
+    }>;
+  };
+  about: {
+    title: string;
+    intro: string;
+    mission: string;
+    values: Array<{
+      name: string;
+      description: string;
+    }>;
+  };
 }
 
 const AiCopyPreview = () => {
@@ -42,11 +51,9 @@ const AiCopyPreview = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
-  const [homepageCopy, setHomepageCopy] = useState<HomepageCopy | null>(null);
-  const [servicesCopy, setServicesCopy] = useState<ServicesCopy | null>(null);
+  const [generatedCopy, setGeneratedCopy] = useState<GeneratedCopy | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generatingHomepage, setGeneratingHomepage] = useState(false);
-  const [generatingServices, setGeneratingServices] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
   const sessionId = searchParams.get("sessionId");
@@ -62,75 +69,47 @@ const AiCopyPreview = () => {
       return;
     }
 
-    fetchSessionData();
+    generateCopy();
   }, [sessionId, toast]);
 
-  const fetchSessionData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('onboarding_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching session data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load session data",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSessionData(data);
-      // Auto-generate both sections on load
-      generateCopy(data, 'homepage');
-      generateCopy(data, 'services');
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load session data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateCopy = async (clinicData: OnboardingSession, section: 'homepage' | 'services') => {
-    const isHomepage = section === 'homepage';
-    const setGenerating = isHomepage ? setGeneratingHomepage : setGeneratingServices;
+  const generateCopy = async () => {
+    if (!sessionId) return;
     
     setGenerating(true);
+    setLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-copy', {
-        body: { clinicData, section }
+        body: { sessionId }
       });
 
-      if (error) throw error;
-
-      if (isHomepage) {
-        setHomepageCopy(data.copy);
-      } else {
-        setServicesCopy(data.copy);
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
       }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate copy');
+      }
+
+      console.log('Generated copy data:', data);
+      setGeneratedCopy(data.copy);
+      setSessionData(data.sessionData);
 
       toast({
         title: "Success",
-        description: `${isHomepage ? 'Homepage' : 'Services'} copy generated successfully!`,
+        description: "Copy generated successfully!",
       });
     } catch (error) {
       console.error('Error generating copy:', error);
       toast({
         title: "Error",
-        description: `Failed to generate ${section} copy`,
+        description: "Failed to generate copy. Please try again.",
         variant: "destructive",
       });
     } finally {
       setGenerating(false);
+      setLoading(false);
     }
   };
 
@@ -158,12 +137,30 @@ const AiCopyPreview = () => {
     }
   };
 
+  const exportAsJson = () => {
+    if (!generatedCopy) return;
+    
+    const dataStr = JSON.stringify(generatedCopy, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${sessionData?.clinic_name || 'clinic'}-copy.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Exported!",
+      description: "Copy exported as JSON file",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading session data...</span>
+          <span>Generating AI copy...</span>
         </div>
       </div>
     );
@@ -203,252 +200,286 @@ const AiCopyPreview = () => {
             Back
           </Button>
           
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              AI-Generated Copy Preview
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              AI-generated content for {sessionData.clinic_name}
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                AI-Generated Copy Preview
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-300">
+                AI-generated content for {sessionData.clinic_name}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={generateCopy}
+                disabled={generating}
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Regenerate
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportAsJson}
+                disabled={!generatedCopy}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export JSON
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Homepage Copy Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Homepage Copy</CardTitle>
-                  <CardDescription>
-                    AI-generated homepage content for your clinic
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateCopy(sessionData, 'homepage')}
-                  disabled={generatingHomepage}
-                >
-                  {generatingHomepage ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Regenerate
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {generatingHomepage ? (
-                <div className="space-y-4">
+        {generating ? (
+          <div className="space-y-6">
+            {[1, 2, 3].map(i => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-64" />
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <Skeleton className="h-8 w-3/4" />
                   <Skeleton className="h-6 w-full" />
                   <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-10 w-32" />
-                </div>
-              ) : homepageCopy ? (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Headline</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(homepageCopy.headline, 'Headline')}
-                      >
-                        {copiedItems.has('Headline') ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <h2 className="text-2xl font-bold">{homepageCopy.headline}</h2>
-                    </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : generatedCopy ? (
+          <div className="space-y-8">
+            {/* Homepage Copy Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Homepage Copy</CardTitle>
+                <CardDescription>
+                  Main homepage content and hero section
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Headline</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.homepage.headline, 'Headline')}
+                    >
+                      {copiedItems.has('Headline') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
                   </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Subheadline</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(homepageCopy.subheadline, 'Subheadline')}
-                      >
-                        {copiedItems.has('Subheadline') ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <p className="text-lg text-gray-600 dark:text-gray-300">{homepageCopy.subheadline}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Welcome Message</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(homepageCopy.welcomeMessage, 'Welcome Message')}
-                      >
-                        {copiedItems.has('Welcome Message') ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <p>{homepageCopy.welcomeMessage}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Call-to-Action</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(homepageCopy.ctaText, 'CTA Text')}
-                      >
-                        {copiedItems.has('CTA Text') ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <Button className="font-semibold">{homepageCopy.ctaText}</Button>
-                    </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-2xl font-bold">{generatedCopy.homepage.headline}</h2>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No homepage copy generated yet</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Services Copy Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Services Copy</CardTitle>
-                  <CardDescription>
-                    AI-generated services section content
-                  </CardDescription>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Subheadline</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.homepage.subheadline, 'Subheadline')}
+                    >
+                      {copiedItems.has('Subheadline') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-lg text-gray-600 dark:text-gray-300">{generatedCopy.homepage.subheadline}</p>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateCopy(sessionData, 'services')}
-                  disabled={generatingServices}
-                >
-                  {generatingServices ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Regenerate
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {generatingServices ? (
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Welcome Message</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.homepage.welcomeMessage, 'Welcome Message')}
+                    >
+                      {copiedItems.has('Welcome Message') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p>{generatedCopy.homepage.welcomeMessage}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Call-to-Action</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.homepage.ctaText, 'CTA Text')}
+                    >
+                      {copiedItems.has('CTA Text') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <Button className="font-semibold">{generatedCopy.homepage.ctaText}</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Services Copy Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Services Copy</CardTitle>
+                <CardDescription>
+                  Services section content and offerings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Section Title</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.services.title, 'Services Title')}
+                    >
+                      {copiedItems.has('Services Title') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-xl font-bold">{generatedCopy.services.title}</h2>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Introduction</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.services.intro, 'Services Intro')}
+                    >
+                      {copiedItems.has('Services Intro') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p>{generatedCopy.services.intro}</p>
+                  </div>
+                </div>
+
                 <div className="space-y-4">
-                  <Skeleton className="h-8 w-1/2" />
-                  <Skeleton className="h-16 w-full" />
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="space-y-2">
-                      <Skeleton className="h-6 w-1/3" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  ))}
-                </div>
-              ) : servicesCopy ? (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Section Title</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(servicesCopy.title, 'Services Title')}
-                      >
-                        {copiedItems.has('Services Title') ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <h2 className="text-xl font-bold">{servicesCopy.title}</h2>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Introduction</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(servicesCopy.intro, 'Services Intro')}
-                      >
-                        {copiedItems.has('Services Intro') ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <p>{servicesCopy.intro}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Services</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {servicesCopy.services.map((service, index) => (
-                        <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold">{service.name}</h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(`${service.name}: ${service.description}`, `Service ${index + 1}`)}
-                            >
-                              {copiedItems.has(`Service ${index + 1}`) ? (
-                                <Check className="h-4 w-4" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">{service.description}</p>
+                  <h3 className="font-semibold">Services</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {generatedCopy.services.services.map((service, index) => (
+                      <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold">{service.name}</h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(`${service.name}: ${service.description}`, `Service ${index + 1}`)}
+                          >
+                            {copiedItems.has(`Service ${index + 1}`) ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
                         </div>
-                      ))}
-                    </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{service.description}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No services copy generated yet</p>
+              </CardContent>
+            </Card>
+
+            {/* About Copy Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>About Copy</CardTitle>
+                <CardDescription>
+                  About section content and practice values
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Section Title</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.about.title, 'About Title')}
+                    >
+                      {copiedItems.has('About Title') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-xl font-bold">{generatedCopy.about.title}</h2>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Introduction</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.about.intro, 'About Intro')}
+                    >
+                      {copiedItems.has('About Intro') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p>{generatedCopy.about.intro}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Mission Statement</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(generatedCopy.about.mission, 'Mission')}
+                    >
+                      {copiedItems.has('Mission') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="italic">{generatedCopy.about.mission}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Core Values</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {generatedCopy.about.values.map((value, index) => (
+                      <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold">{value.name}</h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(`${value.name}: ${value.description}`, `Value ${index + 1}`)}
+                          >
+                            {copiedItems.has(`Value ${index + 1}`) ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{value.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">No copy generated yet</p>
+            <Button onClick={generateCopy} disabled={generating}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Generate Copy
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
