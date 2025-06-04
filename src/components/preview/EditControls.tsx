@@ -1,7 +1,7 @@
 
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Edit, X, Clock } from "lucide-react";
+import { Save, Edit, X, Clock, History } from "lucide-react";
 
 interface EditControlsProps {
   isEditing: boolean;
@@ -11,6 +11,7 @@ interface EditControlsProps {
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
+  onViewHistory?: () => void;
 }
 
 const EditControls = ({ 
@@ -20,7 +21,8 @@ const EditControls = ({
   lastSaved,
   onEdit, 
   onCancel, 
-  onSave 
+  onSave,
+  onViewHistory
 }: EditControlsProps) => {
   const formatLastSaved = (date: Date) => {
     const now = new Date();
@@ -62,6 +64,12 @@ const EditControls = ({
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            {onViewHistory && (
+              <Button onClick={onViewHistory} variant="outline">
+                <History className="h-4 w-4 mr-2" />
+                History
+              </Button>
+            )}
             {!isEditing ? (
               <Button onClick={onEdit} variant="outline">
                 <Edit className="h-4 w-4 mr-2" />

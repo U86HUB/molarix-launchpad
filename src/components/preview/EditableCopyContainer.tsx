@@ -8,6 +8,7 @@ import EditControls from "./EditControls";
 import EditableHomepageSection from "./EditableHomepageSection";
 import EditableServicesSection from "./EditableServicesSection";
 import EditableAboutSection from "./EditableAboutSection";
+import CopyHistoryModal from "./CopyHistoryModal";
 
 interface EditableCopyContainerProps {
   generatedCopy: GeneratedCopy;
@@ -18,6 +19,7 @@ interface EditableCopyContainerProps {
 const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: EditableCopyContainerProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedCopy, setEditedCopy] = useState<GeneratedCopy>(generatedCopy);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const { toast } = useToast();
   const { saveCopy, loading } = useSaveCopy();
   
@@ -56,6 +58,19 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
     if (isEditing) {
       saveNow(); // Save immediately on blur
     }
+  };
+
+  const handleViewHistory = () => {
+    setShowHistoryModal(true);
+  };
+
+  const handleRestoreVersion = (restoredCopy: GeneratedCopy) => {
+    setEditedCopy(restoredCopy);
+    setIsEditing(true); // Put into edit mode but don't auto-save
+    toast({
+      title: "Version Restored",
+      description: "The selected version has been restored. Click 'Publish Changes' to save it.",
+    });
   };
 
   const updateHomepage = (field: keyof GeneratedCopy['homepage'], value: string) => {
@@ -154,6 +169,7 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
         onEdit={handleEdit}
         onCancel={handleCancel}
         onSave={handleSave}
+        onViewHistory={handleViewHistory}
       />
 
       <EditableHomepageSection
@@ -180,6 +196,14 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
         onUpdateValue={updateValue}
         onBlur={handleFieldBlur}
         isEditing={isEditing}
+      />
+
+      <CopyHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        sessionId={sessionId}
+        currentCopy={displayCopy}
+        onRestore={handleRestoreVersion}
       />
     </div>
   );
