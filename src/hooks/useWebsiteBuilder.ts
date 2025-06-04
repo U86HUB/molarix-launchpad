@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,14 @@ function isValidSectionType(type: string): type is SectionType {
 
 function isValidWebsiteStatus(status: string): status is WebsiteStatus {
   return ["draft", "published", "archived"].includes(status);
+}
+
+// Helper function to safely convert Json to Record<string, any>
+function safeJsonToRecord(json: any): Record<string, any> {
+  if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
+    return json as Record<string, any>;
+  }
+  return {};
 }
 
 export const useWebsiteBuilder = (websiteId?: string) => {
@@ -58,7 +65,8 @@ export const useWebsiteBuilder = (websiteId?: string) => {
       // Cast the sections data to proper types
       const typedSections: Section[] = (sectionsData || []).map(section => ({
         ...section,
-        type: isValidSectionType(section.type) ? section.type : 'hero'
+        type: isValidSectionType(section.type) ? section.type : 'hero',
+        settings: safeJsonToRecord(section.settings)
       }));
       setSections(typedSections);
 
@@ -99,7 +107,8 @@ export const useWebsiteBuilder = (websiteId?: string) => {
       // Cast the returned data to proper Section type
       const typedSection: Section = {
         ...data,
-        type: isValidSectionType(data.type) ? data.type : 'hero'
+        type: isValidSectionType(data.type) ? data.type : 'hero',
+        settings: safeJsonToRecord(data.settings)
       };
 
       setSections(prev => [...prev, typedSection]);
@@ -137,7 +146,8 @@ export const useWebsiteBuilder = (websiteId?: string) => {
       // Cast the returned data to proper Section type
       const typedSection: Section = {
         ...data,
-        type: isValidSectionType(data.type) ? data.type : 'hero'
+        type: isValidSectionType(data.type) ? data.type : 'hero',
+        settings: safeJsonToRecord(data.settings)
       };
 
       setSections(prev => 
