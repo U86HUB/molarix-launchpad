@@ -9,7 +9,7 @@ import { useDashboardSessions } from '@/hooks/useDashboardSessions';
 import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
 import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
 import { GroupingType } from '@/hooks/useSessionGrouping';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import UserProfile from '@/components/dashboard/UserProfile';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
@@ -36,6 +36,13 @@ const Dashboard = () => {
     filterBy,
     sessionStatuses
   });
+
+  // Get user's first name for personalized greeting
+  const getFirstName = (email: string) => {
+    const username = email.split('@')[0];
+    const parts = username.split('.');
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  };
 
   const handleContinueEditing = (sessionId: string) => {
     navigate(`/ai-copy-preview?sessionId=${sessionId}&resume=true`);
@@ -77,8 +84,19 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <DashboardHeader userEmail={user?.email || ''} />
+      <div className="max-w-7xl mx-auto">
+        {/* Header with title and user profile */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mt-1">
+              Welcome back, {user?.email ? getFirstName(user.email) : 'there'}! Here's a snapshot of your clinic projects.
+            </p>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            <UserProfile userEmail={user?.email || ''} />
+          </div>
+        </div>
         
         {/* Show empty state for first-time users */}
         {sessions.length === 0 ? (
@@ -90,14 +108,14 @@ const Dashboard = () => {
             {/* Analytics Stats Section */}
             <DashboardStats sessions={sessions} />
             
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Clinic Websites</h2>
                 <p className="text-gray-600 dark:text-gray-300 mt-1">
                   Manage and preview your dental clinic websites
                 </p>
               </div>
-              <Button onClick={handleCreateNew} className="flex items-center gap-2">
+              <Button onClick={handleCreateNew} className="flex items-center gap-2 mt-4 sm:mt-0">
                 <Plus className="h-4 w-4" />
                 Create New Website
               </Button>
@@ -116,7 +134,7 @@ const Dashboard = () => {
             />
 
             {filteredSessions.length === 0 ? (
-              <Card className="text-center py-12">
+              <Card className="text-center py-12 shadow-sm border-border">
                 <CardHeader>
                   <CardTitle>No websites match your filters</CardTitle>
                   <CardDescription>

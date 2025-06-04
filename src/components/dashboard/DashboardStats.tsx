@@ -1,17 +1,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useSessionStatus, SessionStatus } from '@/hooks/useSessionStatus';
-import { BarChart3, Calendar, FileText, TrendingUp } from 'lucide-react';
+import { BarChart3, Calendar, FileText, TrendingUp, Info } from 'lucide-react';
 
 interface DashboardStatsProps {
   sessions: DashboardSession[];
 }
-
-const StatusCounter = ({ session }: { session: DashboardSession }) => {
-  const { status } = useSessionStatus(session);
-  return { status };
-};
 
 const DashboardStats = ({ sessions }: DashboardStatsProps) => {
   // Calculate statistics
@@ -71,52 +67,68 @@ const DashboardStats = ({ sessions }: DashboardStatsProps) => {
       title: "Total Websites",
       value: totalSessions,
       icon: FileText,
-      description: `${totalSessions} website${totalSessions !== 1 ? 's' : ''} created`
+      description: `${totalSessions} website${totalSessions !== 1 ? 's' : ''} created`,
+      tooltip: "Total number of clinic website projects you've created"
     },
     {
       title: "Ready to Publish",
       value: readyToPublishCount,
       icon: BarChart3,
-      description: "Completed websites"
+      description: "Completed websites",
+      tooltip: "Websites with complete content ready to go live"
     },
     {
       title: "Last Activity",
       value: formatLastEdit(),
       icon: Calendar,
-      description: lastEditTimestamp ? "Most recent edit" : "No activity"
+      description: lastEditTimestamp ? "Most recent edit" : "No activity",
+      tooltip: "Shows your most recent update across all projects"
     },
     {
       title: "Recent Activity",
       value: recentActivityCount,
       icon: TrendingUp,
-      description: "Active in last 7 days"
+      description: "Active in last 7 days",
+      tooltip: "Number of projects with updates in the past week"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {statsData.map((stat, index) => {
-        const Icon = stat.icon;
-        return (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                {stat.title}
-              </CardTitle>
-              <Icon className="h-4 w-4 text-gray-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {stat.value}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+    <TooltipProvider>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {statsData.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index} className="shadow-sm border-border">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{stat.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  {stat.value}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 };
 
