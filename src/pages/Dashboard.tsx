@@ -14,6 +14,7 @@ import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
 import GroupedSessionsGrid from '@/components/dashboard/GroupedSessionsGrid';
+import PreviewModal from '@/components/dashboard/PreviewModal';
 import { Loader2, Plus } from 'lucide-react';
 
 const Dashboard = () => {
@@ -26,6 +27,10 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [groupBy, setGroupBy] = useState<GroupingType>('date');
+  
+  // Preview modal state
+  const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   // Get session statuses for filtering
   const sessionStatuses = useMultipleSessionStatuses(sessions);
@@ -45,11 +50,17 @@ const Dashboard = () => {
   };
 
   const handleContinueEditing = (sessionId: string) => {
-    navigate(`/ai-copy-preview?sessionId=${sessionId}&resume=true`);
+    navigate(`/ai-copy-preview?sessionId=${sessionId}&mode=edit`);
   };
 
   const handlePreview = (sessionId: string) => {
-    navigate(`/ai-copy-preview?sessionId=${sessionId}`);
+    setPreviewSessionId(sessionId);
+    setIsPreviewModalOpen(true);
+  };
+
+  const handleClosePreviewModal = () => {
+    setIsPreviewModalOpen(false);
+    setPreviewSessionId(null);
   };
 
   const handleDelete = async (sessionId: string, clinicName: string) => {
@@ -167,6 +178,13 @@ const Dashboard = () => {
           </>
         )}
       </div>
+
+      {/* Preview Modal */}
+      <PreviewModal
+        sessionId={previewSessionId}
+        isOpen={isPreviewModalOpen}
+        onClose={handleClosePreviewModal}
+      />
     </div>
   );
 };
