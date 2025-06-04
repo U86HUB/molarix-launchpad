@@ -9,7 +9,8 @@ import OnboardingBrandSettings from "@/components/onboarding/OnboardingBrandSett
 import OnboardingCompliance from "@/components/onboarding/OnboardingCompliance";
 import OnboardingTemplateSelection from "@/components/onboarding/OnboardingTemplateSelection";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useOnboardingSubmission } from "@/hooks/useOnboardingSubmission";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 export interface OnboardingData {
   clinic: {
@@ -32,6 +33,7 @@ export interface OnboardingData {
 
 const Onboarding = () => {
   const { t } = useLanguage();
+  const { submitOnboardingData, isSubmitting } = useOnboardingSubmission();
   const [activeStep, setActiveStep] = useState<string>("clinic");
   const [progress, setProgress] = useState<number>(25);
   
@@ -99,17 +101,11 @@ const Onboarding = () => {
   };
 
   const handleSubmit = async () => {
-    try {
-      // In a real implementation, this would send data to Supabase
-      console.log("Submitting onboarding data:", onboardingData);
-      
-      // Mock successful submission
-      alert("Onboarding complete! Your clinic setup has been saved.");
-      
-      // Redirect to dashboard or home page
+    const success = await submitOnboardingData(onboardingData);
+    
+    if (success) {
+      // Optionally redirect to dashboard or home page
       // window.location.href = "/";
-    } catch (error) {
-      console.error("Error submitting onboarding data:", error);
     }
   };
 
@@ -212,7 +208,7 @@ const Onboarding = () => {
               <Button
                 variant="outline"
                 onClick={handleBack}
-                disabled={activeStep === "clinic"}
+                disabled={activeStep === "clinic" || isSubmitting}
                 className="flex items-center gap-2"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -223,14 +219,18 @@ const Onboarding = () => {
                 onClick={handleNext}
                 className="flex items-center gap-2"
                 disabled={
+                  isSubmitting ||
                   (activeStep === "clinic" && (!onboardingData.clinic.name || !onboardingData.clinic.email)) ||
                   (activeStep === "templates" && !onboardingData.selectedTemplateId)
                 }
               >
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {activeStep === "templates" 
-                  ? t('finish') || 'Finish Setup' 
+                  ? isSubmitting 
+                    ? (t('submitting') || 'Submitting...') 
+                    : (t('finish') || 'Finish Setup')
                   : t('next') || 'Next Step'}
-                <ChevronRight className="h-4 w-4" />
+                {!isSubmitting && <ChevronRight className="h-4 w-4" />}
               </Button>
             </div>
           </CardContent>
