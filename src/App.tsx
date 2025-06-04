@@ -24,6 +24,7 @@ import AiCopyPreview from "./pages/AiCopyPreview";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Account from "./pages/Account";
+import ClinicSettings from "./pages/ClinicSettings";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,11 @@ const App = () => (
                 <Route path="/account" element={
                   <ProtectedRoute>
                     <Account />
+                  </ProtectedRoute>
+                } />
+                <Route path="/clinics/:clinicId" element={
+                  <ProtectedRoute>
+                    <ClinicSettings />
                   </ProtectedRoute>
                 } />
                 <Route path="/onboarding" element={
