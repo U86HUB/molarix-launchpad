@@ -22,6 +22,7 @@ import Onboarding from "./pages/Onboarding";
 import TemplatePreview from "./pages/TemplatePreview";
 import AiCopyPreview from "./pages/AiCopyPreview";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,11 @@ const App = () => (
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
                 <Route path="/onboarding" element={
                   <ProtectedRoute>
                     <Onboarding />
