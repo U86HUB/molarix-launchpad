@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +17,8 @@ interface Profile {
   last_name: string | null;
   avatar_url: string | null;
   updated_at: string;
+  created_at: string;
+  email: string | null;
 }
 
 const Account = () => {
@@ -75,6 +76,7 @@ const Account = () => {
               id: user.id,
               first_name: '',
               last_name: '',
+              email: user.email,
             }])
             .select()
             .single();
@@ -113,6 +115,7 @@ const Account = () => {
         .update({
           first_name: formData.firstName,
           last_name: formData.lastName,
+          email: formData.email,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
