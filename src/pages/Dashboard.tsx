@@ -150,6 +150,7 @@ const Dashboard = () => {
                 onPreview={handlePreview}
                 onDelete={handleDelete}
                 onDuplicate={handleDuplicate}
+                onUpdate={refreshSessions}
               />
             ))}
           </div>
