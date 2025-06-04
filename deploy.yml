@@ -1,0 +1,52 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Molarix
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      # ✅ Supabase
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # ✅ OpenAI
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      # ✅ Stripe
+      VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+      # ✅ Mailgun
+      MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
+      MAILGUN_DOMAIN: ${{ secrets.MAILGUN_DOMAIN }}
+
+      # Optional: Metadata
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      MOLARIX_NETLIFY_URL: ${{ secrets.MOLARIX_NETLIFY_URL }}
+      MOLARIX_GITHUB_REPO_URL: ${{ secrets.MOLARIX_GITHUB_REPO_URL }}
+
+    steps:
+      - name: ⬇️ Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: 🛠 Build Project
+        run: npm run build
+
+      # Optional: Add deploy step here (Netlify CLI, Vercel, etc.)
+
