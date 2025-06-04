@@ -3,6 +3,7 @@ import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useDashboardState } from '@/hooks/useDashboardState';
 import DashboardEmptyContent from './DashboardEmptyContent';
 import DashboardMainContent from './DashboardMainContent';
+import { OrphanedSessionsAlert } from './OrphanedSessionsAlert';
 
 interface DashboardContentProps {
   sessions: DashboardSession[];
@@ -99,34 +100,39 @@ const DashboardContent = ({
   }
 
   return (
-    <DashboardMainContent
-      sessions={sessions}
-      sortBy={sortBy}
-      filterBy={filterBy}
-      groupBy={groupBy}
-      selectedClinicId={selectedClinicId}
-      searchQuery={searchQuery}
-      showGettingStarted={showGettingStarted}
-      previewSessionId={previewSessionId}
-      isPreviewModalOpen={isPreviewModalOpen}
-      isCreateModalOpen={isCreateModalOpen}
-      setSortBy={setSortBy}
-      setFilterBy={setFilterBy}
-      setGroupBy={setGroupBy}
-      setSelectedClinicId={setSelectedClinicId}
-      setSearchQuery={setSearchQuery}
-      setShowGettingStarted={setShowGettingStarted}
-      onContinueEditing={onContinueEditing}
-      onPreview={handlePreview}
-      onDelete={handleDelete}
-      onDuplicate={handleDuplicate}
-      onUpdate={refreshSessions}
-      onClearFilters={handleClearFilters}
-      onResetAllFilters={handleResetAllFilters}
-      onCreateWebsite={handleCreateNew}
-      onClosePreviewModal={handleClosePreviewModal}
-      onCloseCreateModal={handleCloseCreateModal}
-    />
+    <>
+      {/* Show orphaned sessions alert */}
+      <OrphanedSessionsAlert onDismiss={() => refreshSessions()} />
+      
+      <DashboardMainContent
+        sessions={sessions}
+        sortBy={sortBy}
+        filterBy={filterBy}
+        groupBy={groupBy}
+        selectedClinicId={selectedClinicId}
+        searchQuery={searchQuery}
+        showGettingStarted={showGettingStarted}
+        previewSessionId={previewSessionId}
+        isPreviewModalOpen={isPreviewModalOpen}
+        isCreateModalOpen={isCreateModalOpen}
+        setSortBy={setSortBy}
+        setFilterBy={setFilterBy}
+        setGroupBy={setGroupBy}
+        setSelectedClinicId={setSelectedClinicId}
+        setSearchQuery={setSearchQuery}
+        setShowGettingStarted={setShowGettingStarted}
+        onContinueEditing={onContinueEditing}
+        onPreview={handlePreview}
+        onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
+        onUpdate={refreshSessions}
+        onClearFilters={handleClearFilters}
+        onResetAllFilters={handleResetAllFilters}
+        onCreateWebsite={handleCreateNew}
+        onClosePreviewModal={handleClosePreviewModal}
+        onCloseCreateModal={handleCloseCreateModal}
+      />
+    </>
   );
 };
 

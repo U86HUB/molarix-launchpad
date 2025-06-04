@@ -282,6 +282,20 @@ export type Database = {
         Args: { original_session_id: string; new_user_id?: string }
         Returns: string
       }
+      get_orphaned_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          clinic_name: string
+          created_at: string
+          last_updated: string
+          created_by: string
+        }[]
+      }
+      reassign_session_to_clinic: {
+        Args: { session_id: string; target_clinic_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -8,9 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Building2 } from 'lucide-react';
+import { Loader2, Plus, Building2, AlertTriangle } from 'lucide-react';
 import { useUserClinics } from '@/hooks/useUserClinics';
 import { AddNewClinicInline } from './AddNewClinicInline';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ClinicSelectionSectionProps {
   selectedClinicId: string;
@@ -68,6 +69,15 @@ export const ClinicSelectionSection = ({
       <Label htmlFor="clinic-select" className="text-sm font-medium">
         Assign to Clinic <span className="text-red-500">*</span>
       </Label>
+      
+      {/* Show warning about clinic assignment requirement */}
+      <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+        <AlertTriangle className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800 dark:text-blue-200 text-xs">
+          All websites must be assigned to a clinic to stay organized in your dashboard.
+        </AlertDescription>
+      </Alert>
+
       {clinicsLoading ? (
         <div className="flex items-center justify-center h-10 border rounded-md bg-gray-50">
           <Loader2 className="h-4 w-4 animate-spin" />
