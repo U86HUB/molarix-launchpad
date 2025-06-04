@@ -1,9 +1,9 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { Calendar, Eye, Edit, Trash2, Building } from 'lucide-react';
+import TemplateThumbnail from './TemplateThumbnail';
 
 interface SessionCardProps {
   session: DashboardSession;
@@ -61,6 +61,17 @@ const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: Sessio
       
       <CardContent>
         <div className="space-y-3">
+          {/* Template Thumbnail */}
+          {session.selected_template && (
+            <div className="w-full h-32 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+              <TemplateThumbnail 
+                templateId={session.selected_template}
+                templateName={`Template ${session.selected_template}`}
+                className="w-full h-full"
+              />
+            </div>
+          )}
+          
           <div className="text-sm text-gray-600 dark:text-gray-300">
             Template: <span className="font-medium">{session.selected_template || 'Not selected'}</span>
           </div>
