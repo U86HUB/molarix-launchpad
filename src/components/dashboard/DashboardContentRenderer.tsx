@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { GroupingType } from '@/hooks/useSessionGrouping';
 import GroupedSessionsGrid from './GroupedSessionsGrid';
-import ClinicGroupedSessionsGrid from './ClinicGroupedSessionsGrid';
+import EnhancedClinicGroupedView from './EnhancedClinicGroupedView';
 import EmptyState from '@/components/ui/empty-state';
 import { Search, Filter, RotateCcw } from 'lucide-react';
 
@@ -19,6 +19,7 @@ interface DashboardContentRendererProps {
   onUpdate: () => void;
   onClearFilters: () => void;
   onResetAllFilters: () => void;
+  onCreateWebsite?: () => void;
 }
 
 const DashboardContentRenderer = ({
@@ -32,8 +33,27 @@ const DashboardContentRenderer = ({
   onDuplicate,
   onUpdate,
   onClearFilters,
-  onResetAllFilters
+  onResetAllFilters,
+  onCreateWebsite
 }: DashboardContentRendererProps) => {
+  if (sessions.length === 0 && !selectedClinicId && !searchQuery) {
+    // Show enhanced clinic view even when no sessions exist to display clinics without websites
+    if (groupBy === 'clinic') {
+      return (
+        <EnhancedClinicGroupedView
+          sessions={sessions}
+          selectedClinicId={selectedClinicId}
+          onContinueEditing={onContinueEditing}
+          onPreview={onPreview}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onUpdate={onUpdate}
+          onCreateWebsite={onCreateWebsite}
+        />
+      );
+    }
+  }
+
   if (sessions.length === 0) {
     const hasActiveFilters = searchQuery || selectedClinicId;
     
@@ -77,10 +97,10 @@ const DashboardContentRenderer = ({
     );
   }
 
-  // Show clinic-grouped sessions when clinic filter is applied or group by clinic
+  // Show enhanced clinic-grouped view when grouping by clinic or filtering by clinic
   if (selectedClinicId || groupBy === 'clinic') {
     return (
-      <ClinicGroupedSessionsGrid
+      <EnhancedClinicGroupedView
         sessions={sessions}
         selectedClinicId={selectedClinicId}
         onContinueEditing={onContinueEditing}
@@ -88,6 +108,7 @@ const DashboardContentRenderer = ({
         onDelete={onDelete}
         onDuplicate={onDuplicate}
         onUpdate={onUpdate}
+        onCreateWebsite={onCreateWebsite}
       />
     );
   }

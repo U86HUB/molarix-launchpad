@@ -30,7 +30,7 @@ const DashboardContent = ({
   // Filtering, sorting, and grouping state
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
-  const [groupBy, setGroupBy] = useState<GroupingType>('date');
+  const [groupBy, setGroupBy] = useState<GroupingType>('clinic'); // Default to clinic grouping
   const [selectedClinicId, setSelectedClinicId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -125,8 +125,8 @@ const DashboardContent = ({
     setSelectedClinicId(undefined);
   };
 
-  // Show empty state for first-time users
-  if (sessions.length === 0) {
+  // Show empty state for first-time users only if they have no sessions AND no clinics
+  if (sessions.length === 0 && groupBy !== 'clinic') {
     return (
       <div className="mt-12">
         {showGettingStarted && (
@@ -192,6 +192,7 @@ const DashboardContent = ({
         onUpdate={refreshSessions}
         onClearFilters={handleClearFilters}
         onResetAllFilters={handleResetAllFilters}
+        onCreateWebsite={handleCreateNew}
       />
 
       <DashboardModals
