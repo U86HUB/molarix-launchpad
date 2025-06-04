@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { groupBy } from 'lodash';
 import dayjs from 'dayjs';
@@ -12,9 +11,9 @@ interface SessionGroup {
   order: number;
 }
 
-export const useSessionGrouping = (sessions: DashboardSession[], groupBy: GroupingType): SessionGroup[] => {
+export const useSessionGrouping = (sessions: DashboardSession[], groupingType: GroupingType): SessionGroup[] => {
   const groupedSessions = useMemo(() => {
-    if (groupBy === 'date') {
+    if (groupingType === 'date') {
       const now = dayjs();
       const today = now.startOf('day');
       const sevenDaysAgo = now.subtract(7, 'days').startOf('day');
@@ -49,7 +48,7 @@ export const useSessionGrouping = (sessions: DashboardSession[], groupBy: Groupi
         order: template === 'No Template' ? 999 : Number(template.replace(/\D/g, '')) || 0
       })).sort((a, b) => a.order - b.order);
     }
-  }, [sessions, groupBy]);
+  }, [sessions, groupingType]);
 
   return groupedSessions;
 };
