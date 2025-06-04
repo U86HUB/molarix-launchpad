@@ -61,6 +61,8 @@ const Dashboard = () => {
   const handleClosePreviewModal = () => {
     setIsPreviewModalOpen(false);
     setPreviewSessionId(null);
+    // Refresh sessions to get updated data after any publishes
+    refreshSessions();
   };
 
   const handleDelete = async (sessionId: string, clinicName: string) => {
