@@ -5,10 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { GeneratedCopy } from "@/types/copy";
 import { supabase } from "@/integrations/supabase/client";
+import { useSavedCopy } from "@/hooks/useSavedCopy";
+import { useStreamingCopy } from "@/hooks/useStreamingCopy";
 import PreviewHeader from "@/components/preview/PreviewHeader";
 import PreviewLoadingState from "@/components/preview/PreviewLoadingState";
 import PreviewErrorState from "@/components/preview/PreviewErrorState";
 import PreviewContent from "@/components/preview/PreviewContent";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 interface OnboardingSession {
   id: string;
@@ -28,10 +32,28 @@ const AiCopyPreview = () => {
   const { toast } = useToast();
   const [currentCopy, setCurrentCopy] = useState<GeneratedCopy | null>(null);
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [noCopyFound, setNoCopyFound] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [showInfoBanner, setShowInfoBanner] = useState(false);
+  const [infoBannerMessage, setInfoBannerMessage] = useState("");
 
   const sessionId = searchParams.get("sessionId");
+  const mode = searchParams.get("mode");
+  const isEditMode = mode === "edit";
+
+  // Load saved copy first (preferring drafts in edit mode)
+  const { copy: savedCopy, loading: savedCopyLoading, noCopyFound } = useSavedCopy({
+    sessionId,
+    preferDraft: isEditMode
+  });
+
+  // Streaming copy generation (only triggered if no saved copy)
+  const {
+    streamingContent,
+    isStreaming,
+    error: streamingError,
+    startGeneration,
+    stopGeneration
+  } = useStreamingCopy(sessionId);
 
   useEffect(() => {
     if (!sessionId) {
@@ -40,13 +62,12 @@ const AiCopyPreview = () => {
         description: "No session ID provided",
         variant: "destructive",
       });
-      setLoading(false);
+      setSessionLoading(false);
       return;
     }
 
-    const fetchData = async () => {
+    const fetchSessionData = async () => {
       try {
-        // Fetch session data
         const { data: session, error: sessionError } = await supabase
           .from('onboarding_sessions')
           .select('*')
@@ -64,43 +85,6 @@ const AiCopyPreview = () => {
         }
 
         setSessionData(session);
-
-        // First try to get published copy
-        const { data: publishedCopy, error: publishedError } = await supabase
-          .from('ai_generated_copy')
-          .select('*')
-          .eq('session_id', sessionId)
-          .eq('type', 'published')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (publishedError) {
-          console.error('Error fetching published copy:', publishedError);
-        }
-
-        if (publishedCopy) {
-          setCurrentCopy(publishedCopy.data as unknown as GeneratedCopy);
-        } else {
-          // Try to get any copy (including drafts) as fallback
-          const { data: anyCopy, error: anyError } = await supabase
-            .from('ai_generated_copy')
-            .select('*')
-            .eq('session_id', sessionId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (anyError) {
-            console.error('Error fetching any copy:', anyError);
-          }
-
-          if (anyCopy) {
-            setCurrentCopy(anyCopy.data as unknown as GeneratedCopy);
-          } else {
-            setNoCopyFound(true);
-          }
-        }
       } catch (error) {
         console.error('Error:', error);
         toast({
@@ -109,12 +93,48 @@ const AiCopyPreview = () => {
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        setSessionLoading(false);
       }
     };
 
-    fetchData();
+    fetchSessionData();
   }, [sessionId, toast]);
+
+  // Handle saved copy loading results
+  useEffect(() => {
+    if (!savedCopyLoading) {
+      if (savedCopy) {
+        setCurrentCopy(savedCopy);
+        setInfoBannerMessage("Draft loaded from your last edit.");
+        setShowInfoBanner(true);
+        // Hide banner after 3 seconds
+        setTimeout(() => setShowInfoBanner(false), 3000);
+      } else if (noCopyFound && isEditMode) {
+        // Only auto-generate if in edit mode and no saved copy exists
+        setInfoBannerMessage("Generating content for the first time…");
+        setShowInfoBanner(true);
+        startGeneration();
+      }
+    }
+  }, [savedCopy, savedCopyLoading, noCopyFound, isEditMode, startGeneration]);
+
+  // Handle streaming completion
+  useEffect(() => {
+    if (!isStreaming && streamingContent && !streamingError) {
+      try {
+        const parsedCopy = JSON.parse(streamingContent);
+        setCurrentCopy(parsedCopy);
+        setShowInfoBanner(false);
+      } catch (error) {
+        console.error('Error parsing streamed content:', error);
+        toast({
+          title: "Error",
+          description: "Failed to parse generated content",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [isStreaming, streamingContent, streamingError, toast]);
 
   const exportAsJson = () => {
     if (!currentCopy) return;
@@ -135,8 +155,9 @@ const AiCopyPreview = () => {
   };
 
   const handleRegenerate = () => {
-    // Navigate to editing mode for regeneration
-    window.location.href = `/ai-copy-preview?sessionId=${sessionId}&mode=edit`;
+    setInfoBannerMessage("Regenerating content…");
+    setShowInfoBanner(true);
+    startGeneration();
   };
 
   const handleCopyUpdated = (updatedCopy: GeneratedCopy) => {
@@ -146,6 +167,8 @@ const AiCopyPreview = () => {
   const handleBack = () => {
     window.history.back();
   };
+
+  const loading = sessionLoading || savedCopyLoading;
 
   // Show loading state
   if (loading) {
@@ -162,16 +185,23 @@ const AiCopyPreview = () => {
       <div className="max-w-4xl mx-auto">
         <PreviewHeader
           clinicName={sessionData?.clinic_name}
-          isStreaming={false}
-          loading={false}
+          isStreaming={isStreaming}
+          loading={loading}
           hasCurrentCopy={!!currentCopy}
           onBack={handleBack}
           onRegenerate={handleRegenerate}
-          onStop={() => {}} // Not needed in preview mode
+          onStop={stopGeneration}
           onExport={exportAsJson}
         />
 
-        {noCopyFound ? (
+        {showInfoBanner && (
+          <Alert className="mb-6">
+            <Info className="h-4 w-4" />
+            <AlertDescription>{infoBannerMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {noCopyFound && !isEditMode ? (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No content found yet. Please generate content first in editing mode.</p>
             <button 
@@ -183,9 +213,9 @@ const AiCopyPreview = () => {
           </div>
         ) : (
           <PreviewContent
-            isStreaming={false}
-            streamingContent={null}
-            loading={false}
+            isStreaming={isStreaming}
+            streamingContent={streamingContent}
+            loading={loading}
             currentCopy={currentCopy}
             sessionId={sessionId}
             onRegenerate={handleRegenerate}
