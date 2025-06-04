@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWebsiteBuilder } from '@/hooks/useWebsiteBuilder';
 import SectionLibrary from './SectionLibrary';
 import SectionEditor from './SectionEditor';
+import WebsitePreview from './preview/WebsitePreview';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Eye, Settings, Palette, Save } from 'lucide-react';
 import { FullPageLoader } from '@/components/ui/loading-states';
@@ -156,23 +157,10 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
 
           <ResizableHandle withHandle />
 
-          {/* Right Panel - Preview */}
+          {/* Right Panel - Live Preview */}
           <ResizablePanel defaultSize={70}>
-            <div className="h-full bg-white dark:bg-gray-900 p-6">
-              <div className="h-full border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Live Preview
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Preview functionality coming soon...
-                  </p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {sections.length} section{sections.length !== 1 ? 's' : ''} configured
-                  </p>
-                </div>
-              </div>
+            <div className="h-full bg-white dark:bg-gray-900">
+              <WebsitePreview website={website} sections={sections} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
