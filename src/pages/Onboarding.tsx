@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export interface OnboardingData {
 const Onboarding = () => {
   const { t } = useLanguage();
   const { submitOnboardingData, isSubmitting } = useOnboardingSubmission();
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState<string>("clinic");
   const [progress, setProgress] = useState<number>(25);
   
@@ -101,11 +102,11 @@ const Onboarding = () => {
   };
 
   const handleSubmit = async () => {
-    const success = await submitOnboardingData(onboardingData);
+    const result = await submitOnboardingData(onboardingData);
     
-    if (success) {
-      // Optionally redirect to dashboard or home page
-      // window.location.href = "/";
+    if (result.success && result.sessionId) {
+      // Redirect to template preview page
+      navigate(`/template-preview?sessionId=${result.sessionId}`);
     }
   };
 
@@ -228,7 +229,7 @@ const Onboarding = () => {
                 {activeStep === "templates" 
                   ? isSubmitting 
                     ? (t('submitting') || 'Submitting...') 
-                    : (t('finish') || 'Finish Setup')
+                    : (t('finish') || 'Preview Templates')
                   : t('next') || 'Next Step'}
                 {!isSubmitting && <ChevronRight className="h-4 w-4" />}
               </Button>

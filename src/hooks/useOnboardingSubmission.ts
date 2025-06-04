@@ -34,7 +34,7 @@ export const useOnboardingSubmission = () => {
     }
   };
 
-  const submitOnboardingData = async (data: OnboardingData): Promise<boolean> => {
+  const submitOnboardingData = async (data: OnboardingData): Promise<{ success: boolean; sessionId?: string }> => {
     setIsSubmitting(true);
     
     try {
@@ -85,7 +85,7 @@ export const useOnboardingSubmission = () => {
         description: "Your clinic setup has been saved successfully.",
       });
 
-      return true;
+      return { success: true, sessionId: insertedData.id };
     } catch (error) {
       console.error('Error submitting onboarding data:', error);
       
@@ -95,7 +95,7 @@ export const useOnboardingSubmission = () => {
         variant: "destructive",
       });
 
-      return false;
+      return { success: false };
     } finally {
       setIsSubmitting(false);
     }

@@ -18,6 +18,7 @@ import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
+import TemplatePreview from "./pages/TemplatePreview";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/template-preview" element={<TemplatePreview />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
