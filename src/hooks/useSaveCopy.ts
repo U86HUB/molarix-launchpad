@@ -57,7 +57,7 @@ export const useSaveCopy = () => {
         throw error;
       }
 
-      return { success: true, copy: data?.data as GeneratedCopy || null };
+      return { success: true, copy: data?.data as unknown as GeneratedCopy || null };
     } catch (error: any) {
       console.error('Error getting saved copy:', error);
       return { success: false, error: error.message };
