@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,15 @@ import { ArrowLeft, Loader2, RefreshCw, Download, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useStreamingCopy } from "@/hooks/useStreamingCopy";
+import { GeneratedCopy } from "@/types/copy";
 import StreamingDisplay from "@/components/preview/StreamingDisplay";
-import HomepageCopySection from "@/components/preview/HomepageCopySection";
-import ServicesCopySection from "@/components/preview/ServicesCopySection";
-import AboutCopySection from "@/components/preview/AboutCopySection";
-import CopySaveActions from "@/components/preview/CopySaveActions";
+import EditableCopy from "@/components/preview/EditableCopy";
 
 const AiCopyPreview = () => {
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [currentCopy, setCurrentCopy] = useState<GeneratedCopy | null>(null);
 
   const sessionId = searchParams.get("sessionId");
 
@@ -30,6 +29,13 @@ const AiCopyPreview = () => {
     generateCopyWithStreaming,
     stopGeneration
   } = useStreamingCopy();
+
+  // Update current copy when generated copy changes
+  useEffect(() => {
+    if (generatedCopy) {
+      setCurrentCopy(generatedCopy);
+    }
+  }, [generatedCopy]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -45,9 +51,9 @@ const AiCopyPreview = () => {
   }, [sessionId, toast]);
 
   const exportAsJson = () => {
-    if (!generatedCopy) return;
+    if (!currentCopy) return;
     
-    const dataStr = JSON.stringify(generatedCopy, null, 2);
+    const dataStr = JSON.stringify(currentCopy, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
@@ -66,6 +72,10 @@ const AiCopyPreview = () => {
     if (sessionId) {
       generateCopyWithStreaming(sessionId);
     }
+  };
+
+  const handleCopyUpdated = (updatedCopy: GeneratedCopy) => {
+    setCurrentCopy(updatedCopy);
   };
 
   if (loading && !isStreaming) {
@@ -149,7 +159,7 @@ const AiCopyPreview = () => {
               <Button
                 variant="outline"
                 onClick={exportAsJson}
-                disabled={!generatedCopy || isStreaming}
+                disabled={!currentCopy || isStreaming}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export JSON
@@ -178,13 +188,12 @@ const AiCopyPreview = () => {
               </Card>
             ))}
           </div>
-        ) : generatedCopy ? (
-          <div className="space-y-8">
-            <HomepageCopySection data={generatedCopy.homepage} />
-            <ServicesCopySection data={generatedCopy.services} />
-            <AboutCopySection data={generatedCopy.about} />
-            <CopySaveActions generatedCopy={generatedCopy} sessionData={sessionData} />
-          </div>
+        ) : currentCopy && sessionId ? (
+          <EditableCopy 
+            generatedCopy={currentCopy} 
+            sessionId={sessionId}
+            onCopyUpdated={handleCopyUpdated}
+          />
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No copy generated yet</p>
