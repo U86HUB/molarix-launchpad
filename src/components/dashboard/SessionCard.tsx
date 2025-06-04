@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useSessionStatus } from '@/hooks/useSessionStatus';
-import { Calendar, Eye, Edit, Trash2, Building, Clock } from 'lucide-react';
+import { Calendar, Eye, Edit, Trash2, Building, Clock, Copy } from 'lucide-react';
 import TemplateThumbnail from './TemplateThumbnail';
 
 interface SessionCardProps {
@@ -12,9 +12,10 @@ interface SessionCardProps {
   onContinueEditing: (sessionId: string) => void;
   onPreview: (sessionId: string) => void;
   onDelete: (sessionId: string, clinicName: string) => void;
+  onDuplicate: (sessionId: string, clinicName: string) => void;
 }
 
-const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: SessionCardProps) => {
+const SessionCard = ({ session, onContinueEditing, onPreview, onDelete, onDuplicate }: SessionCardProps) => {
   const { status } = useSessionStatus(session);
 
   const formatDate = (dateString: string) => {
@@ -133,6 +134,16 @@ const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: Sessio
             >
               <Eye className="h-3 w-3" />
               Preview
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onDuplicate(session.id, session.clinic_name || 'Untitled Clinic')}
+              className="flex items-center gap-1"
+            >
+              <Copy className="h-3 w-3" />
+              Duplicate
             </Button>
             
             <Button 

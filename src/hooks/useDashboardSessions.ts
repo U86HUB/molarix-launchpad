@@ -74,6 +74,33 @@ export const useDashboardSessions = () => {
     }
   };
 
+  const duplicateSession = async (sessionId: string) => {
+    if (!user) return false;
+
+    try {
+      const { data, error } = await supabase.rpc('duplicate_session', {
+        original_session_id: sessionId
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Website duplicated successfully",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error duplicating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate website",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchSessions();
   }, [user]);
@@ -82,6 +109,7 @@ export const useDashboardSessions = () => {
     sessions,
     loading,
     refreshSessions: fetchSessions,
-    deleteSession
+    deleteSession,
+    duplicateSession
   };
 };

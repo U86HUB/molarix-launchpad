@@ -15,7 +15,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { sessions, loading, refreshSessions, deleteSession } = useDashboardSessions();
+  const { sessions, loading, refreshSessions, deleteSession, duplicateSession } = useDashboardSessions();
 
   const handleContinueEditing = (sessionId: string) => {
     navigate(`/ai-copy-preview?sessionId=${sessionId}&resume=true`);
@@ -28,6 +28,15 @@ const Dashboard = () => {
   const handleDelete = async (sessionId: string, clinicName: string) => {
     if (confirm(`Are you sure you want to delete "${clinicName}"? This action cannot be undone.`)) {
       const success = await deleteSession(sessionId);
+      if (success) {
+        refreshSessions();
+      }
+    }
+  };
+
+  const handleDuplicate = async (sessionId: string, clinicName: string) => {
+    if (confirm(`Do you want to create a copy of "${clinicName}"?`)) {
+      const success = await duplicateSession(sessionId);
       if (success) {
         refreshSessions();
       }
@@ -91,6 +100,7 @@ const Dashboard = () => {
                 onContinueEditing={handleContinueEditing}
                 onPreview={handlePreview}
                 onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
               />
             ))}
           </div>

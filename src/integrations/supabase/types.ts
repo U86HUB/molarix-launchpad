@@ -121,7 +121,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      duplicate_session: {
+        Args: { original_session_id: string; new_user_id?: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
