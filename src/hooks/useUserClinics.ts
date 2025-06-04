@@ -24,35 +24,37 @@ export const useUserClinics = () => {
     console.log('=== FETCHING CLINICS DEBUG START ===');
     
     try {
-      // Get the current user from Supabase auth
-      console.log('🔄 Getting current user for clinics fetch...');
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      // Get the current session from Supabase auth
+      console.log('🔄 Getting current session for clinics fetch...');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      console.log('👤 User data for clinics fetch:', { 
-        userData: userData?.user ? { 
-          id: userData.user.id, 
-          email: userData.user.email 
-        } : null, 
-        userError 
+      console.log('🔐 Session data for clinics fetch:', { 
+        session: sessionData?.session ? {
+          access_token: sessionData.session.access_token ? 'EXISTS' : 'MISSING',
+          user_id: sessionData.session.user?.id,
+          user_email: sessionData.session.user?.email,
+          expires_at: sessionData.session.expires_at
+        } : null,
+        sessionError 
       });
 
-      if (userError) {
-        console.log('❌ Error getting user:', userError);
+      if (sessionError) {
+        console.log('❌ Error getting session:', sessionError);
         setLoading(false);
         return;
       }
 
-      if (!userData?.user?.id) {
-        console.log('⚠️ No user found, skipping fetch');
+      if (!sessionData?.session?.user?.id) {
+        console.log('⚠️ No active session found, skipping fetch');
         setLoading(false);
         return;
       }
 
-      const userId = userData.user.id;
-      console.log('✅ Valid user ID for clinics fetch:', userId);
+      const userId = sessionData.session.user.id;
+      console.log('✅ Valid session and user ID for clinics fetch:', userId);
 
-      // RLS policies will automatically filter by user
-      console.log('🔍 Executing clinics query...');
+      // RLS policies will automatically filter by authenticated user
+      console.log('🔍 Executing clinics query with authenticated session...');
       const { data, error } = await supabase
         .from('clinics')
         .select('*')

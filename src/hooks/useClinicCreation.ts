@@ -28,42 +28,51 @@ export const useClinicCreation = () => {
     setIsCreating(true);
 
     try {
-      // Get the current user from Supabase auth
-      console.log('🔄 Getting current user from Supabase auth...');
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      // Get the current session from Supabase auth
+      console.log('🔄 Getting current session from Supabase auth...');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      console.log('👤 User data response:', { 
-        userData: userData?.user ? { 
-          id: userData.user.id, 
-          email: userData.user.email 
-        } : null, 
-        userError 
+      console.log('🔐 Session data response:', { 
+        session: sessionData?.session ? {
+          access_token: sessionData.session.access_token ? 'EXISTS' : 'MISSING',
+          user_id: sessionData.session.user?.id,
+          user_email: sessionData.session.user?.email,
+          expires_at: sessionData.session.expires_at
+        } : null,
+        sessionError 
       });
 
-      if (userError) {
-        console.log('❌ Error getting user:', userError);
-        throw new Error('Authentication error: ' + userError.message);
+      if (sessionError) {
+        console.log('❌ Error getting session:', sessionError);
+        throw new Error('Session error: ' + sessionError.message);
       }
 
-      if (!userData?.user?.id) {
-        console.log('❌ No user ID found');
-        throw new Error('User not authenticated');
+      if (!sessionData?.session) {
+        console.log('❌ No active session found');
+        throw new Error('No active session. Please log in again.');
       }
 
-      const userId = userData.user.id;
-      console.log('✅ Valid user ID found:', userId);
+      const session = sessionData.session;
+      const userId = session.user?.id;
 
-      // Create the insert payload - RLS will ensure created_by matches auth.uid()
+      if (!userId) {
+        console.log('❌ No user ID found in session');
+        throw new Error('User ID not found in session');
+      }
+
+      console.log('✅ Valid session and user ID found:', userId);
+
+      // Create the insert payload
       const insertPayload = {
         name: clinicName.trim(),
         address: clinicAddress.trim() || null,
-        created_by: userId, // Explicitly set this for RLS
+        created_by: userId,
       };
       
       console.log('📝 Insert payload:', insertPayload);
 
-      // Insert with RLS - the policies will ensure created_by = auth.uid()
-      console.log('📤 Executing Supabase insert...');
+      // Insert with authenticated session - the client should automatically include auth headers
+      console.log('📤 Executing Supabase insert with authenticated session...');
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
         .insert(insertPayload)
