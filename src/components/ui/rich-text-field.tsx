@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 interface RichTextFieldProps {
   defaultContent?: string;
   onChange?: (content: string) => void;
+  onBlur?: () => void;
   className?: string;
   placeholder?: string;
 }
@@ -26,6 +27,7 @@ interface RichTextFieldProps {
 const RichTextField = ({ 
   defaultContent = '', 
   onChange, 
+  onBlur,
   className,
   placeholder = 'Start typing...'
 }: RichTextFieldProps) => {
@@ -51,6 +53,9 @@ const RichTextField = ({
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onChange?.(html);
+    },
+    onBlur: () => {
+      onBlur?.();
     },
     editorProps: {
       attributes: {
