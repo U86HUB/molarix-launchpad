@@ -113,7 +113,8 @@ const blogArticles = {
 
 const BlogArticle = () => {
   const { id } = useParams();
-  const article = blogArticles[id as keyof typeof blogArticles];
+  const articleId = id ? parseInt(id, 10) : null;
+  const article = articleId && blogArticles[articleId as keyof typeof blogArticles] ? blogArticles[articleId as keyof typeof blogArticles] : null;
 
   if (!article) {
     return (
