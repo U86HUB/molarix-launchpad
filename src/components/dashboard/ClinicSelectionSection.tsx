@@ -28,8 +28,8 @@ export const ClinicSelectionSection = ({
 
   const handleClinicCreated = async (clinicId: string) => {
     console.log('=== CLINIC SELECTION DEBUG START ===');
-    console.log('New clinic created with ID:', clinicId);
-    console.log('Current clinics before refresh:', clinics.map(c => ({ id: c.id, name: c.name })));
+    console.log('🎯 New clinic created with ID:', clinicId);
+    console.log('📋 Current clinics before refresh:', clinics.map(c => ({ id: c.id, name: c.name })));
     
     // Hide the inline form
     setShowAddNewClinic(false);
@@ -77,7 +77,7 @@ export const ClinicSelectionSection = ({
         <Select
           value={selectedClinicId}
           onValueChange={(value) => {
-            console.log('Select value changed to:', value);
+            console.log('🔄 Select value changed to:', value);
             if (value === 'add-new') {
               console.log('🔄 Opening add new clinic form');
               setShowAddNewClinic(true);
