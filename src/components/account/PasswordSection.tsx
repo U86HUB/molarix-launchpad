@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 
 export const PasswordSection = () => {
   const { toast } = useToast();
@@ -72,10 +72,13 @@ export const PasswordSection = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Change Password</CardTitle>
-        <CardDescription>
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Lock className="h-5 w-5" />
+          Change Password
+        </CardTitle>
+        <CardDescription className="text-base">
           Update your account password
         </CardDescription>
       </CardHeader>

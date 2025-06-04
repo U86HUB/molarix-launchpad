@@ -140,7 +140,10 @@ export const ProfileSection = ({ profile, setProfile, user }: ProfileSectionProp
 
       if (updateError) throw updateError;
 
-      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
+      // Fix the TypeScript error by properly typing the profile update
+      if (profile) {
+        setProfile({ ...profile, avatar_url: publicUrl });
+      }
 
       toast({
         title: "Avatar Updated",
@@ -166,13 +169,13 @@ export const ProfileSection = ({ profile, setProfile, user }: ProfileSectionProp
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-xl">
           <User className="h-5 w-5" />
           Profile Information
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-base">
           Update your personal information and profile picture
         </CardDescription>
       </CardHeader>

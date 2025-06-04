@@ -27,13 +27,13 @@ export const SignOutSection = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-red-600">
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-red-600 text-xl">
           <LogOut className="h-5 w-5" />
           Sign Out
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-base">
           Sign out of your account
         </CardDescription>
       </CardHeader>

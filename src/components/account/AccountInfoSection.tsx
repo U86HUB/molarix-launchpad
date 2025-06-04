@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Mail, Calendar } from 'lucide-react';
+import { Mail, Calendar, Info } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface AccountInfoSectionProps {
@@ -10,13 +10,13 @@ interface AccountInfoSectionProps {
 
 export const AccountInfoSection = ({ user }: AccountInfoSectionProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Info className="h-5 w-5" />
           Account Information
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-base">
           View your account details
         </CardDescription>
       </CardHeader>
