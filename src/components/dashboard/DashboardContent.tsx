@@ -1,7 +1,5 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
 import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
@@ -9,11 +7,9 @@ import { GroupingType } from '@/hooks/useSessionGrouping';
 import DashboardStats from './DashboardStats';
 import DashboardFiltersSection from './DashboardFiltersSection';
 import DashboardEmpty from './DashboardEmpty';
-import GroupedSessionsGrid from './GroupedSessionsGrid';
-import ClinicGroupedSessionsGrid from './ClinicGroupedSessionsGrid';
-import PreviewModal from './PreviewModal';
-import { CreateWebsiteModal } from './CreateWebsiteModal';
-import { Plus } from 'lucide-react';
+import DashboardActionsSection from './DashboardActionsSection';
+import DashboardContentRenderer from './DashboardContentRenderer';
+import DashboardModals from './DashboardModals';
 
 interface DashboardContentProps {
   sessions: DashboardSession[];
@@ -70,7 +66,6 @@ const DashboardContent = ({
   const handleClosePreviewModal = () => {
     setIsPreviewModalOpen(false);
     setPreviewSessionId(null);
-    // Refresh sessions to get updated data after any publishes
     refreshSessions();
   };
 
@@ -98,8 +93,19 @@ const DashboardContent = ({
 
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
-    // Refresh sessions to show the newly created website
     refreshSessions();
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedClinicId(undefined);
+  };
+
+  const handleResetAllFilters = () => {
+    setSortBy('newest');
+    setFilterBy('all');
+    setSearchQuery('');
+    setSelectedClinicId(undefined);
   };
 
   // Show empty state for first-time users
@@ -107,9 +113,12 @@ const DashboardContent = ({
     return (
       <div className="mt-12">
         <DashboardEmpty onCreateNew={handleCreateNew} />
-        <CreateWebsiteModal
-          isOpen={isCreateModalOpen}
-          onClose={handleCloseCreateModal}
+        <DashboardModals
+          previewSessionId={previewSessionId}
+          isPreviewModalOpen={isPreviewModalOpen}
+          isCreateModalOpen={isCreateModalOpen}
+          onClosePreviewModal={handleClosePreviewModal}
+          onCloseCreateModal={handleCloseCreateModal}
         />
       </div>
     );
@@ -122,22 +131,7 @@ const DashboardContent = ({
         <DashboardStats sessions={sessions} />
       </div>
       
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Your Clinic Websites</h2>
-          <p className="text-gray-600 dark:text-gray-300">
-            Manage and preview your dental clinic websites
-          </p>
-        </div>
-        <Button 
-          onClick={handleCreateNew} 
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200 shadow-md"
-          size="lg"
-        >
-          <Plus className="h-5 w-5" />
-          Create New Website
-        </Button>
-      </div>
+      <DashboardActionsSection onCreateNew={handleCreateNew} />
 
       {/* Enhanced Filters with clinic filter and search functionality */}
       <DashboardFiltersSection
@@ -155,83 +149,26 @@ const DashboardContent = ({
         onSearchChange={setSearchQuery}
       />
 
-      {searchFilteredSessions.length === 0 ? (
-        <Card className="text-center py-12 shadow-sm border-border bg-white dark:bg-gray-800">
-          <CardHeader>
-            <CardTitle className="text-xl">
-              {searchQuery || selectedClinicId ? 'No websites match your filters' : 'No websites match your filters'}
-            </CardTitle>
-            <CardDescription className="text-base">
-              {searchQuery || selectedClinicId
-                ? `Try adjusting your search or clinic filter to see more results`
-                : `Try adjusting your sort and filter options to see more results`
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {(searchQuery || selectedClinicId) && (
-                <Button 
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedClinicId(undefined);
-                  }} 
-                  variant="outline"
-                  className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                >
-                  Clear Filters
-                </Button>
-              )}
-              <Button 
-                onClick={() => {
-                  setSortBy('newest');
-                  setFilterBy('all');
-                  setSearchQuery('');
-                  setSelectedClinicId(undefined);
-                }} 
-                variant="outline"
-              >
-                Reset All Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        // Show clinic-grouped sessions when clinic filter is applied or group by clinic
-        selectedClinicId || groupBy === 'clinic' ? (
-          <ClinicGroupedSessionsGrid
-            sessions={searchFilteredSessions}
-            selectedClinicId={selectedClinicId}
-            onContinueEditing={onContinueEditing}
-            onPreview={handlePreview}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            onUpdate={refreshSessions}
-          />
-        ) : (
-          <GroupedSessionsGrid
-            sessions={searchFilteredSessions}
-            groupBy={groupBy}
-            onContinueEditing={onContinueEditing}
-            onPreview={handlePreview}
-            onDelete={handleDelete}
-            onDuplicate={handleDuplicate}
-            onUpdate={refreshSessions}
-          />
-        )
-      )}
-
-      {/* Preview Modal */}
-      <PreviewModal
-        sessionId={previewSessionId}
-        isOpen={isPreviewModalOpen}
-        onClose={handleClosePreviewModal}
+      <DashboardContentRenderer
+        sessions={searchFilteredSessions}
+        groupBy={groupBy}
+        selectedClinicId={selectedClinicId}
+        searchQuery={searchQuery}
+        onContinueEditing={onContinueEditing}
+        onPreview={handlePreview}
+        onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
+        onUpdate={refreshSessions}
+        onClearFilters={handleClearFilters}
+        onResetAllFilters={handleResetAllFilters}
       />
 
-      {/* Create Website Modal */}
-      <CreateWebsiteModal
-        isOpen={isCreateModalOpen}
-        onClose={handleCloseCreateModal}
+      <DashboardModals
+        previewSessionId={previewSessionId}
+        isPreviewModalOpen={isPreviewModalOpen}
+        isCreateModalOpen={isCreateModalOpen}
+        onClosePreviewModal={handleClosePreviewModal}
+        onCloseCreateModal={handleCloseCreateModal}
       />
     </>
   );
