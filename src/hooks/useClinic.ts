@@ -27,7 +27,6 @@ export const useClinic = (clinicId: string | undefined) => {
       if (!clinicId || !user) return;
 
       try {
-        // Using type assertion since TypeScript types haven't been updated yet
         const { data, error } = await supabase
           .from('clinics' as any)
           .select('*')
@@ -45,7 +44,7 @@ export const useClinic = (clinicId: string | undefined) => {
         }
 
         if (data) {
-          setClinic(data as Clinic);
+          setClinic(data as unknown as Clinic);
         }
       } catch (error) {
         console.error('Error loading clinic:', error);
