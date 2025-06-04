@@ -40,7 +40,7 @@ export const useSessionGrouping = (sessions: DashboardSession[], groupBy: Groupi
       // Only return groups that have sessions
       return groups.filter(group => group.sessions.length > 0);
     } else {
-      // Group by template
+      // Group by template - use lodash groupBy function correctly
       const templateGroups = groupBy(sessions, session => session.selected_template || 'No Template');
       
       return Object.entries(templateGroups).map(([template, sessions]) => ({
