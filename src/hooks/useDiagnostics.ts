@@ -148,15 +148,17 @@ export const useDiagnostics = () => {
     try {
       console.log('🔧 Running orphaned websites repair...');
       
-      const { data, error } = await supabase.rpc('fix_orphaned_websites');
-
-      if (error) {
-        console.error('❌ Error running repair:', error);
-        throw error;
-      }
-
-      console.log('✅ Repair completed successfully:', data);
-      return true;
+      // For now, we'll simulate a repair operation since the RPC function doesn't exist
+      // This would need to be implemented in the database
+      console.log('⚠️ Repair function not yet implemented in database');
+      
+      toast({
+        title: "Info",
+        description: "Repair function needs to be implemented in the database",
+        variant: "default",
+      });
+      
+      return false;
     } catch (error) {
       console.error('Error in runOrphanedWebsitesRepair:', error);
       return false;
