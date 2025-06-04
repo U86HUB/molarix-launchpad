@@ -13,6 +13,13 @@ export interface CopyGenerationResponse {
 export class CopyGenerationService {
   async generateCopy(sessionId: string, stream: boolean = false): Promise<CopyGenerationResponse> {
     try {
+      // Get current user to ensure they can access this session
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return { success: false, error: 'Authentication required' };
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-copy', {
         body: { sessionId, stream }
       });

@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import type { OnboardingData } from "@/pages/Onboarding";
 
 export const useOnboardingSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const uploadLogo = async (file: File): Promise<string | null> => {
     try {
@@ -35,6 +37,15 @@ export const useOnboardingSubmission = () => {
   };
 
   const submitOnboardingData = async (data: OnboardingData): Promise<{ success: boolean; sessionId?: string }> => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to submit onboarding data.",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -61,7 +72,8 @@ export const useOnboardingSubmission = () => {
           hipaa: data.compliance.hipaa,
           gdpr: data.compliance.gdpr
         },
-        selected_template: data.selectedTemplateId
+        selected_template: data.selectedTemplateId,
+        created_by: user.id
       };
 
       console.log('Submitting onboarding data:', onboardingSession);

@@ -2,13 +2,24 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { GeneratedCopy } from '@/types/copy';
 
 export const useSaveCopy = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const saveCopy = async (sessionId: string, copy: GeneratedCopy) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to save copy.",
+        variant: "destructive",
+      });
+      return { success: false, error: "User not authenticated" };
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -16,7 +27,8 @@ export const useSaveCopy = () => {
         .insert({
           session_id: sessionId,
           type: 'complete_copy',
-          data: copy as any // Type assertion to handle Json compatibility
+          data: copy as any, // Type assertion to handle Json compatibility
+          created_by: user.id
         });
 
       if (error) {
@@ -43,6 +55,10 @@ export const useSaveCopy = () => {
   };
 
   const getSavedCopy = async (sessionId: string) => {
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
     try {
       const { data, error } = await supabase
         .from('ai_generated_copy')

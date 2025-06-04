@@ -1,161 +1,88 @@
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { GeneratedCopy } from '@/types/copy';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UseAutosaveProps {
   sessionId: string;
-  draftData: GeneratedCopy;
+  draftData: any;
   enabled?: boolean;
-  debounceMs?: number;
+  delay?: number;
 }
 
 export const useAutosave = ({ 
   sessionId, 
   draftData, 
-  enabled = true,
-  debounceMs = 10000 // 10 seconds
+  enabled = true, 
+  delay = 2000 
 }: UseAutosaveProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const { toast } = useToast();
-  
-  const debounceTimer = useRef<NodeJS.Timeout>();
-  const lastSavedData = useRef<string>('');
-  const savePromise = useRef<Promise<void> | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousDataRef = useRef<string>('');
+  const { user } = useAuth();
 
   const saveDraft = useCallback(async () => {
-    if (!enabled || !sessionId || !draftData) return;
-
-    const currentDataString = JSON.stringify(draftData);
-    
-    // Skip save if content hasn't changed
-    if (currentDataString === lastSavedData.current) {
-      return;
-    }
+    if (!user || !enabled) return;
 
     setIsSaving(true);
-    
     try {
-      // First check if there's an existing draft
-      const { data: existingDraft, error: fetchError } = await supabase
+      const { error } = await supabase
         .from('ai_generated_copy')
-        .select('*')
-        .eq('session_id', sessionId)
-        .eq('type', 'draft')
-        .maybeSingle();
+        .upsert({
+          session_id: sessionId,
+          type: 'draft',
+          data: draftData,
+          created_by: user.id
+        });
 
-      if (fetchError) {
-        throw fetchError;
+      if (!error) {
+        setLastSaved(new Date());
       }
-
-      if (existingDraft) {
-        // Update existing draft
-        const { error: updateError } = await supabase
-          .from('ai_generated_copy')
-          .update({
-            data: draftData as any,
-            created_at: new Date().toISOString()
-          })
-          .eq('id', existingDraft.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-      } else {
-        // Create new draft
-        const { error: insertError } = await supabase
-          .from('ai_generated_copy')
-          .insert({
-            session_id: sessionId,
-            type: 'draft',
-            data: draftData as any
-          });
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-
-      lastSavedData.current = currentDataString;
-      setLastSaved(new Date());
-      
-      toast({
-        title: "Draft saved",
-        description: "Your changes have been automatically saved",
-        duration: 2000,
-      });
-
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving draft:', error);
-      toast({
-        title: "Auto-save failed",
-        description: "Failed to save draft. Your changes are still preserved locally.",
-        variant: "destructive",
-        duration: 3000,
-      });
     } finally {
       setIsSaving(false);
     }
-  }, [sessionId, draftData, enabled, toast]);
+  }, [sessionId, draftData, enabled, user]);
 
-  // Debounced save function
-  const debouncedSave = useCallback(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-    
-    debounceTimer.current = setTimeout(() => {
-      if (!savePromise.current) {
-        savePromise.current = saveDraft().finally(() => {
-          savePromise.current = null;
-        });
-      }
-    }, debounceMs);
-  }, [saveDraft, debounceMs]);
-
-  // Manual save function (for onBlur events)
   const saveNow = useCallback(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-    
-    if (!savePromise.current) {
-      savePromise.current = saveDraft().finally(() => {
-        savePromise.current = null;
-      });
-    }
-    
-    return savePromise.current;
+    saveDraft();
   }, [saveDraft]);
 
-  // Auto-save effect
   useEffect(() => {
-    if (enabled && draftData) {
-      debouncedSave();
-    }
-    
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, [draftData, enabled, debouncedSave]);
+    if (!enabled || !user) return;
 
-  // Cleanup on unmount
-  useEffect(() => {
+    const currentData = JSON.stringify(draftData);
+    
+    // Only save if data has actually changed
+    if (currentData !== previousDataRef.current) {
+      previousDataRef.current = currentData;
+      
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Set new timeout
+      timeoutRef.current = setTimeout(() => {
+        saveDraft();
+      }, delay);
+    }
+
     return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
+  }, [draftData, enabled, delay, saveDraft, user]);
 
   return {
     isSaving,
     lastSaved,
-    saveNow,
-    saveDraft
+    saveNow
   };
 };

@@ -12,6 +12,7 @@ export type Database = {
       ai_generated_copy: {
         Row: {
           created_at: string
+          created_by: string | null
           data: Json
           id: string
           session_id: string
@@ -19,6 +20,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           data: Json
           id?: string
           session_id: string
@@ -26,6 +28,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           data?: Json
           id?: string
           session_id?: string
@@ -47,6 +50,7 @@ export type Database = {
           clinic_name: string | null
           compliance_flags: Json | null
           created_at: string | null
+          created_by: string | null
           email: string | null
           font_style: string | null
           id: string
@@ -60,6 +64,7 @@ export type Database = {
           clinic_name?: string | null
           compliance_flags?: Json | null
           created_at?: string | null
+          created_by?: string | null
           email?: string | null
           font_style?: string | null
           id?: string
@@ -73,6 +78,7 @@ export type Database = {
           clinic_name?: string | null
           compliance_flags?: Json | null
           created_at?: string | null
+          created_by?: string | null
           email?: string | null
           font_style?: string | null
           id?: string
