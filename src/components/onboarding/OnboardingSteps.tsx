@@ -11,9 +11,9 @@ interface OnboardingStepsProps {
   activeStep: string;
   progress: number;
   onboardingData: OnboardingData;
-  updateClinicData: (data: typeof onboardingData.clinic) => void;
-  updateBrandData: (data: typeof onboardingData.brand) => void;
-  updateComplianceData: (data: typeof onboardingData.compliance) => void;
+  updateClinicData: (data: OnboardingData['clinic']) => void;
+  updateBrandData: (data: OnboardingData['brand']) => void;
+  updateComplianceData: (data: OnboardingData['compliance']) => void;
   updateSelectedTemplate: (templateId: string) => void;
   setActiveStep: (step: string) => void;
   setProgress: (progress: number) => void;
