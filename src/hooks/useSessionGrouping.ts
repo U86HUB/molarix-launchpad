@@ -43,9 +43,9 @@ export const useSessionGrouping = (sessions: DashboardSession[], groupBy: Groupi
       // Group by template - use lodash groupBy function correctly
       const templateGroups = groupBy(sessions, session => session.selected_template || 'No Template');
       
-      return Object.entries(templateGroups).map(([template, sessions]) => ({
+      return Object.entries(templateGroups).map(([template, sessionsList]) => ({
         title: template,
-        sessions,
+        sessions: sessionsList as DashboardSession[],
         order: template === 'No Template' ? 999 : Number(template.replace(/\D/g, '')) || 0
       })).sort((a, b) => a.order - b.order);
     }
