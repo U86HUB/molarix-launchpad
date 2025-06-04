@@ -16,7 +16,7 @@ export const useSaveCopy = () => {
         .insert({
           session_id: sessionId,
           type: 'complete_copy',
-          data: copy
+          data: copy as any // Type assertion to handle Json compatibility
         });
 
       if (error) {
@@ -57,7 +57,7 @@ export const useSaveCopy = () => {
         throw error;
       }
 
-      return { success: true, copy: data?.data || null };
+      return { success: true, copy: data?.data as GeneratedCopy || null };
     } catch (error: any) {
       console.error('Error getting saved copy:', error);
       return { success: false, error: error.message };
