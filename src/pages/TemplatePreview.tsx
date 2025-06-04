@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import TemplateRenderer from "@/components/preview/TemplateRenderer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAiCopy } from "@/hooks/useAiCopy";
+import { GeneratedCopy } from "@/types/copy";
 
 interface OnboardingSession {
   id: string;
@@ -30,15 +30,12 @@ const TemplatePreview = () => {
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("template-a");
   const [loading, setLoading] = useState(true);
+  const [copy, setCopy] = useState<GeneratedCopy | null>(null);
+  const [copyLoading, setCopyLoading] = useState(true);
+  const [noCopyFound, setNoCopyFound] = useState(false);
 
   const sessionId = searchParams.get("sessionId");
   const useDraft = searchParams.get("useDraft") === "true";
-  
-  // Fetch AI-generated copy
-  const { copy: aiCopy, loading: copyLoading } = useAiCopy({ 
-    sessionId, 
-    useDraft 
-  });
 
   useEffect(() => {
     if (!sessionId) {
@@ -48,19 +45,21 @@ const TemplatePreview = () => {
         variant: "destructive",
       });
       setLoading(false);
+      setCopyLoading(false);
       return;
     }
 
-    const fetchSessionData = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch session data
+        const { data: sessionData, error: sessionError } = await supabase
           .from('onboarding_sessions')
           .select('*')
           .eq('id', sessionId)
           .single();
 
-        if (error) {
-          console.error('Error fetching session data:', error);
+        if (sessionError) {
+          console.error('Error fetching session data:', sessionError);
           toast({
             title: "Error",
             description: "Failed to load session data",
@@ -69,22 +68,65 @@ const TemplatePreview = () => {
           return;
         }
 
-        setSessionData(data);
-        setSelectedTemplate(data.selected_template || "template-a");
+        setSessionData(sessionData);
+        setSelectedTemplate(sessionData.selected_template || "template-a");
+
+        // Fetch copy data - first try draft if useDraft is true, then fallback to published
+        let copyType = useDraft ? 'draft' : 'published';
+        
+        const { data: copyData, error: copyError } = await supabase
+          .from('ai_generated_copy')
+          .select('*')
+          .eq('session_id', sessionId)
+          .eq('type', copyType)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (copyError) {
+          console.error('Error fetching copy data:', copyError);
+        }
+
+        // If no draft found and we were looking for draft, try published
+        if (!copyData && useDraft) {
+          const { data: publishedData, error: publishedError } = await supabase
+            .from('ai_generated_copy')
+            .select('*')
+            .eq('session_id', sessionId)
+            .eq('type', 'published')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (publishedError) {
+            console.error('Error fetching published copy:', publishedError);
+          }
+
+          if (publishedData) {
+            setCopy(publishedData.data as unknown as GeneratedCopy);
+          } else {
+            setNoCopyFound(true);
+          }
+        } else if (copyData) {
+          setCopy(copyData.data as unknown as GeneratedCopy);
+        } else {
+          setNoCopyFound(true);
+        }
       } catch (error) {
         console.error('Error:', error);
         toast({
           title: "Error",
-          description: "Failed to load session data",
+          description: "Failed to load data",
           variant: "destructive",
         });
       } finally {
         setLoading(false);
+        setCopyLoading(false);
       }
     };
 
-    fetchSessionData();
-  }, [sessionId, toast]);
+    fetchData();
+  }, [sessionId, useDraft, toast]);
 
   if (loading || copyLoading) {
     return (
@@ -118,6 +160,27 @@ const TemplatePreview = () => {
     );
   }
 
+  if (noCopyFound) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>No Content Found</CardTitle>
+            <CardDescription>
+              No content found yet. Please generate content first in editing mode.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => window.history.back()} className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -128,7 +191,7 @@ const TemplatePreview = () => {
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Onboarding
+            Back to Dashboard
           </Button>
           
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -143,7 +206,7 @@ const TemplatePreview = () => {
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300">
                 {useDraft 
-                  ? "Preview your edited copy with different templates" 
+                  ? "Preview your draft copy with different templates" 
                   : "See how your clinic will look with different templates"
                 }
               </p>
@@ -165,20 +228,12 @@ const TemplatePreview = () => {
               </Select>
             </div>
           </div>
-          
-          {useDraft && !aiCopy && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800">
-                No draft copy found. Showing template with default content.
-              </p>
-            </div>
-          )}
         </div>
 
         <TemplateRenderer 
           sessionData={sessionData}
           selectedTemplate={selectedTemplate}
-          aiCopy={aiCopy}
+          aiCopy={copy}
         />
       </div>
     </div>

@@ -24,30 +24,47 @@ export const useAiCopy = ({ sessionId, useDraft }: UseAiCopyProps) => {
       try {
         setLoading(true);
         
-        // Determine the type to fetch based on useDraft parameter
-        const copyType = useDraft ? 'draft' : 'published';
+        // First try the preferred type (draft if useDraft is true, otherwise published)
+        const preferredType = useDraft ? 'draft' : 'published';
         
-        const { data, error } = await supabase
+        const { data: preferredData, error: preferredError } = await supabase
           .from('ai_generated_copy')
           .select('*')
           .eq('session_id', sessionId)
-          .eq('type', copyType)
+          .eq('type', preferredType)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error fetching AI copy:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load copy data",
-            variant: "destructive",
-          });
+        if (preferredError) {
+          console.error(`Error fetching ${preferredType} AI copy:`, preferredError);
+        }
+
+        if (preferredData) {
+          setCopy(preferredData.data as unknown as GeneratedCopy);
           return;
         }
 
-        if (data) {
-          setCopy(data.data as unknown as GeneratedCopy);
+        // If useDraft is true and no draft found, try published as fallback
+        if (useDraft) {
+          const { data: publishedData, error: publishedError } = await supabase
+            .from('ai_generated_copy')
+            .select('*')
+            .eq('session_id', sessionId)
+            .eq('type', 'published')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (publishedError) {
+            console.error('Error fetching published AI copy:', publishedError);
+          }
+
+          if (publishedData) {
+            setCopy(publishedData.data as unknown as GeneratedCopy);
+          } else {
+            setCopy(null);
+          }
         } else {
           setCopy(null);
         }
