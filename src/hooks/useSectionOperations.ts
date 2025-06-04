@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Section } from '@/types/website';
-import { transformSectionData } from '@/utils/websiteBuilderUtils';
+import { transformSectionData, validateWebsiteId } from '@/utils/websiteBuilderUtils';
 
 export const useSectionOperations = () => {
   const { toast } = useToast();
@@ -11,7 +10,15 @@ export const useSectionOperations = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchSections = async (websiteId: string) => {
+    console.log('useSectionOperations - fetchSections called with websiteId:', websiteId);
+    
+    if (!validateWebsiteId(websiteId)) {
+      throw new Error('Invalid website ID');
+    }
+
     try {
+      console.log('useSectionOperations - Executing sections query for website:', websiteId);
+      
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('sections')
         .select('*')
@@ -19,7 +26,12 @@ export const useSectionOperations = () => {
         .eq('is_visible', true)
         .order('position');
 
-      if (sectionsError) throw sectionsError;
+      if (sectionsError) {
+        console.error('useSectionOperations - Database error:', sectionsError);
+        throw sectionsError;
+      }
+      
+      console.log('useSectionOperations - Sections data received:', sectionsData?.length || 0, 'sections');
       
       const typedSections: Section[] = (sectionsData || []).map(transformSectionData);
       setSections(typedSections);
@@ -32,6 +44,10 @@ export const useSectionOperations = () => {
   };
 
   const addSection = async (websiteId: string, type: Section['type']) => {
+    if (!validateWebsiteId(websiteId)) {
+      throw new Error('Invalid website ID');
+    }
+
     try {
       setSaving(true);
       
