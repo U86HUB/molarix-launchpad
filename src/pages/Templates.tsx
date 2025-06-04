@@ -8,11 +8,10 @@ import { Eye, Star } from "lucide-react";
 
 const Templates = () => {
   const templateCategories = [
-    { name: "All Templates", count: 52 },
-    { name: "Dental Clinics", count: 18 },
-    { name: "Medical Practices", count: 15 },
-    { name: "Specialty Clinics", count: 12 },
-    { name: "Pediatric", count: 7 }
+    { name: "All Templates", count: 8 },
+    { name: "Dental Clinics", count: 3 },
+    { name: "Medical Practices", count: 3 },
+    { name: "Specialty Clinics", count: 2 }
   ];
 
   const templates = [
@@ -21,7 +20,7 @@ const Templates = () => {
       name: "Modern Dental",
       category: "Dental Clinics",
       description: "Clean, professional design perfect for general dental practices",
-      image: "template-1-preview",
+      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop&crop=center",
       badge: "Popular",
       badgeColor: "bg-blue-100 text-blue-800"
     },
@@ -30,16 +29,16 @@ const Templates = () => {
       name: "Medical Center Pro",
       category: "Medical Practices", 
       description: "Comprehensive layout for multi-specialty medical centers",
-      image: "template-2-preview",
+      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop&crop=center",
       badge: "New",
       badgeColor: "bg-green-100 text-green-800"
     },
     {
       id: 3,
       name: "Pediatric Care",
-      category: "Pediatric",
+      category: "Dental Clinics",
       description: "Colorful, friendly design perfect for children's healthcare",
-      image: "template-3-preview",
+      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop&crop=center",
       badge: null,
       badgeColor: ""
     },
@@ -48,7 +47,7 @@ const Templates = () => {
       name: "Orthodontic Specialist",
       category: "Specialty Clinics",
       description: "Sleek design showcasing before/after galleries",
-      image: "template-4-preview",
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop&crop=center",
       badge: "Featured",
       badgeColor: "bg-purple-100 text-purple-800"
     },
@@ -57,7 +56,7 @@ const Templates = () => {
       name: "Family Practice",
       category: "Medical Practices",
       description: "Warm, welcoming design for family medicine practices",
-      image: "template-5-preview",
+      image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=400&h=300&fit=crop&crop=center",
       badge: null,
       badgeColor: ""
     },
@@ -66,7 +65,7 @@ const Templates = () => {
       name: "Cosmetic Dentistry",
       category: "Dental Clinics",
       description: "Elegant, high-end design for cosmetic dental practices",
-      image: "template-6-preview",
+      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=400&h=300&fit=crop&crop=center",
       badge: "Premium",
       badgeColor: "bg-yellow-100 text-yellow-800"
     },
@@ -75,7 +74,7 @@ const Templates = () => {
       name: "Urgent Care",
       category: "Medical Practices",
       description: "Clear, informative layout for urgent care facilities",
-      image: "template-7-preview",
+      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=300&fit=crop&crop=center",
       badge: null,
       badgeColor: ""
     },
@@ -84,27 +83,9 @@ const Templates = () => {
       name: "Dermatology Clinic",
       category: "Specialty Clinics",
       description: "Professional design focused on skincare services",
-      image: "template-8-preview",
+      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop&crop=center",
       badge: null,
       badgeColor: ""
-    },
-    {
-      id: 9,
-      name: "Cardiology Practice",
-      category: "Specialty Clinics",
-      description: "Trustworthy design for cardiovascular specialists",
-      image: "template-9-preview",
-      badge: null,
-      badgeColor: ""
-    },
-    {
-      id: 10,
-      name: "Mental Health Center",
-      category: "Specialty Clinics",
-      description: "Calming, supportive design for mental health services",
-      image: "template-10-preview",
-      badge: "New",
-      badgeColor: "bg-green-100 text-green-800"
     }
   ];
 
@@ -145,31 +126,30 @@ const Templates = () => {
       {/* Templates Grid */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {templates.map((template) => (
-              <Card key={template.id} className="border-none shadow-lg hover:shadow-xl transition-shadow overflow-hidden">
+              <Card key={template.id} className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
                 <div className="relative">
-                  <div className="bg-gray-200 h-48 flex items-center justify-center">
-                    <span className="text-gray-500">{template.image}</span>
-                  </div>
+                  <img 
+                    src={template.image} 
+                    alt={template.name}
+                    className="w-full h-48 object-cover"
+                  />
                   {template.badge && (
                     <Badge className={`absolute top-4 right-4 ${template.badgeColor}`}>
                       {template.badge}
                     </Badge>
                   )}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 hover:opacity-100">
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="flex space-x-2">
                       <Button size="sm" variant="secondary">
                         <Eye className="h-4 w-4 mr-2" />
                         Preview
                       </Button>
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                        Use Template
-                      </Button>
                     </div>
                   </div>
                 </div>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
                     <div className="flex items-center">
@@ -178,7 +158,10 @@ const Templates = () => {
                     </div>
                   </div>
                   <p className="text-sm text-blue-600 mb-2">{template.category}</p>
-                  <p className="text-gray-600 text-sm">{template.description}</p>
+                  <p className="text-gray-600 text-sm mb-4">{template.description}</p>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    Spin up this template
+                  </Button>
                 </CardContent>
               </Card>
             ))}
