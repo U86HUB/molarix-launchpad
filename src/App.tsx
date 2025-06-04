@@ -19,6 +19,7 @@ import BlogArticle from "./pages/BlogArticle";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import TemplatePreview from "./pages/TemplatePreview";
+import AiCopyPreview from "./pages/AiCopyPreview";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/template-preview" element={<TemplatePreview />} />
+              <Route path="/ai-copy-preview" element={<AiCopyPreview />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
