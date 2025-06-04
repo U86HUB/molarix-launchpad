@@ -12,7 +12,7 @@ interface SessionGroup {
   order: number;
 }
 
-export const useSessionGrouping = (sessions: DashboardSession[], groupBy: GroupingType) => {
+export const useSessionGrouping = (sessions: DashboardSession[], groupBy: GroupingType): SessionGroup[] => {
   const groupedSessions = useMemo(() => {
     if (groupBy === 'date') {
       const now = dayjs();
@@ -46,7 +46,7 @@ export const useSessionGrouping = (sessions: DashboardSession[], groupBy: Groupi
       return Object.entries(templateGroups).map(([template, sessions]) => ({
         title: template,
         sessions,
-        order: template === 'No Template' ? 999 : parseInt(template.replace(/\D/g, '')) || 0
+        order: template === 'No Template' ? 999 : Number(template.replace(/\D/g, '')) || 0
       })).sort((a, b) => a.order - b.order);
     }
   }, [sessions, groupBy]);
