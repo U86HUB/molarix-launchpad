@@ -1,62 +1,32 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2, RefreshCw, Copy, Check, Download } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Loader2, RefreshCw, Copy, Check, Download, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-interface OnboardingSession {
-  id: string;
-  clinic_name: string;
-  address: string;
-  phone: string;
-  email: string;
-  logo_url: string | null;
-  primary_color: string;
-  font_style: string;
-  selected_template: string;
-}
-
-interface GeneratedCopy {
-  homepage: {
-    headline: string;
-    subheadline: string;
-    welcomeMessage: string;
-    ctaText: string;
-  };
-  services: {
-    title: string;
-    intro: string;
-    services: Array<{
-      name: string;
-      description: string;
-    }>;
-  };
-  about: {
-    title: string;
-    intro: string;
-    mission: string;
-    values: Array<{
-      name: string;
-      description: string;
-    }>;
-  };
-}
+import { useStreamingCopy } from "@/hooks/useStreamingCopy";
+import TypingAnimation from "@/components/TypingAnimation";
 
 const AiCopyPreview = () => {
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
-  const [generatedCopy, setGeneratedCopy] = useState<GeneratedCopy | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
   const sessionId = searchParams.get("sessionId");
+
+  const {
+    sessionData,
+    generatedCopy,
+    streamingContent,
+    isStreaming,
+    loading,
+    generateCopyWithStreaming,
+    stopGeneration
+  } = useStreamingCopy();
 
   useEffect(() => {
     if (!sessionId) {
@@ -65,53 +35,11 @@ const AiCopyPreview = () => {
         description: "No session ID provided",
         variant: "destructive",
       });
-      setLoading(false);
       return;
     }
 
-    generateCopy();
+    generateCopyWithStreaming(sessionId);
   }, [sessionId, toast]);
-
-  const generateCopy = async () => {
-    if (!sessionId) return;
-    
-    setGenerating(true);
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-copy', {
-        body: { sessionId }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to generate copy');
-      }
-
-      console.log('Generated copy data:', data);
-      setGeneratedCopy(data.copy);
-      setSessionData(data.sessionData);
-
-      toast({
-        title: "Success",
-        description: "Copy generated successfully!",
-      });
-    } catch (error) {
-      console.error('Error generating copy:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate copy. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setGenerating(false);
-      setLoading(false);
-    }
-  };
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -155,18 +83,24 @@ const AiCopyPreview = () => {
     });
   };
 
-  if (loading) {
+  const handleRegenerate = () => {
+    if (sessionId) {
+      generateCopyWithStreaming(sessionId);
+    }
+  };
+
+  if (loading && !isStreaming) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Generating AI copy...</span>
+          <span>Initializing AI copy generation...</span>
         </div>
       </div>
     );
   }
 
-  if (!sessionData) {
+  if (!sessionData && !loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -206,26 +140,37 @@ const AiCopyPreview = () => {
                 AI-Generated Copy Preview
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                AI-generated content for {sessionData.clinic_name}
+                AI-generated content for {sessionData?.clinic_name || 'your clinic'}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={generateCopy}
-                disabled={generating}
-              >
-                {generating ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                )}
-                Regenerate
-              </Button>
+              {isStreaming ? (
+                <Button
+                  variant="outline"
+                  onClick={stopGeneration}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Square className="h-4 w-4 mr-2" />
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={handleRegenerate}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Regenerate
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={exportAsJson}
-                disabled={!generatedCopy}
+                disabled={!generatedCopy || isStreaming}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export JSON
@@ -234,7 +179,32 @@ const AiCopyPreview = () => {
           </div>
         </div>
 
-        {generating ? (
+        {isStreaming && streamingContent ? (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  AI is generating your copy...
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </CardTitle>
+                <CardDescription>
+                  Watch as your personalized content is created in real-time
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                    <TypingAnimation 
+                      text={streamingContent} 
+                      speed={20}
+                      className="text-gray-800 dark:text-gray-200"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : loading ? (
           <div className="space-y-6">
             {[1, 2, 3].map(i => (
               <Card key={i}>
@@ -272,8 +242,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('Headline') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <h2 className="text-2xl font-bold">{generatedCopy.homepage.headline}</h2>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-3xl font-bold leading-tight">{generatedCopy.homepage.headline}</h2>
                   </div>
                 </div>
 
@@ -288,8 +258,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('Subheadline') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="text-lg text-gray-600 dark:text-gray-300">{generatedCopy.homepage.subheadline}</p>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">{generatedCopy.homepage.subheadline}</p>
                   </div>
                 </div>
 
@@ -304,8 +274,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('Welcome Message') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p>{generatedCopy.homepage.welcomeMessage}</p>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-lg leading-relaxed">{generatedCopy.homepage.welcomeMessage}</p>
                   </div>
                 </div>
 
@@ -320,8 +290,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('CTA Text') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <Button className="font-semibold">{generatedCopy.homepage.ctaText}</Button>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <Button size="lg" className="font-semibold text-lg px-8 py-3">{generatedCopy.homepage.ctaText}</Button>
                   </div>
                 </div>
               </CardContent>
@@ -347,8 +317,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('Services Title') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <h2 className="text-xl font-bold">{generatedCopy.services.title}</h2>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-2xl font-bold">{generatedCopy.services.title}</h2>
                   </div>
                 </div>
 
@@ -363,18 +333,18 @@ const AiCopyPreview = () => {
                       {copiedItems.has('Services Intro') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p>{generatedCopy.services.intro}</p>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-lg leading-relaxed">{generatedCopy.services.intro}</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <h3 className="font-semibold">Services</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {generatedCopy.services.services.map((service, index) => (
-                      <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                      <div key={index} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold">{service.name}</h4>
+                          <h4 className="font-semibold text-lg">{service.name}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -383,7 +353,7 @@ const AiCopyPreview = () => {
                             {copiedItems.has(`Service ${index + 1}`) ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           </Button>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{service.description}</p>
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{service.description}</p>
                       </div>
                     ))}
                   </div>
@@ -411,8 +381,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('About Title') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <h2 className="text-xl font-bold">{generatedCopy.about.title}</h2>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h2 className="text-2xl font-bold">{generatedCopy.about.title}</h2>
                   </div>
                 </div>
 
@@ -427,8 +397,8 @@ const AiCopyPreview = () => {
                       {copiedItems.has('About Intro') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p>{generatedCopy.about.intro}</p>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-lg leading-relaxed">{generatedCopy.about.intro}</p>
                   </div>
                 </div>
 
@@ -443,18 +413,18 @@ const AiCopyPreview = () => {
                       {copiedItems.has('Mission') ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="italic">{generatedCopy.about.mission}</p>
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-lg italic leading-relaxed">{generatedCopy.about.mission}</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <h3 className="font-semibold">Core Values</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {generatedCopy.about.values.map((value, index) => (
-                      <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                      <div key={index} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold">{value.name}</h4>
+                          <h4 className="font-semibold text-lg">{value.name}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -463,10 +433,32 @@ const AiCopyPreview = () => {
                             {copiedItems.has(`Value ${index + 1}`) ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           </Button>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{value.description}</p>
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{value.description}</p>
                       </div>
                     ))}
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Save Your Copy</CardTitle>
+                <CardDescription>
+                  Export or save your generated content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4">
+                  <Button onClick={exportAsJson} className="flex-1">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download as JSON
+                  </Button>
+                  <Button variant="outline" className="flex-1" disabled>
+                    Save to Project
+                    <span className="text-xs ml-2">(Coming Soon)</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -474,7 +466,7 @@ const AiCopyPreview = () => {
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No copy generated yet</p>
-            <Button onClick={generateCopy} disabled={generating}>
+            <Button onClick={handleRegenerate} disabled={loading}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Generate Copy
             </Button>

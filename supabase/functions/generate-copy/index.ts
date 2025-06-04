@@ -12,21 +12,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to sanitize OpenAI response
-const sanitizeResponse = (content: string): string => {
-  // Remove markdown code blocks if present
-  const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
-  const match = content.match(codeBlockRegex);
-  return match ? match[1].trim() : content.trim();
-};
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { sessionId } = await req.json();
+    const { sessionId, stream = false } = await req.json();
 
     if (!sessionId) {
       throw new Error('Session ID is required');
@@ -133,6 +125,7 @@ serve(async (req) => {
         ],
         temperature: 0.7,
         max_tokens: 2000,
+        stream: stream,
       }),
     });
 
@@ -142,38 +135,109 @@ serve(async (req) => {
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('OpenAI response:', data);
+    if (stream) {
+      // Return streaming response
+      const encoder = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          const reader = response.body?.getReader();
+          if (!reader) {
+            controller.close();
+            return;
+          }
 
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response from OpenAI');
+          try {
+            let buffer = '';
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = new TextDecoder().decode(value);
+              buffer += chunk;
+
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') {
+                    controller.close();
+                    return;
+                  }
+
+                  try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        content: parsed.choices[0].delta.content,
+                        sessionData: sessionData
+                      })}\n\n`));
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Streaming error:', error);
+            controller.error(error);
+          } finally {
+            reader.releaseLock();
+          }
+        }
+      });
+
+      return new Response(readable, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    } else {
+      // Original non-streaming logic
+      const data = await response.json();
+      console.log('OpenAI response:', data);
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error('Invalid response from OpenAI');
+      }
+
+      const rawContent = data.choices[0].message.content;
+      console.log('Raw OpenAI content:', rawContent);
+
+      // Helper function to sanitize OpenAI response
+      const sanitizeResponse = (content: string): string => {
+        const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
+        const match = content.match(codeBlockRegex);
+        return match ? match[1].trim() : content.trim();
+      };
+
+      const sanitizedContent = sanitizeResponse(rawContent);
+      console.log('Sanitized content:', sanitizedContent);
+
+      let generatedCopy;
+      try {
+        generatedCopy = JSON.parse(sanitizedContent);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Content that failed to parse:', sanitizedContent);
+        throw new Error('Failed to parse OpenAI response as JSON');
+      }
+
+      console.log('Successfully generated copy:', generatedCopy);
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        copy: generatedCopy,
+        sessionData: sessionData 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-
-    const rawContent = data.choices[0].message.content;
-    console.log('Raw OpenAI content:', rawContent);
-
-    // Sanitize and parse the response
-    const sanitizedContent = sanitizeResponse(rawContent);
-    console.log('Sanitized content:', sanitizedContent);
-
-    let generatedCopy;
-    try {
-      generatedCopy = JSON.parse(sanitizedContent);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.error('Content that failed to parse:', sanitizedContent);
-      throw new Error('Failed to parse OpenAI response as JSON');
-    }
-
-    console.log('Successfully generated copy:', generatedCopy);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      copy: generatedCopy,
-      sessionData: sessionData 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
 
   } catch (error) {
     console.error('Error in generate-copy function:', error);
