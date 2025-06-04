@@ -2,13 +2,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SortOption, FilterOption } from '@/hooks/useSessionFilters';
-import { ArrowDown, ArrowUp, ListFilter } from 'lucide-react';
+import { GroupingType } from '@/hooks/useSessionGrouping';
+import { ArrowDown, ArrowUp, ListFilter, Layers } from 'lucide-react';
 
 interface DashboardFiltersProps {
   sortBy: SortOption;
   filterBy: FilterOption;
+  groupBy: GroupingType;
   onSortChange: (sort: SortOption) => void;
   onFilterChange: (filter: FilterOption) => void;
+  onGroupChange: (group: GroupingType) => void;
   totalCount: number;
   filteredCount: number;
 }
@@ -16,8 +19,10 @@ interface DashboardFiltersProps {
 const DashboardFilters = ({ 
   sortBy, 
   filterBy, 
+  groupBy,
   onSortChange, 
   onFilterChange, 
+  onGroupChange,
   totalCount, 
   filteredCount 
 }: DashboardFiltersProps) => {
@@ -26,6 +31,20 @@ const DashboardFilters = ({
       <CardContent className="pt-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Group by:</span>
+              <Select value={groupBy} onValueChange={onGroupChange}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="template">Template</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-center gap-2">
               <ArrowDown className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</span>

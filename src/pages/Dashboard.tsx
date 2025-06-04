@@ -8,11 +8,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardSessions } from '@/hooks/useDashboardSessions';
 import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
 import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
+import { GroupingType } from '@/hooks/useSessionGrouping';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
-import SessionCard from '@/components/dashboard/SessionCard';
+import GroupedSessionsGrid from '@/components/dashboard/GroupedSessionsGrid';
 import { Loader2, Plus } from 'lucide-react';
 
 const Dashboard = () => {
@@ -21,9 +22,10 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { sessions, loading, refreshSessions, deleteSession, duplicateSession } = useDashboardSessions();
 
-  // Filtering and sorting state
+  // Filtering, sorting, and grouping state
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [groupBy, setGroupBy] = useState<GroupingType>('date');
 
   // Get session statuses for filtering
   const sessionStatuses = useMultipleSessionStatuses(sessions);
@@ -101,12 +103,14 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {/* Filters and Sorting */}
+            {/* Filters, Sorting, and Grouping */}
             <DashboardFilters
               sortBy={sortBy}
               filterBy={filterBy}
+              groupBy={groupBy}
               onSortChange={setSortBy}
               onFilterChange={setFilterBy}
+              onGroupChange={setGroupBy}
               totalCount={totalCount}
               filteredCount={filteredCount}
             />
@@ -132,19 +136,15 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSessions.map((session) => (
-                  <SessionCard
-                    key={session.id}
-                    session={session}
-                    onContinueEditing={handleContinueEditing}
-                    onPreview={handlePreview}
-                    onDelete={handleDelete}
-                    onDuplicate={handleDuplicate}
-                    onUpdate={refreshSessions}
-                  />
-                ))}
-              </div>
+              <GroupedSessionsGrid
+                sessions={filteredSessions}
+                groupBy={groupBy}
+                onContinueEditing={handleContinueEditing}
+                onPreview={handlePreview}
+                onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
+                onUpdate={refreshSessions}
+              />
             )}
           </>
         )}
