@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardSessions } from '@/hooks/useDashboardSessions';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardStats from '@/components/dashboard/DashboardStats';
 import SessionCard from '@/components/dashboard/SessionCard';
 import { Loader2, Plus } from 'lucide-react';
 
@@ -48,6 +50,9 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <DashboardHeader userEmail={user?.email || ''} />
+        
+        {/* Analytics Stats Section */}
+        <DashboardStats sessions={sessions} />
         
         <div className="flex justify-between items-center mb-8">
           <div>
