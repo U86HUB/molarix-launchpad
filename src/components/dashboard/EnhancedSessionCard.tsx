@@ -108,7 +108,7 @@ const EnhancedSessionCard = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Edit AI content and design</p>
+                  <p>Edit your latest draft content</p>
                 </TooltipContent>
               </Tooltip>
               
@@ -125,7 +125,7 @@ const EnhancedSessionCard = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>View your site with current content</p>
+                  <p>View saved content in your chosen template</p>
                 </TooltipContent>
               </Tooltip>
               

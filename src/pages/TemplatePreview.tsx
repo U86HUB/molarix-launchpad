@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,11 +105,23 @@ const TemplatePreview = () => {
             setCopy(publishedData.data as unknown as GeneratedCopy);
           } else {
             setNoCopyFound(true);
+            // Show toast warning for no draft content found
+            toast({
+              title: "No draft content found",
+              description: "Please generate or edit content first.",
+              variant: "destructive",
+            });
           }
         } else if (copyData) {
           setCopy(copyData.data as unknown as GeneratedCopy);
         } else {
           setNoCopyFound(true);
+          // Show toast warning for no content found
+          toast({
+            title: "No content found",
+            description: "Please generate or edit content first.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error:', error);
