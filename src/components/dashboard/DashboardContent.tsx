@@ -1,16 +1,8 @@
 
-import { useState, useEffect } from 'react';
 import { DashboardSession } from '@/hooks/useDashboardSessions';
-import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
-import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
-import { GroupingType } from '@/hooks/useSessionGrouping';
-import DashboardStats from './DashboardStats';
-import DashboardFiltersSection from './DashboardFiltersSection';
-import DashboardEmpty from './DashboardEmpty';
-import DashboardActionsSection from './DashboardActionsSection';
-import DashboardContentRenderer from './DashboardContentRenderer';
-import DashboardModals from './DashboardModals';
-import GettingStartedGuide from './GettingStartedGuide';
+import { useDashboardState } from '@/hooks/useDashboardState';
+import DashboardEmptyContent from './DashboardEmptyContent';
+import DashboardMainContent from './DashboardMainContent';
 
 interface DashboardContentProps {
   sessions: DashboardSession[];
@@ -27,48 +19,28 @@ const DashboardContent = ({
   duplicateSession,
   onContinueEditing 
 }: DashboardContentProps) => {
-  // Filtering, sorting, and grouping state
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [filterBy, setFilterBy] = useState<FilterOption>('all');
-  const [groupBy, setGroupBy] = useState<GroupingType>('clinic'); // Default to clinic grouping
-  const [selectedClinicId, setSelectedClinicId] = useState<string | undefined>();
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Preview modal state
-  const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-
-  // Create website modal state
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Getting started guide state
-  const [showGettingStarted, setShowGettingStarted] = useState(false);
-
-  // Get session statuses for filtering
-  const sessionStatuses = useMultipleSessionStatuses(sessions);
-
-  const { filteredSessions, totalCount, filteredCount } = useSessionFilters({
-    sessions,
+  const {
     sortBy,
     filterBy,
-    sessionStatuses
-  });
-
-  // Show getting started guide for new users
-  useEffect(() => {
-    const hasSeenGuide = localStorage.getItem('hasSeenGettingStartedGuide');
-    if (!hasSeenGuide && sessions.length === 0) {
-      setShowGettingStarted(true);
-    }
-  }, [sessions.length]);
-
-  // Apply search filtering
-  const searchFilteredSessions = filteredSessions.filter(session => {
-    const matchesSearch = session.clinic_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         session.clinic?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    const matchesClinic = !selectedClinicId || session.clinic_id === selectedClinicId;
-    return matchesSearch && matchesClinic;
-  });
+    groupBy,
+    selectedClinicId,
+    searchQuery,
+    previewSessionId,
+    isPreviewModalOpen,
+    isCreateModalOpen,
+    showGettingStarted,
+    setSortBy,
+    setFilterBy,
+    setGroupBy,
+    setSelectedClinicId,
+    setSearchQuery,
+    setPreviewSessionId,
+    setIsPreviewModalOpen,
+    setIsCreateModalOpen,
+    setShowGettingStarted,
+    handleClearFilters,
+    handleResetAllFilters,
+  } = useDashboardState();
 
   const handlePreview = (sessionId: string) => {
     setPreviewSessionId(sessionId);
@@ -108,101 +80,55 @@ const DashboardContent = ({
     refreshSessions();
   };
 
-  const handleDismissGettingStarted = () => {
-    setShowGettingStarted(false);
-    localStorage.setItem('hasSeenGettingStartedGuide', 'true');
-  };
+  // Show empty content for first-time users
+  const emptyContent = (
+    <DashboardEmptyContent
+      sessions={sessions}
+      groupBy={groupBy}
+      showGettingStarted={showGettingStarted}
+      setShowGettingStarted={setShowGettingStarted}
+      previewSessionId={previewSessionId}
+      isPreviewModalOpen={isPreviewModalOpen}
+      isCreateModalOpen={isCreateModalOpen}
+      onCreateWebsite={handleCreateNew}
+      onClosePreviewModal={handleClosePreviewModal}
+      onCloseCreateModal={handleCloseCreateModal}
+    />
+  );
 
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    setSelectedClinicId(undefined);
-  };
-
-  const handleResetAllFilters = () => {
-    setSortBy('newest');
-    setFilterBy('all');
-    setSearchQuery('');
-    setSelectedClinicId(undefined);
-  };
-
-  // Show empty state for first-time users only if they have no sessions AND no clinics
-  if (sessions.length === 0 && groupBy !== 'clinic') {
-    return (
-      <div className="mt-12">
-        {showGettingStarted && (
-          <GettingStartedGuide
-            onDismiss={handleDismissGettingStarted}
-            onCreateWebsite={handleCreateNew}
-          />
-        )}
-        <DashboardEmpty onCreateNew={handleCreateNew} />
-        <DashboardModals
-          previewSessionId={previewSessionId}
-          isPreviewModalOpen={isPreviewModalOpen}
-          isCreateModalOpen={isCreateModalOpen}
-          onClosePreviewModal={handleClosePreviewModal}
-          onCloseCreateModal={handleCloseCreateModal}
-        />
-      </div>
-    );
+  if (emptyContent) {
+    return emptyContent;
   }
 
   return (
-    <>
-      {/* Show getting started guide for users with content */}
-      {showGettingStarted && (
-        <GettingStartedGuide
-          onDismiss={handleDismissGettingStarted}
-          onCreateWebsite={handleCreateNew}
-        />
-      )}
-
-      {/* Enhanced Analytics Stats Section with background container */}
-      <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-white/20 dark:border-gray-700/20 mb-8">
-        <DashboardStats sessions={sessions} />
-      </div>
-      
-      <DashboardActionsSection onCreateNew={handleCreateNew} />
-
-      {/* Enhanced Filters with clinic filter and search functionality */}
-      <DashboardFiltersSection
-        sortBy={sortBy}
-        filterBy={filterBy}
-        groupBy={groupBy}
-        selectedClinicId={selectedClinicId}
-        searchQuery={searchQuery}
-        totalCount={totalCount}
-        filteredCount={searchQuery ? searchFilteredSessions.length : filteredCount}
-        onSortChange={setSortBy}
-        onFilterChange={setFilterBy}
-        onGroupChange={setGroupBy}
-        onClinicChange={setSelectedClinicId}
-        onSearchChange={setSearchQuery}
-      />
-
-      <DashboardContentRenderer
-        sessions={searchFilteredSessions}
-        groupBy={groupBy}
-        selectedClinicId={selectedClinicId}
-        searchQuery={searchQuery}
-        onContinueEditing={onContinueEditing}
-        onPreview={handlePreview}
-        onDelete={handleDelete}
-        onDuplicate={handleDuplicate}
-        onUpdate={refreshSessions}
-        onClearFilters={handleClearFilters}
-        onResetAllFilters={handleResetAllFilters}
-        onCreateWebsite={handleCreateNew}
-      />
-
-      <DashboardModals
-        previewSessionId={previewSessionId}
-        isPreviewModalOpen={isPreviewModalOpen}
-        isCreateModalOpen={isCreateModalOpen}
-        onClosePreviewModal={handleClosePreviewModal}
-        onCloseCreateModal={handleCloseCreateModal}
-      />
-    </>
+    <DashboardMainContent
+      sessions={sessions}
+      sortBy={sortBy}
+      filterBy={filterBy}
+      groupBy={groupBy}
+      selectedClinicId={selectedClinicId}
+      searchQuery={searchQuery}
+      showGettingStarted={showGettingStarted}
+      previewSessionId={previewSessionId}
+      isPreviewModalOpen={isPreviewModalOpen}
+      isCreateModalOpen={isCreateModalOpen}
+      setSortBy={setSortBy}
+      setFilterBy={setFilterBy}
+      setGroupBy={setGroupBy}
+      setSelectedClinicId={setSelectedClinicId}
+      setSearchQuery={setSearchQuery}
+      setShowGettingStarted={setShowGettingStarted}
+      onContinueEditing={onContinueEditing}
+      onPreview={handlePreview}
+      onDelete={handleDelete}
+      onDuplicate={handleDuplicate}
+      onUpdate={refreshSessions}
+      onClearFilters={handleClearFilters}
+      onResetAllFilters={handleResetAllFilters}
+      onCreateWebsite={handleCreateNew}
+      onClosePreviewModal={handleClosePreviewModal}
+      onCloseCreateModal={handleCloseCreateModal}
+    />
   );
 };
 
