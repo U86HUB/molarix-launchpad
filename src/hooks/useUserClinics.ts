@@ -23,7 +23,14 @@ export const useUserClinics = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchClinics = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('useUserClinics: No user found, skipping fetch');
+      setLoading(false);
+      return;
+    }
+
+    console.log('=== FETCHING CLINICS DEBUG START ===');
+    console.log('Fetching clinics for user:', user.id);
 
     try {
       const { data, error } = await supabase
@@ -32,8 +39,14 @@ export const useUserClinics = () => {
         .eq('created_by', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Clinics fetch response:', { data, error });
 
+      if (error) {
+        console.log('❌ Error fetching clinics:', error);
+        throw error;
+      }
+
+      console.log('✅ Clinics fetched successfully:', data?.length || 0, 'clinics');
       setClinics(data || []);
     } catch (error) {
       console.error('Error fetching clinics:', error);
@@ -44,6 +57,7 @@ export const useUserClinics = () => {
       });
     } finally {
       setLoading(false);
+      console.log('=== FETCHING CLINICS DEBUG END ===');
     }
   };
 

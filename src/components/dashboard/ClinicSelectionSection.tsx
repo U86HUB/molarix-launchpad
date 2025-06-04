@@ -26,10 +26,27 @@ export const ClinicSelectionSection = ({
   const { clinics, loading: clinicsLoading, refreshClinics } = useUserClinics();
   const [showAddNewClinic, setShowAddNewClinic] = useState(false);
 
-  const handleClinicCreated = (clinicId: string) => {
-    onClinicCreated(clinicId);
+  const handleClinicCreated = async (clinicId: string) => {
+    console.log('=== CLINIC SELECTION DEBUG START ===');
+    console.log('New clinic created with ID:', clinicId);
+    
+    // Hide the inline form
     setShowAddNewClinic(false);
-    refreshClinics();
+    
+    // Refresh the clinics list to get the latest data
+    console.log('🔄 Refreshing clinics list...');
+    await refreshClinics();
+    
+    // Select the new clinic
+    console.log('🔄 Selecting new clinic:', clinicId);
+    onClinicChange(clinicId);
+    
+    // Call the parent callback
+    console.log('🔄 Calling parent onClinicCreated callback');
+    onClinicCreated(clinicId);
+    
+    console.log('✅ Clinic selection flow completed');
+    console.log('=== CLINIC SELECTION DEBUG END ===');
   };
 
   const selectedClinic = clinics.find(clinic => clinic.id === selectedClinicId);
@@ -48,9 +65,12 @@ export const ClinicSelectionSection = ({
         <Select
           value={selectedClinicId}
           onValueChange={(value) => {
+            console.log('Select value changed to:', value);
             if (value === 'add-new') {
+              console.log('🔄 Opening add new clinic form');
               setShowAddNewClinic(true);
             } else {
+              console.log('🔄 Selecting existing clinic:', value);
               onClinicChange(value);
               setShowAddNewClinic(false);
             }
@@ -105,7 +125,10 @@ export const ClinicSelectionSection = ({
       {showAddNewClinic && (
         <AddNewClinicInline
           onClinicCreated={handleClinicCreated}
-          onCancel={() => setShowAddNewClinic(false)}
+          onCancel={() => {
+            console.log('🔄 Cancelling clinic creation');
+            setShowAddNewClinic(false);
+          }}
         />
       )}
     </div>

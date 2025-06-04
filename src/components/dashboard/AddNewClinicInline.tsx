@@ -23,7 +23,22 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !clinicName.trim()) {
+    console.log('=== CLINIC CREATION DEBUG START ===');
+    console.log('Form submitted with:', { clinicName: clinicName.trim(), clinicAddress: clinicAddress.trim() });
+    console.log('Current user:', user);
+
+    if (!user) {
+      console.log('❌ No user found');
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create a clinic.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!clinicName.trim()) {
+      console.log('❌ Empty clinic name');
       toast({
         title: "Missing Information",
         description: "Please enter a clinic name.",
@@ -35,24 +50,54 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
     setIsCreating(true);
 
     try {
+      console.log('🔄 Starting Supabase insert...');
+      
+      const insertPayload = {
+        name: clinicName.trim(),
+        address: clinicAddress.trim() || null,
+        created_by: user.id,
+      };
+      
+      console.log('Insert payload:', insertPayload);
+
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
-        .insert({
-          name: clinicName.trim(),
-          address: clinicAddress.trim() || null,
-          created_by: user.id,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
-      if (clinicError) throw clinicError;
+      console.log('Supabase response:', { data: clinicData, error: clinicError });
 
+      if (clinicError) {
+        console.log('❌ Supabase error:', clinicError);
+        throw clinicError;
+      }
+
+      if (!clinicData) {
+        console.log('❌ No data returned from insert');
+        throw new Error('No data returned from clinic creation');
+      }
+
+      console.log('✅ Clinic created successfully:', clinicData);
+
+      // Show success toast
+      toast({
+        title: "Clinic Created Successfully",
+        description: `"${clinicData.name}" has been created and selected.`,
+      });
+
+      // Call the callback with the new clinic ID
+      console.log('🔄 Calling onClinicCreated with ID:', clinicData.id);
       onClinicCreated(clinicData.id);
+
+      // Reset form
       setClinicName('');
       setClinicAddress('');
 
+      console.log('✅ Clinic creation flow completed');
+
     } catch (error: any) {
-      console.error('Error creating clinic:', error);
+      console.log('❌ Error in clinic creation:', error);
       toast({
         title: "Creation Failed",
         description: error.message || "Failed to create clinic. Please try again.",
@@ -60,6 +105,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       });
     } finally {
       setIsCreating(false);
+      console.log('=== CLINIC CREATION DEBUG END ===');
     }
   };
 
@@ -78,6 +124,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
           size="sm"
           onClick={onCancel}
           className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+          disabled={isCreating}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -94,6 +141,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
             onChange={(e) => setClinicName(e.target.value)}
             placeholder="Enter clinic name"
             required
+            disabled={isCreating}
             className="mt-1"
           />
         </div>
@@ -107,6 +155,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
             value={clinicAddress}
             onChange={(e) => setClinicAddress(e.target.value)}
             placeholder="Enter clinic address"
+            disabled={isCreating}
             className="mt-1"
           />
         </div>
@@ -130,7 +179,13 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
               </>
             )}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={onCancel}
+            disabled={isCreating}
+          >
             Cancel
           </Button>
         </div>
