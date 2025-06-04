@@ -172,6 +172,107 @@ export type Database = {
         }
         Relationships: []
       }
+      sections: {
+        Row: {
+          copy_id: string | null
+          created_at: string
+          id: string
+          is_visible: boolean
+          position: number
+          settings: Json
+          type: string
+          updated_at: string
+          website_id: string
+        }
+        Insert: {
+          copy_id?: string | null
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          position?: number
+          settings?: Json
+          type: string
+          updated_at?: string
+          website_id: string
+        }
+        Update: {
+          copy_id?: string | null
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          position?: number
+          settings?: Json
+          type?: string
+          updated_at?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sections_copy_id_fkey"
+            columns: ["copy_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_copy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sections_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      websites: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          domain: string | null
+          font_style: string | null
+          id: string
+          name: string
+          primary_color: string | null
+          status: string | null
+          template_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          domain?: string | null
+          font_style?: string | null
+          id?: string
+          name: string
+          primary_color?: string | null
+          status?: string | null
+          template_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          domain?: string | null
+          font_style?: string | null
+          id?: string
+          name?: string
+          primary_color?: string | null
+          status?: string | null
+          template_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "websites_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

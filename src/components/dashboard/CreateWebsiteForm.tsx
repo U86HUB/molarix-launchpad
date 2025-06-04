@@ -56,13 +56,28 @@ export const CreateWebsiteForm = ({ onClose }: CreateWebsiteFormProps) => {
     setIsCreating(true);
 
     try {
-      // Create the onboarding session linked to the selected clinic
+      // Create the website record
+      const { data: websiteData, error: websiteError } = await supabase
+        .from('websites')
+        .insert({
+          clinic_id: selectedClinicId,
+          name: websiteName.trim(),
+          status: 'draft',
+          template_type: 'template-a',
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (websiteError) throw websiteError;
+
+      // Also create an onboarding session for backward compatibility
       const { data: sessionData, error: sessionError } = await supabase
         .from('onboarding_sessions')
         .insert({
           clinic_id: selectedClinicId,
           clinic_name: websiteName.trim(),
-          selected_template: 'template-a', // Default template
+          selected_template: 'template-a',
           completion_score: 0,
           created_by: user.id,
           last_updated: new Date().toISOString(),
@@ -74,7 +89,7 @@ export const CreateWebsiteForm = ({ onClose }: CreateWebsiteFormProps) => {
 
       toast({
         title: "Website Created Successfully",
-        description: `"${websiteName}" has been created and linked to your clinic.`,
+        description: `"${websiteName}" has been created and is ready for editing.`,
       });
 
       // Reset form state
@@ -82,8 +97,8 @@ export const CreateWebsiteForm = ({ onClose }: CreateWebsiteFormProps) => {
       setWebsiteName('');
       onClose();
 
-      // Navigate to onboarding with the new session ID
-      navigate(`/onboarding?sessionId=${sessionData.id}`);
+      // Navigate to the website builder
+      navigate(`/website-builder/${websiteData.id}`);
 
     } catch (error: any) {
       console.error('Error creating website:', error);
