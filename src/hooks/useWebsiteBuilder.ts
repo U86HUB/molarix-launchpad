@@ -4,6 +4,17 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Website, Section } from '@/types/website';
 
+type SectionType = "hero" | "about" | "services" | "testimonials" | "contact" | "features" | "gallery" | "team";
+type WebsiteStatus = "draft" | "published" | "archived";
+
+function isValidSectionType(type: string): type is SectionType {
+  return ["hero", "about", "services", "testimonials", "contact", "features", "gallery", "team"].includes(type);
+}
+
+function isValidWebsiteStatus(status: string): status is WebsiteStatus {
+  return ["draft", "published", "archived"].includes(status);
+}
+
 export const useWebsiteBuilder = (websiteId?: string) => {
   const { toast } = useToast();
   const [website, setWebsite] = useState<Website | null>(null);
@@ -26,7 +37,13 @@ export const useWebsiteBuilder = (websiteId?: string) => {
         .single();
 
       if (websiteError) throw websiteError;
-      setWebsite(websiteData);
+      
+      // Cast the website data to proper types
+      const typedWebsite: Website = {
+        ...websiteData,
+        status: isValidWebsiteStatus(websiteData.status) ? websiteData.status : 'draft'
+      };
+      setWebsite(typedWebsite);
 
       // Fetch sections
       const { data: sectionsData, error: sectionsError } = await supabase
@@ -37,7 +54,13 @@ export const useWebsiteBuilder = (websiteId?: string) => {
         .order('position');
 
       if (sectionsError) throw sectionsError;
-      setSections(sectionsData || []);
+      
+      // Cast the sections data to proper types
+      const typedSections: Section[] = (sectionsData || []).map(section => ({
+        ...section,
+        type: isValidSectionType(section.type) ? section.type : 'hero'
+      }));
+      setSections(typedSections);
 
     } catch (error: any) {
       console.error('Error fetching website data:', error);
@@ -73,7 +96,13 @@ export const useWebsiteBuilder = (websiteId?: string) => {
 
       if (error) throw error;
 
-      setSections(prev => [...prev, data]);
+      // Cast the returned data to proper Section type
+      const typedSection: Section = {
+        ...data,
+        type: isValidSectionType(data.type) ? data.type : 'hero'
+      };
+
+      setSections(prev => [...prev, typedSection]);
       toast({
         title: "Section Added",
         description: `${type} section has been added to your website.`,
@@ -105,9 +134,15 @@ export const useWebsiteBuilder = (websiteId?: string) => {
 
       if (error) throw error;
 
+      // Cast the returned data to proper Section type
+      const typedSection: Section = {
+        ...data,
+        type: isValidSectionType(data.type) ? data.type : 'hero'
+      };
+
       setSections(prev => 
         prev.map(section => 
-          section.id === sectionId ? { ...section, ...data } : section
+          section.id === sectionId ? { ...section, ...typedSection } : section
         )
       );
 
