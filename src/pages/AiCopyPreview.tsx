@@ -50,8 +50,11 @@ const AiCopyPreview = () => {
     streamingContent,
     isStreaming,
     error: streamingError,
+    hasUnsavedChanges,
     startGeneration,
-    stopGeneration
+    regenerateVersion,
+    stopGeneration,
+    markSaved
   } = useStreamingCopy(sessionId, { skipGenerationIfCopyExists: true });
 
   useEffect(() => {
@@ -159,6 +162,10 @@ const AiCopyPreview = () => {
     startGeneration(sessionId!);
   };
 
+  const handleGenerateNewVersion = () => {
+    regenerateVersion(sessionId!);
+  };
+
   const handleCopyUpdated = (updatedCopy: GeneratedCopy) => {
     setCurrentCopy(updatedCopy);
   };
@@ -217,8 +224,11 @@ const AiCopyPreview = () => {
             loading={loading}
             currentCopy={currentCopy}
             sessionId={sessionId}
+            hasUnsavedChanges={hasUnsavedChanges}
             onRegenerate={handleRegenerate}
+            onGenerateNewVersion={handleGenerateNewVersion}
             onCopyUpdated={handleCopyUpdated}
+            onMarkSaved={markSaved}
           />
         )}
       </div>

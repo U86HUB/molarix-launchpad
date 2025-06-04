@@ -1,17 +1,21 @@
 
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, Edit, X, Clock, History } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Save, Edit, X, Clock, History, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface EditControlsProps {
   isEditing: boolean;
   loading: boolean;
   isSaving?: boolean;
   lastSaved?: Date | null;
+  hasUnsavedChanges?: boolean;
+  isStreaming?: boolean;
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
   onViewHistory?: () => void;
+  onGenerateNewVersion?: () => void;
 }
 
 const EditControls = ({ 
@@ -19,10 +23,13 @@ const EditControls = ({
   loading, 
   isSaving = false,
   lastSaved,
+  hasUnsavedChanges = false,
+  isStreaming = false,
   onEdit, 
   onCancel, 
   onSave,
-  onViewHistory
+  onViewHistory,
+  onGenerateNewVersion
 }: EditControlsProps) => {
   const formatLastSaved = (date: Date) => {
     const now = new Date();
@@ -43,7 +50,15 @@ const EditControls = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Your AI-Generated Copy</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle>Your AI-Generated Copy</CardTitle>
+              {hasUnsavedChanges && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Draft not saved
+                </Badge>
+              )}
+            </div>
             <CardDescription>
               {isEditing ? "Make changes to your copy and save when ready" : "Click edit to modify your content"}
               {isEditing && (
@@ -64,6 +79,16 @@ const EditControls = ({
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            {onGenerateNewVersion && (
+              <Button 
+                onClick={onGenerateNewVersion} 
+                variant="outline"
+                disabled={isStreaming || loading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Generate New Version
+              </Button>
+            )}
             {onViewHistory && (
               <Button onClick={onViewHistory} variant="outline">
                 <History className="h-4 w-4 mr-2" />

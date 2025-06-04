@@ -11,8 +11,11 @@ interface PreviewContentProps {
   loading: boolean;
   currentCopy: GeneratedCopy | null;
   sessionId: string | null;
+  hasUnsavedChanges?: boolean;
   onRegenerate: () => void;
+  onGenerateNewVersion?: () => void;
   onCopyUpdated: (updatedCopy: GeneratedCopy) => void;
+  onMarkSaved?: () => void;
 }
 
 const PreviewContent = ({
@@ -21,8 +24,11 @@ const PreviewContent = ({
   loading,
   currentCopy,
   sessionId,
+  hasUnsavedChanges = false,
   onRegenerate,
-  onCopyUpdated
+  onGenerateNewVersion,
+  onCopyUpdated,
+  onMarkSaved
 }: PreviewContentProps) => {
   if (isStreaming && streamingContent) {
     return (
@@ -41,7 +47,11 @@ const PreviewContent = ({
       <EditableCopy 
         generatedCopy={currentCopy} 
         sessionId={sessionId}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isStreaming={isStreaming}
         onCopyUpdated={onCopyUpdated}
+        onGenerateNewVersion={onGenerateNewVersion}
+        onMarkSaved={onMarkSaved}
       />
     );
   }

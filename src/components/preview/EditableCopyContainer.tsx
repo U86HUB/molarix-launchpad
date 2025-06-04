@@ -13,10 +13,22 @@ import CopyHistoryModal from "./CopyHistoryModal";
 interface EditableCopyContainerProps {
   generatedCopy: GeneratedCopy;
   sessionId: string;
+  hasUnsavedChanges?: boolean;
+  isStreaming?: boolean;
   onCopyUpdated: (updatedCopy: GeneratedCopy) => void;
+  onGenerateNewVersion?: () => void;
+  onMarkSaved?: () => void;
 }
 
-const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: EditableCopyContainerProps) => {
+const EditableCopyContainer = ({ 
+  generatedCopy, 
+  sessionId, 
+  hasUnsavedChanges = false,
+  isStreaming = false,
+  onCopyUpdated,
+  onGenerateNewVersion,
+  onMarkSaved
+}: EditableCopyContainerProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedCopy, setEditedCopy] = useState<GeneratedCopy>(generatedCopy);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -47,6 +59,7 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
     if (result.success) {
       setIsEditing(false);
       onCopyUpdated(editedCopy);
+      onMarkSaved?.();
       toast({
         title: "Success",
         description: "Your copy has been published successfully!",
@@ -166,10 +179,13 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
         loading={loading}
         isSaving={isSaving}
         lastSaved={lastSaved}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isStreaming={isStreaming}
         onEdit={handleEdit}
         onCancel={handleCancel}
         onSave={handleSave}
         onViewHistory={handleViewHistory}
+        onGenerateNewVersion={onGenerateNewVersion}
       />
 
       <EditableHomepageSection
