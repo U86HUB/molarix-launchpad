@@ -1,16 +1,28 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { t, direction } = useLanguage();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const navigation = [
     { name: t('features'), href: "/features" },
@@ -22,6 +34,15 @@ const Header = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed Out",
+      description: "You have been signed out successfully.",
+    });
+    navigate("/");
+  };
 
   return (
     <header 
@@ -61,21 +82,46 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
             <ThemeToggle />
             <LanguageToggle />
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-              aria-label="Sign in to your account"
-            >
-              {t('signIn')}
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-              aria-label="Get started with Molarix"
-            >
-              {t('getStarted')}
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                    <User className="h-4 w-4 mr-2" />
+                    {user.email}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate("/onboarding")}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate("/auth")}
+                  className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                  aria-label="Sign in to your account"
+                >
+                  {t('signIn')}
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate("/auth")}
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                  aria-label="Get started with Molarix"
+                >
+                  {t('getStarted')}
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -120,21 +166,47 @@ const Header = () => {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="justify-start focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                  aria-label="Sign in to your account"
-                >
-                  {t('signIn')}
-                </Button>
-                <Button 
-                  size="sm" 
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                  aria-label="Get started with Molarix"
-                >
-                  {t('getStarted')}
-                </Button>
+                {user ? (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => navigate("/onboarding")}
+                      className="justify-start focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                    >
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleSignOut}
+                      className="justify-start focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => navigate("/auth")}
+                      className="justify-start focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                      aria-label="Sign in to your account"
+                    >
+                      {t('signIn')}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => navigate("/auth")}
+                      className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                      aria-label="Get started with Molarix"
+                    >
+                      {t('getStarted')}
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
