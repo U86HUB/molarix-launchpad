@@ -24,7 +24,11 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
     e.preventDefault();
     
     console.log('=== CLINIC CREATION DEBUG START ===');
-    console.log('Form submitted with:', { clinicName: clinicName.trim(), clinicAddress: clinicAddress.trim() });
+    console.log('Form submitted with:', { 
+      clinicName: clinicName.trim(), 
+      clinicAddress: clinicAddress.trim(),
+      timestamp: new Date().toISOString()
+    });
     console.log('Current user:', user);
 
     if (!user) {
@@ -58,7 +62,12 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         created_by: user.id,
       };
       
-      console.log('Insert payload:', insertPayload);
+      console.log('📝 Insert payload:', insertPayload);
+      console.log('🔐 User context:', { 
+        userId: user.id, 
+        userEmail: user.email,
+        aud: user.aud 
+      });
 
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
@@ -66,10 +75,19 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         .select()
         .single();
 
-      console.log('Supabase response:', { data: clinicData, error: clinicError });
+      console.log('📤 Supabase insert response:', { 
+        data: clinicData, 
+        error: clinicError,
+        timestamp: new Date().toISOString()
+      });
 
       if (clinicError) {
-        console.log('❌ Supabase error:', clinicError);
+        console.log('❌ Supabase error details:', {
+          message: clinicError.message,
+          details: clinicError.details,
+          hint: clinicError.hint,
+          code: clinicError.code
+        });
         throw clinicError;
       }
 
@@ -78,7 +96,25 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         throw new Error('No data returned from clinic creation');
       }
 
-      console.log('✅ Clinic created successfully:', clinicData);
+      console.log('✅ Clinic created successfully:', {
+        id: clinicData.id,
+        name: clinicData.name,
+        created_by: clinicData.created_by,
+        created_at: clinicData.created_at
+      });
+
+      // Verify the clinic was actually created by trying to fetch it
+      console.log('🔍 Verifying clinic creation by fetching...');
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('clinics')
+        .select('*')
+        .eq('id', clinicData.id)
+        .single();
+
+      console.log('🔍 Verification query result:', { 
+        data: verifyData, 
+        error: verifyError 
+      });
 
       // Show success toast
       toast({
@@ -94,10 +130,16 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       setClinicName('');
       setClinicAddress('');
 
-      console.log('✅ Clinic creation flow completed');
+      console.log('✅ Clinic creation flow completed successfully');
 
     } catch (error: any) {
-      console.log('❌ Error in clinic creation:', error);
+      console.log('❌ Error in clinic creation:', {
+        error: error,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      });
       toast({
         title: "Creation Failed",
         description: error.message || "Failed to create clinic. Please try again.",

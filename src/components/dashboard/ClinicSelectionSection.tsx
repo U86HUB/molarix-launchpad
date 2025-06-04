@@ -29,6 +29,7 @@ export const ClinicSelectionSection = ({
   const handleClinicCreated = async (clinicId: string) => {
     console.log('=== CLINIC SELECTION DEBUG START ===');
     console.log('New clinic created with ID:', clinicId);
+    console.log('Current clinics before refresh:', clinics.map(c => ({ id: c.id, name: c.name })));
     
     // Hide the inline form
     setShowAddNewClinic(false);
@@ -37,19 +38,30 @@ export const ClinicSelectionSection = ({
     console.log('🔄 Refreshing clinics list...');
     await refreshClinics();
     
-    // Select the new clinic
-    console.log('🔄 Selecting new clinic:', clinicId);
-    onClinicChange(clinicId);
+    // Give a small delay to ensure state updates
+    setTimeout(() => {
+      console.log('🔄 Selecting new clinic:', clinicId);
+      onClinicChange(clinicId);
+      
+      // Call the parent callback
+      console.log('🔄 Calling parent onClinicCreated callback');
+      onClinicCreated(clinicId);
+      
+      console.log('✅ Clinic selection flow completed');
+    }, 100);
     
-    // Call the parent callback
-    console.log('🔄 Calling parent onClinicCreated callback');
-    onClinicCreated(clinicId);
-    
-    console.log('✅ Clinic selection flow completed');
     console.log('=== CLINIC SELECTION DEBUG END ===');
   };
 
   const selectedClinic = clinics.find(clinic => clinic.id === selectedClinicId);
+
+  console.log('🎯 ClinicSelectionSection render:', {
+    selectedClinicId,
+    clinicsCount: clinics.length,
+    clinicsLoading,
+    selectedClinic: selectedClinic ? { id: selectedClinic.id, name: selectedClinic.name } : null,
+    showAddNewClinic
+  });
 
   return (
     <div className="space-y-2">
