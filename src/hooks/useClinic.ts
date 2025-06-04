@@ -28,7 +28,7 @@ export const useClinic = (clinicId: string | undefined) => {
 
       try {
         const { data, error } = await supabase
-          .from('clinics' as any)
+          .from('clinics')
           .select('*')
           .eq('id', clinicId)
           .single();
@@ -44,7 +44,7 @@ export const useClinic = (clinicId: string | undefined) => {
         }
 
         if (data) {
-          setClinic(data as unknown as Clinic);
+          setClinic(data);
         }
       } catch (error) {
         console.error('Error loading clinic:', error);
@@ -66,7 +66,7 @@ export const useClinic = (clinicId: string | undefined) => {
 
     try {
       const { error } = await supabase
-        .from('clinics' as any)
+        .from('clinics')
         .update({
           ...updates,
           updated_at: new Date().toISOString(),

@@ -64,7 +64,7 @@ export const ClinicLogoUpload = ({ clinic, onLogoUpdate }: ClinicLogoUploadProps
         .getPublicUrl(fileName);
 
       const { error: updateError } = await supabase
-        .from('clinics' as any)
+        .from('clinics')
         .update({ 
           logo_url: publicUrl,
           updated_at: new Date().toISOString()

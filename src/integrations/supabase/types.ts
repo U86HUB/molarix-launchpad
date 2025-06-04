@@ -44,9 +44,46 @@ export type Database = {
           },
         ]
       }
+      clinics: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_sessions: {
         Row: {
           address: string | null
+          clinic_id: string | null
           clinic_name: string | null
           completion_score: number | null
           compliance_flags: Json | null
@@ -63,6 +100,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          clinic_id?: string | null
           clinic_name?: string | null
           completion_score?: number | null
           compliance_flags?: Json | null
@@ -79,6 +117,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          clinic_id?: string | null
           clinic_name?: string | null
           completion_score?: number | null
           compliance_flags?: Json | null
@@ -93,7 +132,15 @@ export type Database = {
           primary_color?: string | null
           selected_template?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_sessions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
