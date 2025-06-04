@@ -43,8 +43,8 @@ const OnboardingTemplateSelection = ({
           {templates.slice(0, 6).map((template) => (
             <Card 
               key={template.id} 
-              className={`cursor-pointer transition-all hover:border-primary ${selected === template.id ? 'ring-2 ring-primary' : ''}`}
-              onClick={() => handleTemplateSelect(template.id)}
+              className={`cursor-pointer transition-all hover:border-primary ${selected === String(template.id) ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => handleTemplateSelect(String(template.id))}
             >
               <CardContent className="p-4 flex flex-col items-center">
                 <div className="relative mb-3 w-full h-32 overflow-hidden rounded-md">
@@ -56,7 +56,7 @@ const OnboardingTemplateSelection = ({
                   <div className="absolute top-2 right-2">
                     <div className="flex items-center justify-center">
                       <RadioGroupItem 
-                        value={template.id} 
+                        value={String(template.id)} 
                         id={`template-${template.id}`} 
                         className="data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                       />
