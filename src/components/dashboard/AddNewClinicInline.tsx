@@ -21,7 +21,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('=== CLINIC CREATION DEBUG START ===');
+    console.log('=== CLINIC CREATION WITH RLS DEBUG START ===');
     console.log('Form submitted with:', { 
       clinicName: clinicName.trim(), 
       clinicAddress: clinicAddress.trim(),
@@ -74,13 +74,14 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       
       console.log('📝 Insert payload:', insertPayload);
 
+      // Insert with RLS - the policy will automatically ensure created_by = auth.uid()
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
         .insert(insertPayload)
         .select()
         .single();
 
-      console.log('📤 Supabase insert response:', { 
+      console.log('📤 Supabase insert response with RLS:', { 
         data: clinicData, 
         error: clinicError,
         timestamp: new Date().toISOString()
@@ -101,25 +102,11 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         throw new Error('No data returned from clinic creation');
       }
 
-      console.log('✅ Clinic created successfully:', {
+      console.log('✅ Clinic created successfully with RLS:', {
         id: clinicData.id,
         name: clinicData.name,
         created_by: clinicData.created_by,
         created_at: clinicData.created_at
-      });
-
-      // Verify the clinic was actually created by trying to fetch it
-      console.log('🔍 Verifying clinic creation by fetching...');
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('clinics')
-        .select('*')
-        .eq('id', clinicData.id)
-        .eq('created_by', userId)
-        .single();
-
-      console.log('🔍 Verification query result:', { 
-        data: verifyData, 
-        error: verifyError 
       });
 
       // Show success toast
@@ -136,7 +123,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       setClinicName('');
       setClinicAddress('');
 
-      console.log('✅ Clinic creation flow completed successfully');
+      console.log('✅ Clinic creation flow completed successfully with RLS');
 
     } catch (error: any) {
       console.log('❌ Error in clinic creation:', {
@@ -153,7 +140,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       });
     } finally {
       setIsCreating(false);
-      console.log('=== CLINIC CREATION DEBUG END ===');
+      console.log('=== CLINIC CREATION WITH RLS DEBUG END ===');
     }
   };
 

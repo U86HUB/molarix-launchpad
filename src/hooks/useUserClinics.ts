@@ -21,7 +21,7 @@ export const useUserClinics = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchClinics = async () => {
-    console.log('=== FETCHING CLINICS DEBUG START ===');
+    console.log('=== FETCHING CLINICS WITH RLS DEBUG START ===');
     
     try {
       // Get the current user from Supabase auth
@@ -51,15 +51,14 @@ export const useUserClinics = () => {
       const userId = userData.user.id;
       console.log('✅ Valid user ID for clinics fetch:', userId);
 
-      // Now the actual query with user filter
-      console.log('🔍 Executing main clinics query...');
+      // Now the actual query - RLS will automatically filter by user
+      console.log('🔍 Executing clinics query with RLS...');
       const { data, error } = await supabase
         .from('clinics')
         .select('*')
-        .eq('created_by', userId)
         .order('created_at', { ascending: false });
 
-      console.log('📊 User clinics query result:', { 
+      console.log('📊 Clinics query result with RLS:', { 
         data, 
         error, 
         userIdUsed: userId,
@@ -71,7 +70,7 @@ export const useUserClinics = () => {
         throw error;
       }
 
-      console.log('✅ Clinics fetched successfully:', data?.length || 0, 'clinics');
+      console.log('✅ Clinics fetched successfully with RLS:', data?.length || 0, 'clinics');
       console.log('📋 Clinic details:', data?.map(c => ({ id: c.id, name: c.name, created_by: c.created_by })));
       setClinics(data || []);
     } catch (error) {
@@ -83,7 +82,7 @@ export const useUserClinics = () => {
       });
     } finally {
       setLoading(false);
-      console.log('=== FETCHING CLINICS DEBUG END ===');
+      console.log('=== FETCHING CLINICS WITH RLS DEBUG END ===');
     }
   };
 
