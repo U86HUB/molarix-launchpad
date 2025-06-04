@@ -37,6 +37,7 @@ const DashboardFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="date">By Date</SelectItem>
+              <SelectItem value="clinic">By Clinic</SelectItem>
               <SelectItem value="template">By Template</SelectItem>
             </SelectContent>
           </Select>

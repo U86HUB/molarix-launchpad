@@ -14,6 +14,15 @@ export interface DashboardSession {
   logo_url?: string;
   primary_color?: string;
   clinic_id?: string;
+  // Added clinic information
+  clinic?: {
+    id: string;
+    name: string;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+    logo_url: string | null;
+  };
 }
 
 export const useDashboardSessions = () => {
@@ -29,7 +38,25 @@ export const useDashboardSessions = () => {
     try {
       const { data, error } = await supabase
         .from('onboarding_sessions')
-        .select('id, clinic_name, created_at, last_updated, completion_score, selected_template, logo_url, primary_color, clinic_id')
+        .select(`
+          id, 
+          clinic_name, 
+          created_at, 
+          last_updated, 
+          completion_score, 
+          selected_template, 
+          logo_url, 
+          primary_color, 
+          clinic_id,
+          clinic:clinics(
+            id,
+            name,
+            address,
+            phone,
+            email,
+            logo_url
+          )
+        `)
         .order('last_updated', { ascending: false });
 
       if (error) throw error;

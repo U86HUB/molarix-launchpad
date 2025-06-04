@@ -1,9 +1,10 @@
+
 import { useMemo } from 'react';
 import { groupBy } from 'lodash';
 import dayjs from 'dayjs';
 import { DashboardSession } from './useDashboardSessions';
 
-export type GroupingType = 'date' | 'template';
+export type GroupingType = 'date' | 'template' | 'clinic';
 
 interface SessionGroup {
   title: string;
@@ -38,6 +39,20 @@ export const useSessionGrouping = (sessions: DashboardSession[], groupingType: G
 
       // Only return groups that have sessions
       return groups.filter(group => group.sessions.length > 0);
+    } else if (groupingType === 'clinic') {
+      // Group by clinic
+      const clinicGroups = groupBy(sessions, session => {
+        return session.clinic?.name || session.clinic_name || 'No Clinic';
+      });
+      
+      return Object.entries(clinicGroups).map(([clinicName, sessionsList]) => ({
+        title: clinicName,
+        sessions: sessionsList as DashboardSession[],
+        order: clinicName === 'No Clinic' ? 999 : 0
+      })).sort((a, b) => {
+        if (a.order !== b.order) return a.order - b.order;
+        return a.title.localeCompare(b.title);
+      });
     } else {
       // Group by template - use lodash groupBy function correctly
       const templateGroups = groupBy(sessions, session => session.selected_template || 'No Template');

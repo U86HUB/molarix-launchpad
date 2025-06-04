@@ -15,6 +15,8 @@ import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
 import GroupedSessionsGrid from '@/components/dashboard/GroupedSessionsGrid';
+import ClinicGroupedSessionsGrid from '@/components/dashboard/ClinicGroupedSessionsGrid';
+import ClinicFilter from '@/components/dashboard/ClinicFilter';
 import PreviewModal from '@/components/dashboard/PreviewModal';
 import { CreateWebsiteModal } from '@/components/dashboard/CreateWebsiteModal';
 import { Loader2, Plus, Search } from 'lucide-react';
@@ -29,6 +31,7 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [groupBy, setGroupBy] = useState<GroupingType>('date');
+  const [selectedClinicId, setSelectedClinicId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Preview modal state
@@ -49,9 +52,12 @@ const Dashboard = () => {
   });
 
   // Apply search filtering
-  const searchFilteredSessions = filteredSessions.filter(session =>
-    session.clinic_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false
-  );
+  const searchFilteredSessions = filteredSessions.filter(session => {
+    const matchesSearch = session.clinic_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         session.clinic?.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+    const matchesClinic = !selectedClinicId || session.clinic_id === selectedClinicId;
+    return matchesSearch && matchesClinic;
+  });
 
   // Get user's first name for personalized greeting
   const getFirstName = (email: string) => {
@@ -157,20 +163,29 @@ const Dashboard = () => {
               </Button>
             </div>
 
-            {/* Enhanced Filters with search functionality */}
+            {/* Enhanced Filters with clinic filter and search functionality */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
               <div className="p-4">
                 <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-                  <DashboardFilters
-                    sortBy={sortBy}
-                    filterBy={filterBy}
-                    groupBy={groupBy}
-                    onSortChange={setSortBy}
-                    onFilterChange={setFilterBy}
-                    onGroupChange={setGroupBy}
-                    totalCount={totalCount}
-                    filteredCount={searchQuery ? searchFilteredSessions.length : filteredCount}
-                  />
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-1">
+                    <ClinicFilter
+                      selectedClinicId={selectedClinicId}
+                      onClinicChange={setSelectedClinicId}
+                    />
+                    
+                    <div className="hidden sm:block w-px h-6 bg-gray-300 dark:bg-gray-600" />
+                    
+                    <DashboardFilters
+                      sortBy={sortBy}
+                      filterBy={filterBy}
+                      groupBy={groupBy}
+                      onSortChange={setSortBy}
+                      onFilterChange={setFilterBy}
+                      onGroupChange={setGroupBy}
+                      totalCount={totalCount}
+                      filteredCount={searchQuery ? searchFilteredSessions.length : filteredCount}
+                    />
+                  </div>
                   
                   {/* Search Input */}
                   <div className="relative w-full lg:w-64">
@@ -190,24 +205,27 @@ const Dashboard = () => {
               <Card className="text-center py-12 shadow-sm border-border bg-white dark:bg-gray-800">
                 <CardHeader>
                   <CardTitle className="text-xl">
-                    {searchQuery ? 'No websites match your search' : 'No websites match your filters'}
+                    {searchQuery || selectedClinicId ? 'No websites match your filters' : 'No websites match your filters'}
                   </CardTitle>
                   <CardDescription className="text-base">
-                    {searchQuery 
-                      ? `Try a different search term or clear your search to see all results`
+                    {searchQuery || selectedClinicId
+                      ? `Try adjusting your search or clinic filter to see more results`
                       : `Try adjusting your sort and filter options to see more results`
                     }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    {searchQuery && (
+                    {(searchQuery || selectedClinicId) && (
                       <Button 
-                        onClick={() => setSearchQuery('')} 
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSelectedClinicId(undefined);
+                        }} 
                         variant="outline"
                         className="border-blue-200 text-blue-700 hover:bg-blue-50"
                       >
-                        Clear Search
+                        Clear Filters
                       </Button>
                     )}
                     <Button 
@@ -215,6 +233,7 @@ const Dashboard = () => {
                         setSortBy('newest');
                         setFilterBy('all');
                         setSearchQuery('');
+                        setSelectedClinicId(undefined);
                       }} 
                       variant="outline"
                     >
@@ -224,15 +243,28 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             ) : (
-              <GroupedSessionsGrid
-                sessions={searchFilteredSessions}
-                groupBy={groupBy}
-                onContinueEditing={handleContinueEditing}
-                onPreview={handlePreview}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-                onUpdate={refreshSessions}
-              />
+              // Show clinic-grouped sessions when clinic filter is applied or group by clinic
+              selectedClinicId || groupBy === 'clinic' ? (
+                <ClinicGroupedSessionsGrid
+                  sessions={searchFilteredSessions}
+                  selectedClinicId={selectedClinicId}
+                  onContinueEditing={handleContinueEditing}
+                  onPreview={handlePreview}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onUpdate={refreshSessions}
+                />
+              ) : (
+                <GroupedSessionsGrid
+                  sessions={searchFilteredSessions}
+                  groupBy={groupBy}
+                  onContinueEditing={handleContinueEditing}
+                  onPreview={handlePreview}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onUpdate={refreshSessions}
+                />
+              )
             )}
           </>
         )}
