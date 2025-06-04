@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ const Header = () => {
     { name: t('features'), href: "/features" },
     { name: t('howItWorks'), href: "/how-it-works" },
     { name: t('templates'), href: "/templates" },
+    { name: "Blog", href: "/blog" },
     { name: t('about'), href: "/about" },
     { name: t('contact'), href: "/contact" },
   ];
