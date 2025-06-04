@@ -80,24 +80,22 @@ const DashboardContent = ({
     refreshSessions();
   };
 
-  // Show empty content for first-time users
-  const emptyContent = (
-    <DashboardEmptyContent
-      sessions={sessions}
-      groupBy={groupBy}
-      showGettingStarted={showGettingStarted}
-      setShowGettingStarted={setShowGettingStarted}
-      previewSessionId={previewSessionId}
-      isPreviewModalOpen={isPreviewModalOpen}
-      isCreateModalOpen={isCreateModalOpen}
-      onCreateWebsite={handleCreateNew}
-      onClosePreviewModal={handleClosePreviewModal}
-      onCloseCreateModal={handleCloseCreateModal}
-    />
-  );
-
-  if (emptyContent) {
-    return emptyContent;
+  // Show empty content for first-time users only if they have no sessions AND groupBy is not 'clinic'
+  if (sessions.length === 0 && groupBy !== 'clinic') {
+    return (
+      <DashboardEmptyContent
+        sessions={sessions}
+        groupBy={groupBy}
+        showGettingStarted={showGettingStarted}
+        setShowGettingStarted={setShowGettingStarted}
+        previewSessionId={previewSessionId}
+        isPreviewModalOpen={isPreviewModalOpen}
+        isCreateModalOpen={isCreateModalOpen}
+        onCreateWebsite={handleCreateNew}
+        onClosePreviewModal={handleClosePreviewModal}
+        onCloseCreateModal={handleCloseCreateModal}
+      />
+    );
   }
 
   return (
