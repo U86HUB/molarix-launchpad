@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { useSessionStatus } from '@/hooks/useSessionStatus';
 import { Calendar, Eye, Edit, Trash2, Building, Clock } from 'lucide-react';
 import TemplateThumbnail from './TemplateThumbnail';
 
@@ -14,6 +15,8 @@ interface SessionCardProps {
 }
 
 const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: SessionCardProps) => {
+  const { status } = useSessionStatus(session);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -38,13 +41,17 @@ const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: Sessio
   };
 
   const getStatusBadge = () => {
-    if (session.completion_score !== null) {
-      const score = session.completion_score;
-      if (score >= 80) return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Complete</Badge>;
-      if (score >= 50) return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">In Progress</Badge>;
-      return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">Started</Badge>;
+    switch (status) {
+      case 'Published':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Published</Badge>;
+      case 'Ready to Publish':
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Ready to Publish</Badge>;
+      case 'In Progress':
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">In Progress</Badge>;
+      case 'Draft':
+      default:
+        return <Badge variant="secondary">Draft</Badge>;
     }
-    return <Badge variant="secondary">Draft</Badge>;
   };
 
   return (
@@ -98,11 +105,9 @@ const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: Sessio
               Template: <span className="font-medium">{session.selected_template || 'Not selected'}</span>
             </div>
             
-            {session.completion_score !== null && (
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Completion: <span className="font-medium">{session.completion_score}%</span>
-              </div>
-            )}
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Status: <span className="font-medium">{status}</span>
+            </div>
             
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <Clock className="h-3 w-3" />

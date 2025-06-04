@@ -1,21 +1,41 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
+import { useSessionStatus, SessionStatus } from '@/hooks/useSessionStatus';
 import { BarChart3, Calendar, FileText, TrendingUp } from 'lucide-react';
 
 interface DashboardStatsProps {
   sessions: DashboardSession[];
 }
 
+const StatusCounter = ({ session }: { session: DashboardSession }) => {
+  const { status } = useSessionStatus(session);
+  return { status };
+};
+
 const DashboardStats = ({ sessions }: DashboardStatsProps) => {
   // Calculate statistics
   const totalSessions = sessions.length;
   
-  // Calculate average completion score
-  const sessionsWithCompletion = sessions.filter(session => session.completion_score !== null);
-  const averageCompletion = sessionsWithCompletion.length > 0 
-    ? Math.round(sessionsWithCompletion.reduce((sum, session) => sum + (session.completion_score || 0), 0) / sessionsWithCompletion.length)
-    : 0;
+  // Calculate status distribution
+  const statusCounts = sessions.reduce((counts, session) => {
+    // We'll simulate the status calculation here for stats since we can't use hooks in reduce
+    // This is a simplified version - in a real app you might want to fetch this data differently
+    const hasTemplate = session.selected_template !== null;
+    const hasCompletion = session.completion_score !== null && session.completion_score > 0;
+    
+    let status: SessionStatus = 'Draft';
+    if (hasCompletion && session.completion_score && session.completion_score >= 80) {
+      status = 'Ready to Publish';
+    } else if (hasCompletion) {
+      status = 'In Progress';
+    }
+    
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {} as Record<SessionStatus, number>);
+
+  const readyToPublishCount = statusCounts['Ready to Publish'] || 0;
   
   // Get the most recent edit timestamp from last_updated
   const lastEditTimestamp = sessions.length > 0 
@@ -54,10 +74,10 @@ const DashboardStats = ({ sessions }: DashboardStatsProps) => {
       description: `${totalSessions} website${totalSessions !== 1 ? 's' : ''} created`
     },
     {
-      title: "Avg. Completion",
-      value: `${averageCompletion}%`,
+      title: "Ready to Publish",
+      value: readyToPublishCount,
       icon: BarChart3,
-      description: sessionsWithCompletion.length > 0 ? "Content completeness" : "No completion data"
+      description: "Completed websites"
     },
     {
       title: "Last Activity",
