@@ -4,10 +4,10 @@ import { SortOption, FilterOption } from '@/hooks/useSessionFilters';
 import { GroupingType } from '@/hooks/useSessionGrouping';
 
 export const useDashboardState = () => {
-  // Filtering, sorting, and grouping state
+  // Filtering, sorting, and grouping state - default to clinic grouping
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
-  const [groupBy, setGroupBy] = useState<GroupingType>('clinic');
+  const [groupBy, setGroupBy] = useState<GroupingType>('clinic'); // Default to clinic grouping
   const [selectedClinicId, setSelectedClinicId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -29,6 +29,7 @@ export const useDashboardState = () => {
     setFilterBy('all');
     setSearchQuery('');
     setSelectedClinicId(undefined);
+    setGroupBy('clinic'); // Reset to clinic grouping
   };
 
   return {
