@@ -25,11 +25,13 @@ export const ClinicFormFields = ({
         </Label>
         <Input
           id="clinic-name"
+          name="clinic-name"
           value={clinicName}
           onChange={(e) => setClinicName(e.target.value)}
           placeholder="Enter clinic name"
           required
           disabled={isCreating}
+          autoComplete="organization"
           className="mt-1"
         />
       </div>
@@ -40,10 +42,12 @@ export const ClinicFormFields = ({
         </Label>
         <Input
           id="clinic-address"
+          name="clinic-address"
           value={clinicAddress}
           onChange={(e) => setClinicAddress(e.target.value)}
           placeholder="Enter clinic address"
           disabled={isCreating}
+          autoComplete="street-address"
           className="mt-1"
         />
       </div>
