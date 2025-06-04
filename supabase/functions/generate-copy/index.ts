@@ -12,6 +12,59 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fallback copy function
+const getFallbackCopy = (clinicName = "Your Dental Clinic") => {
+  return {
+    homepage: {
+      headline: `Welcome to ${clinicName}`,
+      subheadline: "Your trusted partner for comprehensive dental care and beautiful smiles",
+      welcomeMessage: `At ${clinicName}, we're committed to providing exceptional dental care in a comfortable and welcoming environment. Our experienced team uses the latest technology to ensure you receive the best possible treatment for your oral health needs.`,
+      ctaText: "Book Appointment"
+    },
+    services: {
+      title: "Our Services",
+      intro: "We offer a comprehensive range of dental services to meet all your oral health needs, from routine checkups to advanced procedures.",
+      services: [
+        {
+          name: "General Dentistry",
+          description: "Comprehensive oral health care including cleanings, exams, fillings, and preventive treatments to maintain your dental health."
+        },
+        {
+          name: "Cosmetic Dentistry",
+          description: "Transform your smile with teeth whitening, veneers, and other aesthetic treatments designed to enhance your appearance."
+        },
+        {
+          name: "Orthodontics",
+          description: "Straighten your teeth and correct bite issues with traditional braces or modern clear aligner treatments."
+        },
+        {
+          name: "Oral Surgery",
+          description: "Expert surgical procedures including tooth extractions, dental implants, and other oral surgery services."
+        }
+      ]
+    },
+    about: {
+      title: "About Our Practice",
+      intro: `${clinicName} has been serving our community with exceptional dental care for years. We believe in creating lasting relationships with our patients through personalized care and attention.`,
+      mission: "Our mission is to provide the highest quality dental care while ensuring every patient feels comfortable and confident in their treatment.",
+      values: [
+        {
+          name: "Excellence",
+          description: "We strive for the highest standards in everything we do."
+        },
+        {
+          name: "Compassion",
+          description: "We treat every patient with kindness and understanding."
+        },
+        {
+          name: "Innovation",
+          description: "We embrace the latest technology and techniques in dental care."
+        }
+      ]
+    }
+  };
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -108,132 +161,149 @@ serve(async (req) => {
 
     console.log('Sending request to OpenAI...');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a professional copywriter specializing in dental practice marketing. Always return valid JSON formatted responses without markdown code blocks.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        stream: stream,
-      }),
-    });
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are a professional copywriter specializing in dental practice marketing. Always return valid JSON formatted responses without markdown code blocks.' 
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          stream: stream,
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenAI API error:', errorText);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
 
-    if (stream) {
-      // Return streaming response
-      const encoder = new TextEncoder();
-      const readable = new ReadableStream({
-        async start(controller) {
-          const reader = response.body?.getReader();
-          if (!reader) {
-            controller.close();
-            return;
-          }
+      if (stream) {
+        // Return streaming response
+        const encoder = new TextEncoder();
+        const readable = new ReadableStream({
+          async start(controller) {
+            const reader = response.body?.getReader();
+            if (!reader) {
+              controller.close();
+              return;
+            }
 
-          try {
-            let buffer = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
+            try {
+              let buffer = '';
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-              const chunk = new TextDecoder().decode(value);
-              buffer += chunk;
+                const chunk = new TextDecoder().decode(value);
+                buffer += chunk;
 
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
 
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-                  if (data === '[DONE]') {
-                    controller.close();
-                    return;
-                  }
-
-                  try {
-                    const parsed = JSON.parse(data);
-                    if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-                        content: parsed.choices[0].delta.content,
-                        sessionData: sessionData
-                      })}\n\n`));
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') {
+                      controller.close();
+                      return;
                     }
-                  } catch (e) {
-                    // Skip invalid JSON
+
+                    try {
+                      const parsed = JSON.parse(data);
+                      if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                          content: parsed.choices[0].delta.content,
+                          sessionData: sessionData
+                        })}\n\n`));
+                      }
+                    } catch (e) {
+                      // Skip invalid JSON
+                    }
                   }
                 }
               }
+            } catch (error) {
+              console.error('Streaming error:', error);
+              controller.error(error);
+            } finally {
+              reader.releaseLock();
             }
-          } catch (error) {
-            console.error('Streaming error:', error);
-            controller.error(error);
-          } finally {
-            reader.releaseLock();
           }
+        });
+
+        return new Response(readable, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'text/stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        });
+      } else {
+        // Original non-streaming logic
+        const data = await response.json();
+        console.log('OpenAI response:', data);
+
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+          throw new Error('Invalid response from OpenAI');
         }
-      });
 
-      return new Response(readable, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
-    } else {
-      // Original non-streaming logic
-      const data = await response.json();
-      console.log('OpenAI response:', data);
+        const rawContent = data.choices[0].message.content;
+        console.log('Raw OpenAI content:', rawContent);
 
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        throw new Error('Invalid response from OpenAI');
+        // Helper function to sanitize OpenAI response
+        const sanitizeResponse = (content: string): string => {
+          const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
+          const match = content.match(codeBlockRegex);
+          return match ? match[1].trim() : content.trim();
+        };
+
+        const sanitizedContent = sanitizeResponse(rawContent);
+        console.log('Sanitized content:', sanitizedContent);
+
+        let generatedCopy;
+        try {
+          generatedCopy = JSON.parse(sanitizedContent);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.error('Content that failed to parse:', sanitizedContent);
+          throw new Error('Failed to parse OpenAI response as JSON');
+        }
+
+        console.log('Successfully generated copy:', generatedCopy);
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          copy: generatedCopy,
+          sessionData: sessionData 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-
-      const rawContent = data.choices[0].message.content;
-      console.log('Raw OpenAI content:', rawContent);
-
-      // Helper function to sanitize OpenAI response
-      const sanitizeResponse = (content: string): string => {
-        const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
-        const match = content.match(codeBlockRegex);
-        return match ? match[1].trim() : content.trim();
-      };
-
-      const sanitizedContent = sanitizeResponse(rawContent);
-      console.log('Sanitized content:', sanitizedContent);
-
-      let generatedCopy;
-      try {
-        generatedCopy = JSON.parse(sanitizedContent);
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        console.error('Content that failed to parse:', sanitizedContent);
-        throw new Error('Failed to parse OpenAI response as JSON');
-      }
-
-      console.log('Successfully generated copy:', generatedCopy);
+    } catch (openAIError) {
+      console.error('OpenAI failed, using fallback copy:', openAIError);
+      
+      // Use fallback copy when OpenAI fails
+      const fallbackCopy = getFallbackCopy(sessionData.clinic_name);
+      console.log('Using fallback copy for clinic:', sessionData.clinic_name);
 
       return new Response(JSON.stringify({ 
         success: true, 
-        copy: generatedCopy,
-        sessionData: sessionData 
+        copy: fallbackCopy,
+        sessionData: sessionData,
+        usedFallback: true
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
