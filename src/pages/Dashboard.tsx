@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardSessions } from '@/hooks/useDashboardSessions';
+import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
+import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
+import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import SessionCard from '@/components/dashboard/SessionCard';
 import { Loader2, Plus } from 'lucide-react';
 
@@ -16,6 +19,20 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { sessions, loading, refreshSessions, deleteSession, duplicateSession } = useDashboardSessions();
+
+  // Filtering and sorting state
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+
+  // Get session statuses for filtering
+  const sessionStatuses = useMultipleSessionStatuses(sessions);
+
+  const { filteredSessions, totalCount, filteredCount } = useSessionFilters({
+    sessions,
+    sortBy,
+    filterBy,
+    sessionStatuses
+  });
 
   const handleContinueEditing = (sessionId: string) => {
     navigate(`/ai-copy-preview?sessionId=${sessionId}&resume=true`);
@@ -76,6 +93,18 @@ const Dashboard = () => {
           </Button>
         </div>
 
+        {/* Filters and Sorting */}
+        {sessions.length > 0 && (
+          <DashboardFilters
+            sortBy={sortBy}
+            filterBy={filterBy}
+            onSortChange={setSortBy}
+            onFilterChange={setFilterBy}
+            totalCount={totalCount}
+            filteredCount={filteredCount}
+          />
+        )}
+
         {sessions.length === 0 ? (
           <Card className="text-center py-12">
             <CardHeader>
@@ -91,9 +120,29 @@ const Dashboard = () => {
               </Button>
             </CardContent>
           </Card>
+        ) : filteredSessions.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardHeader>
+              <CardTitle>No websites match your filters</CardTitle>
+              <CardDescription>
+                Try adjusting your sort and filter options to see more results
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => {
+                  setSortBy('newest');
+                  setFilterBy('all');
+                }} 
+                variant="outline"
+              >
+                Clear Filters
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sessions.map((session) => (
+            {filteredSessions.map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}

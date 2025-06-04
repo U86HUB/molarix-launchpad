@@ -78,3 +78,50 @@ export const useSessionStatus = (session: DashboardSession): SessionStatusInfo =
 
   return statusInfo;
 };
+
+// Export a utility function to get statuses for multiple sessions
+export const useMultipleSessionStatuses = (sessions: DashboardSession[]) => {
+  const [statuses, setStatuses] = useState<Record<string, SessionStatus>>({});
+
+  useEffect(() => {
+    const getMultipleStatuses = async () => {
+      const statusMap: Record<string, SessionStatus> = {};
+      
+      for (const session of sessions) {
+        try {
+          const { data: aiCopy } = await supabase
+            .from('ai_generated_copy')
+            .select('id, type')
+            .eq('session_id', session.id);
+
+          const hasAiCopy = (aiCopy && aiCopy.length > 0) || false;
+          const hasCompleteCopy = aiCopy?.some(copy => copy.type === 'complete_copy') || false;
+          const hasEdits = aiCopy ? aiCopy.length > 1 || hasCompleteCopy : false;
+          
+          let status: SessionStatus = 'Draft';
+          
+          if (hasCompleteCopy || (hasEdits && hasAiCopy)) {
+            status = 'Ready to Publish';
+          } else if (hasAiCopy && !hasEdits) {
+            status = 'In Progress';
+          } else {
+            status = 'Draft';
+          }
+
+          statusMap[session.id] = status;
+        } catch (error) {
+          console.error(`Error determining status for session ${session.id}:`, error);
+          statusMap[session.id] = 'Draft';
+        }
+      }
+      
+      setStatuses(statusMap);
+    };
+
+    if (sessions.length > 0) {
+      getMultipleStatuses();
+    }
+  }, [sessions]);
+
+  return statuses;
+};
