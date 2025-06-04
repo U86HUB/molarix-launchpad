@@ -6,7 +6,13 @@ import { StreamingService } from '@/services/streamingService';
 import { CopyGenerationService } from '@/services/copyGenerationService';
 import { useSaveCopy } from '@/hooks/useSaveCopy';
 
-export const useStreamingCopy = (sessionId: string | null) => {
+interface UseStreamingCopyOptions {
+  skipGenerationIfCopyExists?: boolean;
+}
+
+export const useStreamingCopy = (sessionId: string | null, options: UseStreamingCopyOptions = {}) => {
+  const { skipGenerationIfCopyExists = false } = options;
+  
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
   const [generatedCopy, setGeneratedCopy] = useState<GeneratedCopy | null>(null);
   const [streamingContent, setStreamingContent] = useState<string>('');
@@ -31,6 +37,16 @@ export const useStreamingCopy = (sessionId: string | null) => {
   const startGeneration = async (targetSessionId?: string) => {
     const sessionIdToUse = targetSessionId || sessionId;
     if (!sessionIdToUse) return;
+
+    // Check if we should skip generation when copy already exists
+    if (skipGenerationIfCopyExists && generatedCopy) {
+      console.log('Skipping generation: copy already exists');
+      toast({
+        title: "Info",
+        description: "Content already exists. Use regenerate if you want to create new content.",
+      });
+      return;
+    }
 
     setLoading(true);
     setError(null);

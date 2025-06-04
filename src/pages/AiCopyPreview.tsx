@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +52,7 @@ const AiCopyPreview = () => {
     error: streamingError,
     startGeneration,
     stopGeneration
-  } = useStreamingCopy(sessionId);
+  } = useStreamingCopy(sessionId, { skipGenerationIfCopyExists: true });
 
   useEffect(() => {
     if (!sessionId) {
