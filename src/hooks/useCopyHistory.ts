@@ -5,6 +5,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeneratedCopy } from '@/types/copy';
 
+export interface CopyVersion {
+  id: string;
+  data: GeneratedCopy;
+  created_at: string;
+  type: string;
+  versionLabel: string;
+}
+
 interface CopyHistoryItem {
   id: string;
   data: GeneratedCopy;
@@ -12,7 +20,18 @@ interface CopyHistoryItem {
   type: string;
 }
 
-export const useCopyHistory = (sessionId: string) => {
+interface VersionDifference {
+  section: string;
+  field: string;
+  oldValue: string;
+  newValue: string;
+}
+
+interface UseCopyHistoryParams {
+  sessionId: string;
+}
+
+export const useCopyHistory = ({ sessionId }: UseCopyHistoryParams) => {
   const [history, setHistory] = useState<CopyHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -31,7 +50,13 @@ export const useCopyHistory = (sessionId: string) => {
 
       if (error) throw error;
 
-      setHistory(data || []);
+      // Transform the data to ensure it's properly typed
+      const transformedData: CopyHistoryItem[] = (data || []).map(item => ({
+        ...item,
+        data: item.data as GeneratedCopy
+      }));
+
+      setHistory(transformedData);
     } catch (error) {
       console.error('Error fetching copy history:', error);
       toast({
@@ -70,14 +95,99 @@ export const useCopyHistory = (sessionId: string) => {
     }
   };
 
+  // Transform history items to versions with labels
+  const versions: CopyVersion[] = history.map((item, index) => ({
+    ...item,
+    versionLabel: index === 0 ? 'Current Version' : `Version ${history.length - index}`
+  }));
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  const getVersionDiff = (oldCopy: GeneratedCopy, newCopy: GeneratedCopy): VersionDifference[] => {
+    const differences: VersionDifference[] = [];
+
+    // Compare homepage fields
+    Object.keys(oldCopy.homepage).forEach(key => {
+      const field = key as keyof GeneratedCopy['homepage'];
+      if (oldCopy.homepage[field] !== newCopy.homepage[field]) {
+        differences.push({
+          section: 'Homepage',
+          field: field,
+          oldValue: oldCopy.homepage[field],
+          newValue: newCopy.homepage[field]
+        });
+      }
+    });
+
+    // Compare services fields
+    if (oldCopy.services.title !== newCopy.services.title) {
+      differences.push({
+        section: 'Services',
+        field: 'title',
+        oldValue: oldCopy.services.title,
+        newValue: newCopy.services.title
+      });
+    }
+
+    if (oldCopy.services.intro !== newCopy.services.intro) {
+      differences.push({
+        section: 'Services',
+        field: 'intro',
+        oldValue: oldCopy.services.intro,
+        newValue: newCopy.services.intro
+      });
+    }
+
+    // Compare about fields
+    if (oldCopy.about.title !== newCopy.about.title) {
+      differences.push({
+        section: 'About',
+        field: 'title',
+        oldValue: oldCopy.about.title,
+        newValue: newCopy.about.title
+      });
+    }
+
+    if (oldCopy.about.intro !== newCopy.about.intro) {
+      differences.push({
+        section: 'About',
+        field: 'intro',
+        oldValue: oldCopy.about.intro,
+        newValue: newCopy.about.intro
+      });
+    }
+
+    if (oldCopy.about.mission !== newCopy.about.mission) {
+      differences.push({
+        section: 'About',
+        field: 'mission',
+        oldValue: oldCopy.about.mission,
+        newValue: newCopy.about.mission
+      });
+    }
+
+    return differences;
+  };
+
+  const restoreVersion = (version: CopyVersion): GeneratedCopy => {
+    return version.data;
+  };
+
   useEffect(() => {
     fetchHistory();
   }, [sessionId, user]);
 
   return {
     history,
+    versions,
     loading,
     refreshHistory: fetchHistory,
-    deleteHistoryItem
+    deleteHistoryItem,
+    getVersionDiff,
+    restoreVersion,
+    formatDate
   };
 };
