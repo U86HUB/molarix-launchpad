@@ -70,6 +70,11 @@ export const useClinicCreation = () => {
       };
       
       console.log('📝 Insert payload:', insertPayload);
+      console.log('🔑 Confirming created_by matches session user:', {
+        payloadUserId: insertPayload.created_by,
+        sessionUserId: userId,
+        match: insertPayload.created_by === userId
+      });
 
       // Insert with authenticated session - the client should automatically include auth headers
       console.log('📤 Executing Supabase insert with authenticated session...');
@@ -107,6 +112,20 @@ export const useClinicCreation = () => {
         created_at: clinicData.created_at
       });
 
+      // Immediately test if we can fetch the clinic back
+      console.log('🔍 Testing immediate fetch after creation...');
+      const { data: fetchTest, error: fetchError } = await supabase
+        .from('clinics')
+        .select('*')
+        .eq('id', clinicData.id)
+        .single();
+      
+      console.log('🔍 Immediate fetch test result:', { 
+        fetchTest, 
+        fetchError,
+        canFetchBack: !!fetchTest && !fetchError
+      });
+
       // Show success toast
       toast({
         title: "Clinic Created Successfully",
@@ -136,8 +155,46 @@ export const useClinicCreation = () => {
     }
   };
 
+  // Add a test function for manual debugging
+  const testDirectInsert = async () => {
+    console.log('🧪 TESTING DIRECT INSERT...');
+    
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    
+    if (!userId) {
+      console.log('❌ No user ID for test insert');
+      return;
+    }
+
+    console.log('🧪 Inserting test clinic with user ID:', userId);
+    
+    const { data, error } = await supabase
+      .from('clinics')
+      .insert({
+        name: 'Debug Test Clinic',
+        address: 'Test Address',
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    console.log('🧪 Test insert result:', { data, error });
+    
+    if (data) {
+      // Try to fetch it back immediately
+      const { data: fetchBack, error: fetchError } = await supabase
+        .from('clinics')
+        .select('*')
+        .eq('id', data.id);
+      
+      console.log('🧪 Can fetch back test clinic:', { fetchBack, fetchError });
+    }
+  };
+
   return {
     createClinic,
     isCreating,
+    testDirectInsert, // Export for debugging
   };
 };
