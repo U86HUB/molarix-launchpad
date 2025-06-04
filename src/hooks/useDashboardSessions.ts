@@ -36,6 +36,8 @@ export const useDashboardSessions = () => {
 
     setLoading(true);
     try {
+      console.log('🔄 Fetching sessions for user:', user.id);
+      
       const { data, error } = await supabase
         .from('onboarding_sessions')
         .select(`
@@ -61,9 +63,12 @@ export const useDashboardSessions = () => {
 
       if (error) throw error;
 
+      console.log('✅ Sessions fetched successfully:', data?.length || 0);
+      console.log('📋 Sessions data:', data?.map(s => ({ id: s.id, clinic_name: s.clinic_name, clinic_id: s.clinic_id })));
+
       setSessions(data || []);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      console.error('❌ Error fetching sessions:', error);
       toast({
         title: "Error",
         description: "Failed to load your websites",
@@ -75,15 +80,62 @@ export const useDashboardSessions = () => {
   };
 
   const deleteSession = async (sessionId: string) => {
-    if (!user) return false;
+    if (!user) {
+      console.error('❌ No user found for deletion');
+      return false;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('🗑️ Attempting to delete session:', sessionId);
+      console.log('👤 User ID:', user.id);
+
+      // First, check if the session exists and belongs to the user
+      const { data: existingSession, error: checkError } = await supabase
+        .from('onboarding_sessions')
+        .select('id, clinic_name, created_by')
+        .eq('id', sessionId)
+        .single();
+
+      if (checkError) {
+        console.error('❌ Error checking session existence:', checkError);
+        throw checkError;
+      }
+
+      if (!existingSession) {
+        console.error('❌ Session not found:', sessionId);
+        toast({
+          title: "Error",
+          description: "Website not found",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log('📋 Found session to delete:', existingSession);
+
+      if (existingSession.created_by !== user.id) {
+        console.error('❌ User does not own this session');
+        toast({
+          title: "Error",
+          description: "You don't have permission to delete this website",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Proceed with deletion
+      const { error: deleteError } = await supabase
         .from('onboarding_sessions')
         .delete()
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .eq('created_by', user.id); // Additional safety check
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('❌ Error during deletion:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('✅ Session deleted successfully:', sessionId);
 
       toast({
         title: "Success",
@@ -92,7 +144,7 @@ export const useDashboardSessions = () => {
 
       return true;
     } catch (error) {
-      console.error('Error deleting session:', error);
+      console.error('❌ Error deleting session:', error);
       toast({
         title: "Error",
         description: "Failed to delete website",
@@ -106,11 +158,15 @@ export const useDashboardSessions = () => {
     if (!user) return false;
 
     try {
+      console.log('📄 Duplicating session:', sessionId);
+      
       const { data, error } = await supabase.rpc('duplicate_session', {
         original_session_id: sessionId
       });
 
       if (error) throw error;
+
+      console.log('✅ Session duplicated successfully');
 
       toast({
         title: "Success",
@@ -119,7 +175,7 @@ export const useDashboardSessions = () => {
 
       return true;
     } catch (error) {
-      console.error('Error duplicating session:', error);
+      console.error('❌ Error duplicating session:', error);
       toast({
         title: "Error",
         description: "Failed to duplicate website",

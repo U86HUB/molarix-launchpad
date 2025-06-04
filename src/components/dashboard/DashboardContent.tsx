@@ -55,11 +55,23 @@ const DashboardContent = ({
   };
 
   const handleDelete = async (sessionId: string, clinicName: string) => {
+    console.log('🗑️ Delete button clicked for session:', { sessionId, clinicName });
+    
     if (confirm(`Are you sure you want to delete "${clinicName}"? This action cannot be undone.`)) {
+      console.log('✅ User confirmed deletion');
+      
       const success = await deleteSession(sessionId);
+      console.log('🔄 Deletion result:', success);
+      
       if (success) {
-        refreshSessions();
+        console.log('🔄 Refreshing sessions after successful deletion');
+        // Force a refresh after successful deletion
+        await refreshSessions();
+      } else {
+        console.log('❌ Deletion failed, not refreshing');
       }
+    } else {
+      console.log('❌ User cancelled deletion');
     }
   };
 
