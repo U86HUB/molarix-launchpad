@@ -65,8 +65,9 @@ const ClinicSettings = () => {
       if (!clinicId || !user) return;
 
       try {
+        // Using type assertion since TypeScript types haven't been updated yet
         const { data, error } = await supabase
-          .from('clinics')
+          .from('clinics' as any)
           .select('*')
           .eq('id', clinicId)
           .single();
@@ -82,7 +83,7 @@ const ClinicSettings = () => {
         }
 
         if (data) {
-          setClinic(data);
+          setClinic(data as Clinic);
           form.reset({
             name: data.name || '',
             address: data.address || '',
@@ -146,7 +147,7 @@ const ClinicSettings = () => {
         .getPublicUrl(fileName);
 
       const { error: updateError } = await supabase
-        .from('clinics')
+        .from('clinics' as any)
         .update({ 
           logo_url: publicUrl,
           updated_at: new Date().toISOString()
@@ -181,7 +182,7 @@ const ClinicSettings = () => {
 
     try {
       const { error } = await supabase
-        .from('clinics')
+        .from('clinics' as any)
         .update({
           name: data.name,
           address: data.address || null,
