@@ -123,19 +123,56 @@ export const useDashboardSessions = () => {
         return false;
       }
 
-      // Proceed with deletion
-      const { error: deleteError } = await supabase
+      // Delete related AI copy first to avoid foreign key constraints
+      console.log('🧹 Cleaning up related AI copy...');
+      const { error: copyDeleteError } = await supabase
+        .from('ai_generated_copy')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (copyDeleteError) {
+        console.error('❌ Error deleting related copy:', copyDeleteError);
+        // Don't fail the entire operation, just warn
+        console.warn('⚠️ Could not delete related copy, continuing with session deletion');
+      } else {
+        console.log('✅ Related AI copy cleaned up successfully');
+      }
+
+      // Proceed with session deletion
+      const { data: deleteResult, error: deleteError } = await supabase
         .from('onboarding_sessions')
         .delete()
         .eq('id', sessionId)
-        .eq('created_by', user.id); // Additional safety check
+        .eq('created_by', user.id)
+        .select(); // Get the deleted row for confirmation
+
+      console.log('🔍 Delete operation result:', { deleteResult, deleteError });
 
       if (deleteError) {
         console.error('❌ Error during deletion:', deleteError);
         throw deleteError;
       }
 
+      // Check if anything was actually deleted
+      if (!deleteResult || deleteResult.length === 0) {
+        console.error('❌ No rows were deleted - session may not exist or belong to user');
+        toast({
+          title: "Error",
+          description: "Website could not be deleted. It may not exist or you don't have permission.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
       console.log('✅ Session deleted successfully:', sessionId);
+      console.log('📊 Deleted session data:', deleteResult[0]);
+
+      // Immediately update local state to remove the deleted session
+      setSessions(prevSessions => {
+        const updatedSessions = prevSessions.filter(session => session.id !== sessionId);
+        console.log('🔄 Updated local sessions count:', updatedSessions.length);
+        return updatedSessions;
+      });
 
       toast({
         title: "Success",

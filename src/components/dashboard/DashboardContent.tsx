@@ -64,11 +64,13 @@ const DashboardContent = ({
       console.log('🔄 Deletion result:', success);
       
       if (success) {
-        console.log('🔄 Refreshing sessions after successful deletion');
-        // Force a refresh after successful deletion
-        await refreshSessions();
+        console.log('🔄 Session deleted successfully, no additional refresh needed');
+        // No need to call refreshSessions here since deleteSession already updates local state
+        // and we want to avoid unnecessary network calls
       } else {
-        console.log('❌ Deletion failed, not refreshing');
+        console.log('❌ Deletion failed, attempting to refresh to sync state');
+        // Only refresh if deletion failed to ensure UI is in sync with DB
+        await refreshSessions();
       }
     } else {
       console.log('❌ User cancelled deletion');
