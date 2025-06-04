@@ -16,6 +16,7 @@ import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
 import GroupedSessionsGrid from '@/components/dashboard/GroupedSessionsGrid';
 import PreviewModal from '@/components/dashboard/PreviewModal';
+import { CreateWebsiteModal } from '@/components/dashboard/CreateWebsiteModal';
 import { Loader2, Plus, Search } from 'lucide-react';
 
 const Dashboard = () => {
@@ -33,6 +34,9 @@ const Dashboard = () => {
   // Preview modal state
   const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
+  // Create website modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Get session statuses for filtering
   const sessionStatuses = useMultipleSessionStatuses(sessions);
@@ -91,7 +95,13 @@ const Dashboard = () => {
   };
 
   const handleCreateNew = () => {
-    navigate('/onboarding');
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+    // Refresh sessions to show the newly created website
+    refreshSessions();
   };
 
   if (loading) {
@@ -233,6 +243,12 @@ const Dashboard = () => {
         sessionId={previewSessionId}
         isOpen={isPreviewModalOpen}
         onClose={handleClosePreviewModal}
+      />
+
+      {/* Create Website Modal */}
+      <CreateWebsiteModal
+        isOpen={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
       />
     </div>
   );
