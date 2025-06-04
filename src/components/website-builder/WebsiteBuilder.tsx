@@ -10,6 +10,7 @@ import WebsitePreview from './preview/WebsitePreview';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Eye, Settings, Palette, Save } from 'lucide-react';
 import { FullPageLoader } from '@/components/ui/loading-states';
+import { usePreviewInteractions } from '@/hooks/usePreviewInteractions';
 
 interface WebsiteBuilderProps {
   websiteId: string;
@@ -28,6 +29,7 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
   } = useWebsiteBuilder(websiteId);
 
   const [activeTab, setActiveTab] = useState('sections');
+  const { activeSection, scrollToSection } = usePreviewInteractions(sections);
 
   if (loading) {
     return <FullPageLoader text="Loading website builder..." />;
@@ -40,6 +42,10 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
       </div>
     );
   }
+
+  const handleSectionScrollTo = (sectionId: string) => {
+    scrollToSection(sectionId);
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -105,15 +111,19 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
                         </div>
                         
                         <div className="space-y-3">
-                          {sections.map((section) => (
-                            <SectionEditor
-                              key={section.id}
-                              section={section}
-                              onUpdate={updateSection}
-                              onDelete={deleteSection}
-                              isUpdating={saving}
-                            />
-                          ))}
+                          {sections
+                            .sort((a, b) => a.position - b.position)
+                            .map((section) => (
+                              <SectionEditor
+                                key={section.id}
+                                section={section}
+                                onUpdate={updateSection}
+                                onDelete={deleteSection}
+                                isUpdating={saving}
+                                isActive={activeSection === section.id}
+                                onScrollTo={() => handleSectionScrollTo(section.id)}
+                              />
+                            ))}
                         </div>
                       </div>
                     )}
@@ -160,7 +170,11 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
           {/* Right Panel - Live Preview */}
           <ResizablePanel defaultSize={70}>
             <div className="h-full bg-white dark:bg-gray-900">
-              <WebsitePreview website={website} sections={sections} />
+              <WebsitePreview 
+                website={website} 
+                sections={sections} 
+                onReorderSections={reorderSections}
+              />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

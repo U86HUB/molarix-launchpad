@@ -7,6 +7,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import AICopyPreview from './pages/AiCopyPreview';
+import WebsiteBuilderPage from './pages/WebsiteBuilder';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminDiagnostics from "./pages/AdminDiagnostics";
 import { Toaster } from '@/components/ui/toaster';
@@ -29,6 +30,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+
+                <Route 
+                  path="/website-builder/:websiteId" 
+                  element={
+                    <ProtectedRoute>
+                      <WebsiteBuilderPage />
                     </ProtectedRoute>
                   } 
                 />

@@ -10,9 +10,18 @@ interface SectionEditorProps {
   onUpdate: (sectionId: string, updates: Partial<Section>) => void;
   onDelete: (sectionId: string) => void;
   isUpdating: boolean;
+  isActive?: boolean;
+  onScrollTo?: () => void;
 }
 
-const SectionEditor = ({ section, onUpdate, onDelete, isUpdating }: SectionEditorProps) => {
+const SectionEditor = ({ 
+  section, 
+  onUpdate, 
+  onDelete, 
+  isUpdating, 
+  isActive = false,
+  onScrollTo 
+}: SectionEditorProps) => {
   const {
     settings,
     isEditing,
@@ -23,17 +32,25 @@ const SectionEditor = ({ section, onUpdate, onDelete, isUpdating }: SectionEdito
   } = useSectionEditor({ section, onUpdate, onDelete });
 
   return (
-    <Card className={`${!section.is_visible ? 'opacity-60' : ''}`}>
+    <Card 
+      className={`transition-all duration-200 ${
+        !section.is_visible ? 'opacity-60 bg-gray-50' : ''
+      } ${
+        isActive ? 'ring-2 ring-blue-500 shadow-md' : ''
+      }`}
+      onClick={onScrollTo}
+    >
       <SectionHeader
         section={section}
         isUpdating={isUpdating}
+        isActive={isActive}
         onVisibilityToggle={handleVisibilityToggle}
         onToggleEditing={toggleEditing}
         onDelete={handleDelete}
       />
 
       {isEditing && (
-        <CardContent>
+        <CardContent className="animate-fade-in">
           <SectionSettingsForm
             section={section}
             settings={settings}

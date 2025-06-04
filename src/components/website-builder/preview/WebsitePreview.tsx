@@ -3,25 +3,39 @@ import { useEffect, useState } from 'react';
 import { Website, Section } from '@/types/website';
 import { GeneratedCopy } from '@/types/copy';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye, ToggleLeft, ToggleRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import HeroSection from './HeroSection';
 import AboutSection from './AboutSection';
 import ServicesSection from './ServicesSection';
 import ContactSection from './ContactSection';
 import TestimonialsSection from './TestimonialsSection';
 import FeaturesSection from './FeaturesSection';
+import FloatingToolbar from './FloatingToolbar';
+import DraggableSection from './DraggableSection';
+import { usePreviewInteractions } from '@/hooks/usePreviewInteractions';
 
 interface WebsitePreviewProps {
   website: Website;
   sections: Section[];
+  onReorderSections?: (newSections: Section[]) => void;
 }
 
-const WebsitePreview = ({ website, sections }: WebsitePreviewProps) => {
+const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreviewProps) => {
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showDraft, setShowDraft] = useState(false);
+
+  const {
+    activeSection,
+    viewMode,
+    copyMode,
+    previewRef,
+    setViewMode,
+    setCopyMode,
+    registerSection,
+    scrollToSection,
+  } = usePreviewInteractions(sections);
 
   useEffect(() => {
     // Apply dynamic CSS variables for the selected colors and fonts
@@ -53,7 +67,7 @@ const WebsitePreview = ({ website, sections }: WebsitePreviewProps) => {
           .from('ai_generated_copy')
           .select('*')
           .eq('session_id', website.id)
-          .eq('type', showDraft ? 'draft' : 'published')
+          .eq('type', copyMode)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -78,38 +92,85 @@ const WebsitePreview = ({ website, sections }: WebsitePreviewProps) => {
     };
 
     fetchCopy();
-  }, [website.id, showDraft]);
+  }, [website.id, copyMode]);
+
+  const handleSectionReorder = (draggedId: string, targetId: string, position: 'before' | 'after') => {
+    if (!onReorderSections) return;
+
+    const draggedSection = sections.find(s => s.id === draggedId);
+    const targetSection = sections.find(s => s.id === targetId);
+    
+    if (!draggedSection || !targetSection) return;
+
+    const newSections = [...sections];
+    const draggedIndex = newSections.findIndex(s => s.id === draggedId);
+    const targetIndex = newSections.findIndex(s => s.id === targetId);
+
+    // Remove dragged section
+    newSections.splice(draggedIndex, 1);
+
+    // Calculate new position
+    const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+    const adjustedIndex = draggedIndex < targetIndex ? insertIndex - 1 : insertIndex;
+
+    // Insert at new position
+    newSections.splice(adjustedIndex, 0, draggedSection);
+
+    // Update positions
+    const updatedSections = newSections.map((section, index) => ({
+      ...section,
+      position: index,
+    }));
+
+    onReorderSections(updatedSections);
+  };
 
   const renderSection = (section: Section) => {
     const sectionCopy = copy ? getCopyForSection(copy, section.type) : null;
+    const isActive = activeSection === section.id;
 
-    switch (section.type) {
-      case 'hero':
-        return <HeroSection key={section.id} section={section} copy={sectionCopy} />;
-      case 'about':
-        return <AboutSection key={section.id} section={section} copy={sectionCopy} />;
-      case 'services':
-        return <ServicesSection key={section.id} section={section} copy={sectionCopy} />;
-      case 'contact':
-        return <ContactSection key={section.id} section={section} copy={sectionCopy} />;
-      case 'testimonials':
-        return <TestimonialsSection key={section.id} section={section} copy={sectionCopy} />;
-      case 'features':
-        return <FeaturesSection key={section.id} section={section} copy={sectionCopy} />;
-      default:
-        return (
-          <section key={section.id} className="py-8 px-4 bg-gray-100 dark:bg-gray-800">
-            <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                {section.type.charAt(0).toUpperCase() + section.type.slice(1)} Section
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                This section type is not yet implemented in the preview.
-              </p>
-            </div>
-          </section>
-        );
-    }
+    const sectionContent = (() => {
+      switch (section.type) {
+        case 'hero':
+          return <HeroSection key={section.id} section={section} copy={sectionCopy} />;
+        case 'about':
+          return <AboutSection key={section.id} section={section} copy={sectionCopy} />;
+        case 'services':
+          return <ServicesSection key={section.id} section={section} copy={sectionCopy} />;
+        case 'contact':
+          return <ContactSection key={section.id} section={section} copy={sectionCopy} />;
+        case 'testimonials':
+          return <TestimonialsSection key={section.id} section={section} copy={sectionCopy} />;
+        case 'features':
+          return <FeaturesSection key={section.id} section={section} copy={sectionCopy} />;
+        default:
+          return (
+            <section className="py-8 px-4 bg-gray-100 dark:bg-gray-800">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  {section.type.charAt(0).toUpperCase() + section.type.slice(1)} Section
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  This section type is not yet implemented in the preview.
+                </p>
+              </div>
+            </section>
+          );
+      }
+    })();
+
+    return (
+      <DraggableSection
+        key={section.id}
+        section={section}
+        isActive={isActive}
+        isVisible={section.is_visible}
+        onRegister={registerSection}
+        onReorder={handleSectionReorder}
+      >
+        {sectionContent}
+      </DraggableSection>
+    );
   };
 
   const getCopyForSection = (copy: GeneratedCopy, sectionType: string) => {
@@ -158,30 +219,25 @@ const WebsitePreview = ({ website, sections }: WebsitePreviewProps) => {
     .sort((a, b) => a.position - b.position);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Preview Controls */}
-      <div className="border-b bg-white dark:bg-gray-900 p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-gray-900 dark:text-white">Live Preview</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {showDraft ? 'Draft' : 'Published'}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDraft(!showDraft)}
-              className="p-1"
-            >
-              {showDraft ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="h-full flex flex-col relative">
+      {/* Floating Toolbar */}
+      <FloatingToolbar
+        sections={sections}
+        activeSection={activeSection}
+        viewMode={viewMode}
+        copyMode={copyMode}
+        onViewModeChange={setViewMode}
+        onCopyModeChange={setCopyMode}
+        onScrollToSection={scrollToSection}
+      />
 
       {/* Preview Content */}
       <div 
-        className="flex-1 overflow-auto bg-white dark:bg-gray-900"
+        ref={previewRef}
+        className={cn(
+          "flex-1 overflow-auto bg-white dark:bg-gray-900 transition-all duration-300",
+          viewMode === 'mobile' && "max-w-sm mx-auto border-x border-gray-300"
+        )}
         style={{ fontFamily: 'var(--preview-font)' }}
       >
         <div className="min-h-full">
