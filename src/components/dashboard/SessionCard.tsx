@@ -1,14 +1,15 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useSessionStatus } from '@/hooks/useSessionStatus';
+import { useSessionCopy } from '@/hooks/useSessionCopy';
 import { Calendar, Eye, Edit, Trash2, Building, Clock, Copy } from 'lucide-react';
 import { InlineEditableText } from '@/components/ui/inline-editable-text';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import TemplateThumbnail from './TemplateThumbnail';
+import CopySuggestions from './CopySuggestions';
 
 interface SessionCardProps {
   session: DashboardSession;
@@ -28,6 +29,7 @@ const SessionCard = ({
   onUpdate 
 }: SessionCardProps) => {
   const { status } = useSessionStatus(session);
+  const { copy, loading: copyLoading } = useSessionCopy(session.id);
   const { toast } = useToast();
 
   const formatDate = (dateString: string) => {
@@ -165,6 +167,15 @@ const SessionCard = ({
               Last updated {formatTimeAgo(session.last_updated || session.created_at)}
             </div>
           </div>
+
+          {/* AI Copy Suggestions */}
+          {!copyLoading && (
+            <CopySuggestions 
+              copy={copy} 
+              sessionId={session.id}
+              onEditClick={() => onContinueEditing(session.id)}
+            />
+          )}
           
           <div className="flex gap-2">
             <Button 
