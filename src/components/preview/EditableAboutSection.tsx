@@ -11,6 +11,7 @@ interface EditableAboutSectionProps {
   onUpdateIntro: (value: string) => void;
   onUpdateMission: (value: string) => void;
   onUpdateValue: (index: number, field: 'name' | 'description', value: string) => void;
+  onBlur?: () => void;
   isEditing: boolean;
 }
 
@@ -19,7 +20,8 @@ const EditableAboutSection = ({
   onUpdateTitle, 
   onUpdateIntro, 
   onUpdateMission, 
-  onUpdateValue, 
+  onUpdateValue,
+  onBlur,
   isEditing 
 }: EditableAboutSectionProps) => {
   return (
@@ -33,6 +35,7 @@ const EditableAboutSection = ({
           label="About Title"
           value={about.title}
           onChange={onUpdateTitle}
+          onBlur={onBlur}
           isEditing={isEditing}
           renderDisplay={(value) => (
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{value}</h2>
@@ -43,6 +46,7 @@ const EditableAboutSection = ({
           label="About Introduction"
           value={about.intro}
           onChange={onUpdateIntro}
+          onBlur={onBlur}
           isEditing={isEditing}
           type="richtext"
         />
@@ -51,6 +55,7 @@ const EditableAboutSection = ({
           label="Mission Statement"
           value={about.mission}
           onChange={onUpdateMission}
+          onBlur={onBlur}
           isEditing={isEditing}
           type="richtext"
           renderDisplay={(value) => (
@@ -72,6 +77,7 @@ const EditableAboutSection = ({
                     <Input
                       value={value.name}
                       onChange={(e) => onUpdateValue(index, 'name', e.target.value)}
+                      onBlur={onBlur}
                       placeholder="Value name"
                     />
                   ) : (
@@ -86,6 +92,7 @@ const EditableAboutSection = ({
                     <Textarea
                       value={value.description}
                       onChange={(e) => onUpdateValue(index, 'description', e.target.value)}
+                      onBlur={onBlur}
                       placeholder="Value description"
                       rows={3}
                     />

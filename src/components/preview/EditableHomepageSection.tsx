@@ -7,10 +7,11 @@ import EditableField from "./EditableField";
 interface EditableHomepageSectionProps {
   homepage: GeneratedCopy['homepage'];
   onUpdate: (field: keyof GeneratedCopy['homepage'], value: string) => void;
+  onBlur?: () => void;
   isEditing: boolean;
 }
 
-const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHomepageSectionProps) => {
+const EditableHomepageSection = ({ homepage, onUpdate, onBlur, isEditing }: EditableHomepageSectionProps) => {
   return (
     <Card>
       <CardHeader>
@@ -22,6 +23,7 @@ const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHome
           label="Headline"
           value={homepage.headline}
           onChange={(value) => onUpdate('headline', value)}
+          onBlur={onBlur}
           isEditing={isEditing}
           renderDisplay={(value) => (
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{value}</h2>
@@ -32,6 +34,7 @@ const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHome
           label="Subheadline"
           value={homepage.subheadline}
           onChange={(value) => onUpdate('subheadline', value)}
+          onBlur={onBlur}
           isEditing={isEditing}
           type="richtext"
           renderDisplay={(value) => (
@@ -46,6 +49,7 @@ const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHome
           label="Welcome Message"
           value={homepage.welcomeMessage}
           onChange={(value) => onUpdate('welcomeMessage', value)}
+          onBlur={onBlur}
           isEditing={isEditing}
           type="richtext"
         />
@@ -54,6 +58,7 @@ const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHome
           label="Call-to-Action Text"
           value={homepage.ctaText}
           onChange={(value) => onUpdate('ctaText', value)}
+          onBlur={onBlur}
           isEditing={isEditing}
           renderDisplay={(value) => (
             <Button size="lg" className="font-semibold">{value}</Button>

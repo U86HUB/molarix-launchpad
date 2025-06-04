@@ -10,6 +10,7 @@ interface EditableServicesSectionProps {
   onUpdateTitle: (value: string) => void;
   onUpdateIntro: (value: string) => void;
   onUpdateService: (index: number, field: 'name' | 'description', value: string) => void;
+  onBlur?: () => void;
   isEditing: boolean;
 }
 
@@ -17,7 +18,8 @@ const EditableServicesSection = ({
   services, 
   onUpdateTitle, 
   onUpdateIntro, 
-  onUpdateService, 
+  onUpdateService,
+  onBlur,
   isEditing 
 }: EditableServicesSectionProps) => {
   return (
@@ -31,6 +33,7 @@ const EditableServicesSection = ({
           label="Services Title"
           value={services.title}
           onChange={onUpdateTitle}
+          onBlur={onBlur}
           isEditing={isEditing}
           renderDisplay={(value) => (
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{value}</h2>
@@ -41,6 +44,7 @@ const EditableServicesSection = ({
           label="Services Introduction"
           value={services.intro}
           onChange={onUpdateIntro}
+          onBlur={onBlur}
           isEditing={isEditing}
           type="richtext"
         />
@@ -56,6 +60,7 @@ const EditableServicesSection = ({
                     <Input
                       value={service.name}
                       onChange={(e) => onUpdateService(index, 'name', e.target.value)}
+                      onBlur={onBlur}
                       placeholder="Service name"
                     />
                   ) : (
@@ -70,6 +75,7 @@ const EditableServicesSection = ({
                     <Textarea
                       value={service.description}
                       onChange={(e) => onUpdateService(index, 'description', e.target.value)}
+                      onBlur={onBlur}
                       placeholder="Service description"
                       rows={3}
                     />

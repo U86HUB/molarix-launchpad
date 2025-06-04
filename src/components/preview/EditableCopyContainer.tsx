@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSaveCopy } from "@/hooks/useSaveCopy";
+import { useAutosave } from "@/hooks/useAutosave";
 import { GeneratedCopy } from "@/types/copy";
 import EditControls from "./EditControls";
 import EditableHomepageSection from "./EditableHomepageSection";
@@ -19,6 +20,13 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
   const [editedCopy, setEditedCopy] = useState<GeneratedCopy>(generatedCopy);
   const { toast } = useToast();
   const { saveCopy, loading } = useSaveCopy();
+  
+  // Auto-save hook for drafts
+  const { isSaving, lastSaved, saveNow } = useAutosave({
+    sessionId,
+    draftData: editedCopy,
+    enabled: isEditing, // Only auto-save when editing
+  });
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -31,6 +39,7 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
   };
 
   const handleSave = async () => {
+    // Save as published copy (type: 'complete_copy')
     const result = await saveCopy(sessionId, editedCopy);
     
     if (result.success) {
@@ -38,8 +47,14 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
       onCopyUpdated(editedCopy);
       toast({
         title: "Success",
-        description: "Your copy has been saved successfully!",
+        description: "Your copy has been published successfully!",
       });
+    }
+  };
+
+  const handleFieldBlur = () => {
+    if (isEditing) {
+      saveNow(); // Save immediately on blur
     }
   };
 
@@ -134,6 +149,8 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
       <EditControls
         isEditing={isEditing}
         loading={loading}
+        isSaving={isSaving}
+        lastSaved={lastSaved}
         onEdit={handleEdit}
         onCancel={handleCancel}
         onSave={handleSave}
@@ -142,6 +159,7 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
       <EditableHomepageSection
         homepage={displayCopy.homepage}
         onUpdate={updateHomepage}
+        onBlur={handleFieldBlur}
         isEditing={isEditing}
       />
 
@@ -150,6 +168,7 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
         onUpdateTitle={updateServicesTitle}
         onUpdateIntro={updateServicesIntro}
         onUpdateService={updateService}
+        onBlur={handleFieldBlur}
         isEditing={isEditing}
       />
 
@@ -159,6 +178,7 @@ const EditableCopyContainer = ({ generatedCopy, sessionId, onCopyUpdated }: Edit
         onUpdateIntro={updateAboutIntro}
         onUpdateMission={updateAboutMission}
         onUpdateValue={updateValue}
+        onBlur={handleFieldBlur}
         isEditing={isEditing}
       />
     </div>

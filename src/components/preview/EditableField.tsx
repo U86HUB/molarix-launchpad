@@ -7,6 +7,7 @@ interface EditableFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   isEditing: boolean;
   type?: 'input' | 'textarea' | 'richtext';
   rows?: number;
@@ -18,6 +19,7 @@ const EditableField = ({
   label,
   value,
   onChange,
+  onBlur,
   isEditing,
   type = 'input',
   rows = 2,
@@ -28,6 +30,7 @@ const EditableField = ({
     const commonProps = {
       value,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
+      onBlur,
       placeholder: placeholder || `Enter ${label.toLowerCase()}`
     };
 
@@ -38,6 +41,7 @@ const EditableField = ({
           <RichTextField
             defaultContent={value}
             onChange={onChange}
+            onBlur={onBlur}
             placeholder={placeholder || `Enter ${label.toLowerCase()}`}
           />
         ) : type === 'textarea' ? (
