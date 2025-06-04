@@ -11,6 +11,7 @@ import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
+import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
 import SessionCard from '@/components/dashboard/SessionCard';
 import { Loader2, Plus } from 'lucide-react';
 
@@ -77,83 +78,75 @@ const Dashboard = () => {
       <div className="max-w-6xl mx-auto">
         <DashboardHeader userEmail={user?.email || ''} />
         
-        {/* Analytics Stats Section */}
-        <DashboardStats sessions={sessions} />
-        
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Clinic Websites</h2>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
-              Manage and preview your dental clinic websites
-            </p>
-          </div>
-          <Button onClick={handleCreateNew} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create New Website
-          </Button>
-        </div>
-
-        {/* Filters and Sorting */}
-        {sessions.length > 0 && (
-          <DashboardFilters
-            sortBy={sortBy}
-            filterBy={filterBy}
-            onSortChange={setSortBy}
-            onFilterChange={setFilterBy}
-            totalCount={totalCount}
-            filteredCount={filteredCount}
-          />
-        )}
-
+        {/* Show empty state for first-time users */}
         {sessions.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardHeader>
-              <CardTitle>No websites yet</CardTitle>
-              <CardDescription>
-                Get started by creating your first dental clinic website
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={handleCreateNew} className="flex items-center gap-2 mx-auto">
-                <Plus className="h-4 w-4" />
-                Create Your First Website
-              </Button>
-            </CardContent>
-          </Card>
-        ) : filteredSessions.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardHeader>
-              <CardTitle>No websites match your filters</CardTitle>
-              <CardDescription>
-                Try adjusting your sort and filter options to see more results
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => {
-                  setSortBy('newest');
-                  setFilterBy('all');
-                }} 
-                variant="outline"
-              >
-                Clear Filters
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSessions.map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onContinueEditing={handleContinueEditing}
-                onPreview={handlePreview}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-                onUpdate={refreshSessions}
-              />
-            ))}
+          <div className="mt-12">
+            <DashboardEmpty onCreateNew={handleCreateNew} />
           </div>
+        ) : (
+          <>
+            {/* Analytics Stats Section */}
+            <DashboardStats sessions={sessions} />
+            
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Clinic Websites</h2>
+                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                  Manage and preview your dental clinic websites
+                </p>
+              </div>
+              <Button onClick={handleCreateNew} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Website
+              </Button>
+            </div>
+
+            {/* Filters and Sorting */}
+            <DashboardFilters
+              sortBy={sortBy}
+              filterBy={filterBy}
+              onSortChange={setSortBy}
+              onFilterChange={setFilterBy}
+              totalCount={totalCount}
+              filteredCount={filteredCount}
+            />
+
+            {filteredSessions.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardHeader>
+                  <CardTitle>No websites match your filters</CardTitle>
+                  <CardDescription>
+                    Try adjusting your sort and filter options to see more results
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={() => {
+                      setSortBy('newest');
+                      setFilterBy('all');
+                    }} 
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredSessions.map((session) => (
+                  <SessionCard
+                    key={session.id}
+                    session={session}
+                    onContinueEditing={handleContinueEditing}
+                    onPreview={handlePreview}
+                    onDelete={handleDelete}
+                    onDuplicate={handleDuplicate}
+                    onUpdate={refreshSessions}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
