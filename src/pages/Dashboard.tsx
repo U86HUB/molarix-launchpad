@@ -2,18 +2,15 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardSessions } from '@/hooks/useDashboardSessions';
-import { useClinicCreation } from '@/hooks/useClinicCreation';
 import DashboardPageHeader from '@/components/dashboard/DashboardPageHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import { DashboardSkeleton } from '@/components/ui/loading-states';
-import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sessions, loading, refreshSessions, deleteSession, duplicateSession } = useDashboardSessions();
-  const { testDirectInsert } = useClinicCreation();
 
   const handleContinueEditing = (sessionId: string) => {
     navigate(`/ai-copy-preview?sessionId=${sessionId}&mode=edit`);
@@ -36,20 +33,6 @@ const Dashboard = () => {
         
         {/* Enhanced Header with improved hierarchy */}
         <DashboardPageHeader userEmail={user?.email || ''} />
-        
-        {/* Temporary Debug Button */}
-        <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
-          <p className="text-sm text-yellow-800 mb-2">🧪 Debug: Test clinic insertion directly</p>
-          <Button 
-            onClick={testDirectInsert} 
-            variant="outline" 
-            size="sm"
-            className="bg-yellow-50 hover:bg-yellow-100"
-          >
-            Test Direct Insert
-          </Button>
-          <p className="text-xs text-yellow-700 mt-1">Check console for detailed logs</p>
-        </div>
         
         {/* Dashboard Content */}
         <DashboardContent
