@@ -2,6 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, MapPin, Clock, Star } from "lucide-react";
+import { GeneratedCopy } from "@/types/copy";
 
 interface TemplateProps {
   clinicName: string;
@@ -9,9 +10,26 @@ interface TemplateProps {
   address: string;
   phone: string;
   email: string;
+  aiCopy?: GeneratedCopy | null;
 }
 
-const TemplateA = ({ clinicName, logoUrl, address, phone, email }: TemplateProps) => {
+const TemplateA = ({ clinicName, logoUrl, address, phone, email, aiCopy }: TemplateProps) => {
+  // Use AI copy if available, otherwise use default content
+  const heroContent = aiCopy?.homepage || {
+    headline: `Welcome to ${clinicName}`,
+    subheadline: "Providing exceptional dental care with a gentle touch",
+    ctaText: "Book Appointment"
+  };
+
+  const servicesContent = aiCopy?.services || {
+    title: "Our Services",
+    services: [
+      { name: "General Dentistry", description: "Comprehensive oral health care" },
+      { name: "Cosmetic Dentistry", description: "Enhance your smile's appearance" },
+      { name: "Emergency Care", description: "24/7 emergency dental services" }
+    ]
+  };
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
       {/* Header */}
@@ -50,17 +68,17 @@ const TemplateA = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
       >
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-            Welcome to {clinicName}
+            {heroContent.headline}
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Providing exceptional dental care with a gentle touch
+            {heroContent.subheadline}
           </p>
           <Button 
             size="lg" 
             className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3"
             style={{ color: 'var(--preview-primary, #4f46e5)' }}
           >
-            Book Appointment
+            {heroContent.ctaText}
           </Button>
         </div>
       </section>
@@ -69,14 +87,10 @@ const TemplateA = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">
-            Our Services
+            {servicesContent.title}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { title: "General Dentistry", desc: "Comprehensive oral health care" },
-              { title: "Cosmetic Dentistry", desc: "Enhance your smile's appearance" },
-              { title: "Emergency Care", desc: "24/7 emergency dental services" }
-            ].map((service, index) => (
+            {servicesContent.services.slice(0, 3).map((service, index) => (
               <Card key={index} className="text-center">
                 <CardContent className="p-6">
                   <div 
@@ -85,8 +99,8 @@ const TemplateA = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
                   >
                     <Clock className="h-8 w-8 text-white" />
                   </div>
-                  <h4 className="text-xl font-semibold mb-2">{service.title}</h4>
-                  <p className="text-gray-600 dark:text-gray-400">{service.desc}</p>
+                  <h4 className="text-xl font-semibold mb-2">{service.name}</h4>
+                  <p className="text-gray-600 dark:text-gray-400">{service.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -130,7 +144,9 @@ const TemplateA = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h4 className="text-xl font-bold mb-4">{clinicName}</h4>
-              <p className="opacity-90">Caring for your smile since day one.</p>
+              <p className="opacity-90">
+                {aiCopy?.about?.mission || "Caring for your smile since day one."}
+              </p>
             </div>
             <div>
               <h4 className="text-xl font-bold mb-4">Contact Info</h4>

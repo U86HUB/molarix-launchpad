@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import TemplateRenderer from "@/components/preview/TemplateRenderer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAiCopy } from "@/hooks/useAiCopy";
 
 interface OnboardingSession {
   id: string;
@@ -31,6 +32,13 @@ const TemplatePreview = () => {
   const [loading, setLoading] = useState(true);
 
   const sessionId = searchParams.get("sessionId");
+  const useDraft = searchParams.get("useDraft") === "true";
+  
+  // Fetch AI-generated copy
+  const { copy: aiCopy, loading: copyLoading } = useAiCopy({ 
+    sessionId, 
+    useDraft 
+  });
 
   useEffect(() => {
     if (!sessionId) {
@@ -78,7 +86,7 @@ const TemplatePreview = () => {
     fetchSessionData();
   }, [sessionId, toast]);
 
-  if (loading) {
+  if (loading || copyLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
         <div className="flex items-center gap-2">
@@ -127,9 +135,17 @@ const TemplatePreview = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Template Preview
+                {useDraft && (
+                  <span className="ml-2 px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">
+                    Draft
+                  </span>
+                )}
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                See how your clinic will look with different templates
+                {useDraft 
+                  ? "Preview your edited copy with different templates" 
+                  : "See how your clinic will look with different templates"
+                }
               </p>
             </div>
             
@@ -149,11 +165,20 @@ const TemplatePreview = () => {
               </Select>
             </div>
           </div>
+          
+          {useDraft && !aiCopy && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800">
+                No draft copy found. Showing template with default content.
+              </p>
+            </div>
+          )}
         </div>
 
         <TemplateRenderer 
           sessionData={sessionData}
           selectedTemplate={selectedTemplate}
+          aiCopy={aiCopy}
         />
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import TemplateA from "./templates/TemplateA";
 import TemplateB from "./templates/TemplateB";
 import TemplateC from "./templates/TemplateC";
+import { GeneratedCopy } from "@/types/copy";
 
 interface OnboardingSession {
   id: string;
@@ -19,9 +20,10 @@ interface OnboardingSession {
 interface TemplateRendererProps {
   sessionData: OnboardingSession;
   selectedTemplate: string;
+  aiCopy?: GeneratedCopy | null;
 }
 
-const TemplateRenderer = ({ sessionData, selectedTemplate }: TemplateRendererProps) => {
+const TemplateRenderer = ({ sessionData, selectedTemplate, aiCopy }: TemplateRendererProps) => {
   useEffect(() => {
     // Apply dynamic CSS variables for the selected colors and fonts
     const root = document.documentElement;
@@ -52,6 +54,7 @@ const TemplateRenderer = ({ sessionData, selectedTemplate }: TemplateRendererPro
       address: sessionData.address || "123 Main St, City, State",
       phone: sessionData.phone || "(555) 123-4567",
       email: sessionData.email || "info@clinic.com",
+      aiCopy: aiCopy,
     };
 
     switch (selectedTemplate) {

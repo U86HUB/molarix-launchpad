@@ -2,6 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, Mail, MapPin, Calendar, Users, Zap } from "lucide-react";
+import { GeneratedCopy } from "@/types/copy";
 
 interface TemplateProps {
   clinicName: string;
@@ -9,9 +10,26 @@ interface TemplateProps {
   address: string;
   phone: string;
   email: string;
+  aiCopy?: GeneratedCopy | null;
 }
 
-const TemplateC = ({ clinicName, logoUrl, address, phone, email }: TemplateProps) => {
+const TemplateC = ({ clinicName, logoUrl, address, phone, email, aiCopy }: TemplateProps) => {
+  // Use AI copy if available, otherwise use default content
+  const heroContent = aiCopy?.homepage || {
+    headline: "Modern Dental Care",
+    subheadline: "Experience the future of dentistry with our innovative approach to oral health care.",
+    ctaText: "Get Started"
+  };
+
+  const servicesContent = aiCopy?.services || {
+    title: "Our Expertise",
+    services: [
+      { name: "Preventive Care", description: "Regular checkups and cleanings" },
+      { name: "Family Dentistry", description: "Comprehensive care for all ages" },
+      { name: "Cosmetic Treatments", description: "Transform your smile" }
+    ]
+  };
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
       {/* Header */}
@@ -53,17 +71,17 @@ const TemplateC = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
       <section className="py-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-6xl font-light mb-8 text-gray-900 dark:text-white">
-            Modern Dental Care
+            {heroContent.headline}
           </h2>
           <p className="text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto font-light">
-            Experience the future of dentistry with our innovative approach to oral health care.
+            {heroContent.subheadline}
           </p>
           <Button 
             size="lg" 
             className="text-white px-12 py-4 text-lg font-light rounded-full"
             style={{ backgroundColor: 'var(--preview-primary, #4f46e5)' }}
           >
-            Get Started
+            {heroContent.ctaText}
           </Button>
         </div>
       </section>
@@ -97,13 +115,13 @@ const TemplateC = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-4xl font-light text-center mb-16 text-gray-900 dark:text-white">
-            Our Expertise
+            {servicesContent.title}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {[
-              { icon: Calendar, title: "Preventive Care", desc: "Regular checkups and cleanings" },
-              { icon: Users, title: "Family Dentistry", desc: "Comprehensive care for all ages" },
-              { icon: Zap, title: "Cosmetic Treatments", desc: "Transform your smile" }
+              { icon: Calendar, ...servicesContent.services[0] },
+              { icon: Users, ...servicesContent.services[1] },
+              { icon: Zap, ...servicesContent.services[2] }
             ].map((service, index) => (
               <div key={index} className="text-center group">
                 <div 
@@ -112,8 +130,8 @@ const TemplateC = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
                 >
                   <service.icon className="h-12 w-12 text-white" />
                 </div>
-                <h4 className="text-2xl font-light mb-4 text-gray-900 dark:text-white">{service.title}</h4>
-                <p className="text-gray-600 dark:text-gray-400 font-light leading-relaxed">{service.desc}</p>
+                <h4 className="text-2xl font-light mb-4 text-gray-900 dark:text-white">{service.name}</h4>
+                <p className="text-gray-600 dark:text-gray-400 font-light leading-relaxed">{service.description}</p>
               </div>
             ))}
           </div>
@@ -144,8 +162,9 @@ const TemplateC = ({ clinicName, logoUrl, address, phone, email }: TemplateProps
             <div>
               <h4 className="text-2xl font-light mb-6 text-gray-900 dark:text-white">{clinicName}</h4>
               <p className="text-gray-600 dark:text-gray-400 font-light mb-8 max-w-md">
-                Committed to excellence in dental care through innovation, 
-                compassion, and personalized treatment plans.
+                {aiCopy?.about?.mission || 
+                  "Committed to excellence in dental care through innovation, compassion, and personalized treatment plans."
+                }
               </p>
               <div className="space-y-3">
                 <div className="flex items-center gap-4">
