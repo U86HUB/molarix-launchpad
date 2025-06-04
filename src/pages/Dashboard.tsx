@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardSessions } from '@/hooks/useDashboardSessions';
@@ -15,7 +16,7 @@ import DashboardFilters from '@/components/dashboard/DashboardFilters';
 import DashboardEmpty from '@/components/dashboard/DashboardEmpty';
 import GroupedSessionsGrid from '@/components/dashboard/GroupedSessionsGrid';
 import PreviewModal from '@/components/dashboard/PreviewModal';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Search } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [groupBy, setGroupBy] = useState<GroupingType>('date');
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Preview modal state
   const [previewSessionId, setPreviewSessionId] = useState<string | null>(null);
@@ -41,6 +43,11 @@ const Dashboard = () => {
     filterBy,
     sessionStatuses
   });
+
+  // Apply search filtering
+  const searchFilteredSessions = filteredSessions.filter(session =>
+    session.clinic_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false
+  );
 
   // Get user's first name for personalized greeting
   const getFirstName = (email: string) => {
@@ -96,17 +103,17 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header with title and user profile */}
+        {/* Enhanced Header with improved hierarchy */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mt-1">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 font-normal">
               Welcome back, {user?.email ? getFirstName(user.email) : 'there'}! Here's a snapshot of your clinic projects.
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-6 sm:mt-0 p-4 bg-white/80 dark:bg-gray-800/80 rounded-lg shadow-sm backdrop-blur-sm">
             <UserProfile userEmail={user?.email || ''} />
           </div>
         </div>
@@ -118,57 +125,97 @@ const Dashboard = () => {
           </div>
         ) : (
           <>
-            {/* Analytics Stats Section */}
-            <DashboardStats sessions={sessions} />
+            {/* Enhanced Analytics Stats Section with background container */}
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-white/20 dark:border-gray-700/20 mb-8">
+              <DashboardStats sessions={sessions} />
+            </div>
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Clinic Websites</h2>
-                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Your Clinic Websites</h2>
+                <p className="text-gray-600 dark:text-gray-300">
                   Manage and preview your dental clinic websites
                 </p>
               </div>
-              <Button onClick={handleCreateNew} className="flex items-center gap-2 mt-4 sm:mt-0">
-                <Plus className="h-4 w-4" />
+              <Button 
+                onClick={handleCreateNew} 
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200 shadow-md"
+                size="lg"
+              >
+                <Plus className="h-5 w-5" />
                 Create New Website
               </Button>
             </div>
 
-            {/* Filters, Sorting, and Grouping */}
-            <DashboardFilters
-              sortBy={sortBy}
-              filterBy={filterBy}
-              groupBy={groupBy}
-              onSortChange={setSortBy}
-              onFilterChange={setFilterBy}
-              onGroupChange={setGroupBy}
-              totalCount={totalCount}
-              filteredCount={filteredCount}
-            />
+            {/* Enhanced Filters with search functionality */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
+              <div className="p-4">
+                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                  <DashboardFilters
+                    sortBy={sortBy}
+                    filterBy={filterBy}
+                    groupBy={groupBy}
+                    onSortChange={setSortBy}
+                    onFilterChange={setFilterBy}
+                    onGroupChange={setGroupBy}
+                    totalCount={totalCount}
+                    filteredCount={searchQuery ? searchFilteredSessions.length : filteredCount}
+                  />
+                  
+                  {/* Search Input */}
+                  <div className="relative w-full lg:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search websites..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 h-9 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            {filteredSessions.length === 0 ? (
-              <Card className="text-center py-12 shadow-sm border-border">
+            {searchFilteredSessions.length === 0 ? (
+              <Card className="text-center py-12 shadow-sm border-border bg-white dark:bg-gray-800">
                 <CardHeader>
-                  <CardTitle>No websites match your filters</CardTitle>
-                  <CardDescription>
-                    Try adjusting your sort and filter options to see more results
+                  <CardTitle className="text-xl">
+                    {searchQuery ? 'No websites match your search' : 'No websites match your filters'}
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    {searchQuery 
+                      ? `Try a different search term or clear your search to see all results`
+                      : `Try adjusting your sort and filter options to see more results`
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    onClick={() => {
-                      setSortBy('newest');
-                      setFilterBy('all');
-                    }} 
-                    variant="outline"
-                  >
-                    Clear Filters
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    {searchQuery && (
+                      <Button 
+                        onClick={() => setSearchQuery('')} 
+                        variant="outline"
+                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        Clear Search
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={() => {
+                        setSortBy('newest');
+                        setFilterBy('all');
+                        setSearchQuery('');
+                      }} 
+                      variant="outline"
+                    >
+                      Reset All Filters
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
               <GroupedSessionsGrid
-                sessions={filteredSessions}
+                sessions={searchFilteredSessions}
                 groupBy={groupBy}
                 onContinueEditing={handleContinueEditing}
                 onPreview={handlePreview}

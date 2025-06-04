@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useSessionStatus, SessionStatus } from '@/hooks/useSessionStatus';
-import { BarChart3, Calendar, FileText, TrendingUp, Info } from 'lucide-react';
+import { Globe, CheckCircle, Clock, TrendingUp, Info } from 'lucide-react';
 
 interface DashboardStatsProps {
   sessions: DashboardSession[];
@@ -66,61 +66,70 @@ const DashboardStats = ({ sessions }: DashboardStatsProps) => {
     {
       title: "Total Websites",
       value: totalSessions,
-      icon: FileText,
+      icon: Globe,
       description: `${totalSessions} website${totalSessions !== 1 ? 's' : ''} created`,
-      tooltip: "Total number of clinic website projects you've created"
+      tooltip: "Total number of clinic website projects you've created",
+      color: "text-blue-600 dark:text-blue-400"
     },
     {
       title: "Ready to Publish",
       value: readyToPublishCount,
-      icon: BarChart3,
+      icon: CheckCircle,
       description: "Completed websites",
-      tooltip: "Websites with complete content ready to go live"
+      tooltip: "Websites with complete content ready to go live",
+      color: "text-green-600 dark:text-green-400"
     },
     {
       title: "Last Activity",
       value: formatLastEdit(),
-      icon: Calendar,
+      icon: Clock,
       description: lastEditTimestamp ? "Most recent edit" : "No activity",
-      tooltip: "Shows your most recent update across all projects"
+      tooltip: "Shows your most recent update across all projects",
+      color: "text-orange-600 dark:text-orange-400"
     },
     {
       title: "Recent Activity",
       value: recentActivityCount,
       icon: TrendingUp,
       description: "Active in last 7 days",
-      tooltip: "Number of projects with updates in the past week"
+      tooltip: "Number of projects with updates in the past week",
+      color: "text-purple-600 dark:text-purple-400"
     }
   ];
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsData.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="shadow-sm border-border">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card key={index} className="relative overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-white/30 dark:border-gray-700/30 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     {stat.title}
                   </CardTitle>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      <button 
+                        className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                        aria-label={`More information about ${stat.title}`}
+                      >
+                        <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{stat.tooltip}</p>
+                      <p className="max-w-xs">{stat.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className={`h-5 w-5 ${stat.color}`} />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
+              <CardContent className="pt-0">
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
                   {stat.value}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {stat.description}
                 </p>
               </CardContent>
