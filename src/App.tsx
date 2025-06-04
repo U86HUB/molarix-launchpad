@@ -23,6 +23,7 @@ import TemplatePreview from "./pages/TemplatePreview";
 import AiCopyPreview from "./pages/AiCopyPreview";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Account from "./pages/Account";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,11 @@ const App = () => (
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/account" element={
+                  <ProtectedRoute>
+                    <Account />
                   </ProtectedRoute>
                 } />
                 <Route path="/onboarding" element={
