@@ -26,13 +26,15 @@ const AiCopyPreview = () => {
     isStreaming,
     streamingContent,
     hasUnsavedChanges,
+    draftCopyId,
     exportAsJson,
     handleRegenerate,
     handleGenerateNewVersion,
     handleCopyUpdated,
     hideInfoBanner,
     stopGeneration,
-    markSaved
+    markSaved,
+    handlePublished
   } = useAiCopyPreviewLogic({ sessionId, isEditMode });
 
   const handleBack = () => {
@@ -57,10 +59,14 @@ const AiCopyPreview = () => {
           isStreaming={isStreaming}
           loading={loading}
           hasCurrentCopy={!!currentCopy}
+          draftCopyId={draftCopyId}
+          sessionId={sessionId}
+          isEditMode={isEditMode}
           onBack={handleBack}
           onRegenerate={handleRegenerate}
           onStop={stopGeneration}
           onExport={exportAsJson}
+          onPublished={handlePublished}
         />
 
         <InfoBanner message={infoBannerMessage} show={showInfoBanner} />

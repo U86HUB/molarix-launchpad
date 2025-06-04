@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +32,9 @@ const TemplatePreview = () => {
   const [loading, setLoading] = useState(true);
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
   const [copyLoading, setCopyLoading] = useState(true);
-  const [noCopyFound, setNoCopyFound] = useState(false);
+  const [noPublishedCopyFound, setNoPublishedCopyFound] = useState(false);
 
   const sessionId = searchParams.get("sessionId");
-  const useDraft = searchParams.get("useDraft") === "true";
 
   useEffect(() => {
     if (!sessionId) {
@@ -70,14 +70,12 @@ const TemplatePreview = () => {
         setSessionData(sessionData);
         setSelectedTemplate(sessionData.selected_template || "template-a");
 
-        // Fetch copy data - first try draft if useDraft is true, then fallback to published
-        let copyType = useDraft ? 'draft' : 'published';
-        
+        // Fetch ONLY published copy
         const { data: copyData, error: copyError } = await supabase
           .from('ai_generated_copy')
           .select('*')
           .eq('session_id', sessionId)
-          .eq('type', copyType)
+          .eq('type', 'published')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -86,42 +84,10 @@ const TemplatePreview = () => {
           console.error('Error fetching copy data:', copyError);
         }
 
-        // If no draft found and we were looking for draft, try published
-        if (!copyData && useDraft) {
-          const { data: publishedData, error: publishedError } = await supabase
-            .from('ai_generated_copy')
-            .select('*')
-            .eq('session_id', sessionId)
-            .eq('type', 'published')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (publishedError) {
-            console.error('Error fetching published copy:', publishedError);
-          }
-
-          if (publishedData) {
-            setCopy(publishedData.data as unknown as GeneratedCopy);
-          } else {
-            setNoCopyFound(true);
-            // Show toast warning for no draft content found
-            toast({
-              title: "No draft content found",
-              description: "Please generate or edit content first.",
-              variant: "destructive",
-            });
-          }
-        } else if (copyData) {
+        if (copyData) {
           setCopy(copyData.data as unknown as GeneratedCopy);
         } else {
-          setNoCopyFound(true);
-          // Show toast warning for no content found
-          toast({
-            title: "No content found",
-            description: "Please generate or edit content first.",
-            variant: "destructive",
-          });
+          setNoPublishedCopyFound(true);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -137,7 +103,7 @@ const TemplatePreview = () => {
     };
 
     fetchData();
-  }, [sessionId, useDraft, toast]);
+  }, [sessionId, toast]);
 
   if (loading || copyLoading) {
     return (
@@ -171,18 +137,28 @@ const TemplatePreview = () => {
     );
   }
 
-  if (noCopyFound) {
+  if (noPublishedCopyFound) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>No Content Found</CardTitle>
+            <CardTitle>No Published Version Available</CardTitle>
             <CardDescription>
-              No content found yet. Please generate content first in editing mode.
+              No published version available yet. Please publish from editing mode first.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.history.back()} className="w-full">
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={() => window.location.href = `/ai-copy-preview?sessionId=${sessionId}&mode=edit`}
+              className="w-full"
+            >
+              Go to Editing Mode
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => window.history.back()} 
+              className="w-full"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Go Back
             </Button>
@@ -209,17 +185,12 @@ const TemplatePreview = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Template Preview
-                {useDraft && (
-                  <span className="ml-2 px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">
-                    Draft
-                  </span>
-                )}
+                <span className="ml-2 px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full">
+                  Published
+                </span>
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                {useDraft 
-                  ? "Preview your draft copy with different templates" 
-                  : "See how your clinic will look with different templates"
-                }
+                See how your published clinic content looks with different templates
               </p>
             </div>
             

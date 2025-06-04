@@ -30,6 +30,7 @@ export const useAiCopyPreviewLogic = ({ sessionId, isEditMode }: UseAiCopyPrevie
   const [sessionLoading, setSessionLoading] = useState(true);
   const [showInfoBanner, setShowInfoBanner] = useState(false);
   const [infoBannerMessage, setInfoBannerMessage] = useState("");
+  const [draftCopyId, setDraftCopyId] = useState<string | null>(null);
 
   // Load saved copy first (preferring drafts in edit mode)
   const { copy: savedCopy, loading: savedCopyLoading, noCopyFound } = useSavedCopy({
@@ -99,6 +100,12 @@ export const useAiCopyPreviewLogic = ({ sessionId, isEditMode }: UseAiCopyPrevie
     if (!savedCopyLoading) {
       if (savedCopy) {
         setCurrentCopy(savedCopy);
+        
+        // Find the draft copy ID for publishing functionality
+        if (isEditMode) {
+          fetchDraftCopyId();
+        }
+        
         setInfoBannerMessage("Draft loaded from your last edit.");
         setShowInfoBanner(true);
         // Hide banner after 3 seconds
@@ -111,6 +118,27 @@ export const useAiCopyPreviewLogic = ({ sessionId, isEditMode }: UseAiCopyPrevie
       }
     }
   }, [savedCopy, savedCopyLoading, noCopyFound, isEditMode, startGeneration, sessionId]);
+
+  const fetchDraftCopyId = async () => {
+    if (!sessionId) return;
+    
+    try {
+      const { data } = await supabase
+        .from('ai_generated_copy')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('type', 'draft')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (data) {
+        setDraftCopyId(data.id);
+      }
+    } catch (error) {
+      console.error('Error fetching draft copy ID:', error);
+    }
+  };
 
   // Handle streaming completion
   useEffect(() => {
@@ -162,6 +190,15 @@ export const useAiCopyPreviewLogic = ({ sessionId, isEditMode }: UseAiCopyPrevie
     setCurrentCopy(updatedCopy);
   };
 
+  const handlePublished = () => {
+    setInfoBannerMessage("Content published successfully!");
+    setShowInfoBanner(true);
+    setTimeout(() => setShowInfoBanner(false), 3000);
+    
+    // Refresh the draft copy ID since it might have changed
+    fetchDraftCopyId();
+  };
+
   const hideInfoBanner = () => {
     setShowInfoBanner(false);
   };
@@ -178,12 +215,14 @@ export const useAiCopyPreviewLogic = ({ sessionId, isEditMode }: UseAiCopyPrevie
     isStreaming,
     streamingContent,
     hasUnsavedChanges,
+    draftCopyId,
     exportAsJson,
     handleRegenerate,
     handleGenerateNewVersion,
     handleCopyUpdated,
     hideInfoBanner,
     stopGeneration,
-    markSaved
+    markSaved,
+    handlePublished
   };
 };
