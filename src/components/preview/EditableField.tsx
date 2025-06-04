@@ -1,13 +1,14 @@
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextField from "@/components/ui/rich-text-field";
 
 interface EditableFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
   isEditing: boolean;
-  type?: 'input' | 'textarea';
+  type?: 'input' | 'textarea' | 'richtext';
   rows?: number;
   placeholder?: string;
   renderDisplay?: (value: string) => React.ReactNode;
@@ -33,7 +34,13 @@ const EditableField = ({
     return (
       <div className="space-y-2">
         <label className="text-sm font-medium">{label}</label>
-        {type === 'textarea' ? (
+        {type === 'richtext' ? (
+          <RichTextField
+            defaultContent={value}
+            onChange={onChange}
+            placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+          />
+        ) : type === 'textarea' ? (
           <Textarea {...commonProps} rows={rows} />
         ) : (
           <Input {...commonProps} />
@@ -47,7 +54,10 @@ const EditableField = ({
       <label className="text-sm font-medium">{label}</label>
       <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
         {renderDisplay ? renderDisplay(value) : (
-          <p className="text-gray-800 dark:text-gray-200">{value}</p>
+          <div 
+            className="text-gray-800 dark:text-gray-200 prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: value }}
+          />
         )}
       </div>
     </div>

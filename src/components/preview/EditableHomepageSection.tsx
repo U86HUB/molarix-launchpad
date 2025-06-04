@@ -33,10 +33,12 @@ const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHome
           value={homepage.subheadline}
           onChange={(value) => onUpdate('subheadline', value)}
           isEditing={isEditing}
-          type="textarea"
-          rows={2}
+          type="richtext"
           renderDisplay={(value) => (
-            <p className="text-lg text-gray-600 dark:text-gray-300">{value}</p>
+            <div 
+              className="text-lg text-gray-600 dark:text-gray-300 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: value }}
+            />
           )}
         />
 
@@ -45,8 +47,7 @@ const EditableHomepageSection = ({ homepage, onUpdate, isEditing }: EditableHome
           value={homepage.welcomeMessage}
           onChange={(value) => onUpdate('welcomeMessage', value)}
           isEditing={isEditing}
-          type="textarea"
-          rows={3}
+          type="richtext"
         />
 
         <EditableField

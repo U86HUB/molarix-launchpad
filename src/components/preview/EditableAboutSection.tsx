@@ -44,8 +44,7 @@ const EditableAboutSection = ({
           value={about.intro}
           onChange={onUpdateIntro}
           isEditing={isEditing}
-          type="textarea"
-          rows={3}
+          type="richtext"
         />
 
         <EditableField
@@ -53,10 +52,12 @@ const EditableAboutSection = ({
           value={about.mission}
           onChange={onUpdateMission}
           isEditing={isEditing}
-          type="textarea"
-          rows={3}
+          type="richtext"
           renderDisplay={(value) => (
-            <p className="text-gray-800 dark:text-gray-200 italic">{value}</p>
+            <div 
+              className="text-gray-800 dark:text-gray-200 italic prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: value }}
+            />
           )}
         />
 

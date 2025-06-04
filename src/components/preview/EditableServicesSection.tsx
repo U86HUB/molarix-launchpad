@@ -42,8 +42,7 @@ const EditableServicesSection = ({
           value={services.intro}
           onChange={onUpdateIntro}
           isEditing={isEditing}
-          type="textarea"
-          rows={3}
+          type="richtext"
         />
 
         <div className="space-y-4">
