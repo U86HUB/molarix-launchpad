@@ -80,6 +80,33 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostic_logs: {
+        Row: {
+          created_at: string
+          error_message: string
+          error_type: string
+          id: string
+          table_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          error_type: string
+          id?: string
+          table_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          error_type?: string
+          id?: string
+          table_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       onboarding_sessions: {
         Row: {
           address: string | null
@@ -282,6 +309,18 @@ export type Database = {
         Args: { original_session_id: string; new_user_id?: string }
         Returns: string
       }
+      get_cross_owner_websites: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          clinic_id: string
+          status: string
+          created_by: string
+          current_user_id: string
+          created_at: string
+        }[]
+      }
       get_orphaned_sessions: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -292,9 +331,43 @@ export type Database = {
           created_by: string
         }[]
       }
+      get_orphaned_websites: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          status: string
+          template_type: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_recent_diagnostic_errors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          error_type: string
+          error_message: string
+          table_name: string
+          user_id: string
+          created_at: string
+        }[]
+      }
       reassign_session_to_clinic: {
         Args: { session_id: string; target_clinic_id: string }
         Returns: boolean
+      }
+      test_rls_access: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          can_select: boolean
+          can_insert: boolean
+          can_update: boolean
+          can_delete: boolean
+          record_count: number
+        }[]
       }
     }
     Enums: {

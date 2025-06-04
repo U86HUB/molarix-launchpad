@@ -1,108 +1,116 @@
-
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import ErrorBoundary from "@/components/ErrorBoundary";
-
-// Pages
-import Index from "@/pages/Index";
-import Landing from "@/pages/Landing";
-import Features from "@/pages/Features";
-import HowItWorks from "@/pages/HowItWorks";
-import Templates from "@/pages/Templates";
-import About from "@/pages/About";
-import Contact from "@/pages/Contact";
-import Blog from "@/pages/Blog";
-import BlogArticle from "@/pages/BlogArticle";
-import Privacy from "@/pages/Privacy";
-import Terms from "@/pages/Terms";
-import Auth from "@/pages/Auth";
-import Dashboard from "@/pages/Dashboard";
-import Onboarding from "@/pages/Onboarding";
-import AiCopyPreview from "@/pages/AiCopyPreview";
-import TemplatePreview from "@/pages/TemplatePreview";
-import Account from "@/pages/Account";
-import ClinicSettings from "@/pages/ClinicSettings";
-import NotFound from "@/pages/NotFound";
-import WebsiteBuilder from "@/pages/WebsiteBuilder";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import Home from './pages/Home';
+import Pricing from './pages/Pricing';
+import Contact from './pages/Contact';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
+import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import AICopyPreview from './pages/AICopyPreview';
+import NotFound from './pages/NotFound';
+import Legal from './pages/Legal';
+import Admin from './pages/Admin';
+import AdminClinics from './pages/AdminClinics';
+import AdminUsers from './pages/AdminUsers';
+import AdminSessions from './pages/AdminSessions';
+import AdminWebsites from './pages/AdminWebsites';
+import AdminDiagnostics from "./pages/AdminDiagnostics";
+import { Toaster } from '@/components/ui/toaster';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <ErrorBoundary>
-          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-            <LanguageProvider>
-              <AuthProvider>
-                <div className="min-h-screen">
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/landing" element={<Landing />} />
-                    <Route path="/features" element={<Features />} />
-                    <Route path="/how-it-works" element={<HowItWorks />} />
-                    <Route path="/templates" element={<Templates />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/blog/:slug" element={<BlogArticle />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/auth" element={<Auth />} />
-
-                    {/* Protected routes */}
-                    <Route path="/dashboard" element={
+      <AuthProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <BrowserRouter>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/legal" element={<Legal />} />
+                  <Route path="/ai-copy-preview" element={<ProtectedRoute><AICopyPreview /></ProtectedRoute>} />
+                  
+                  <Route 
+                    path="/dashboard" 
+                    element={
                       <ProtectedRoute>
                         <Dashboard />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/onboarding" element={
-                      <ProtectedRoute>
-                        <Onboarding />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/ai-copy-preview" element={
-                      <ProtectedRoute>
-                        <AiCopyPreview />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/template-preview" element={
-                      <ProtectedRoute>
-                        <TemplatePreview />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/account" element={
-                      <ProtectedRoute>
-                        <Account />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/clinic-settings/:clinicId" element={
-                      <ProtectedRoute>
-                        <ClinicSettings />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/website-builder/:websiteId" element={
-                      <ProtectedRoute>
-                        <WebsiteBuilder />
-                      </ProtectedRoute>
-                    } />
+                    } 
+                  />
 
-                    {/* 404 route */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
+                  <Route 
+                    path="/admin" 
+                    element={
+                      <ProtectedRoute>
+                        <Admin />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/clinics" 
+                    element={
+                      <ProtectedRoute>
+                        <AdminClinics />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/users" 
+                    element={
+                      <ProtectedRoute>
+                        <AdminUsers />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/sessions" 
+                    element={
+                      <ProtectedRoute>
+                        <AdminSessions />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/websites" 
+                    element={
+                      <ProtectedRoute>
+                        <AdminWebsites />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/admin/diagnostics" 
+                    element={
+                      <ProtectedRoute>
+                        <AdminDiagnostics />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
                 <Toaster />
-              </AuthProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </ErrorBoundary>
-      </Router>
+              </ErrorBoundary>
+            </BrowserRouter>
+          </LanguageProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
