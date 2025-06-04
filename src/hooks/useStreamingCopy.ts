@@ -1,9 +1,10 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { GeneratedCopy, OnboardingSession } from '@/types/copy';
 import { StreamingService } from '@/services/streamingService';
 import { CopyGenerationService } from '@/services/copyGenerationService';
+import { useSaveCopy } from '@/hooks/useSaveCopy';
 
 export const useStreamingCopy = () => {
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
@@ -12,15 +13,35 @@ export const useStreamingCopy = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { getSavedCopy } = useSaveCopy();
   
   const streamingService = useRef(new StreamingService());
   const copyGenerationService = useRef(new CopyGenerationService());
 
-  const generateCopyWithStreaming = async (sessionId: string) => {
+  const loadSavedCopy = async (sessionId: string) => {
+    const result = await getSavedCopy(sessionId);
+    if (result.success && result.copy) {
+      setGeneratedCopy(result.copy);
+      return true;
+    }
+    return false;
+  };
+
+  const generateCopyWithStreaming = async (sessionId: string, checkSaved: boolean = true) => {
     if (!sessionId) return;
 
-    setIsStreaming(true);
     setLoading(true);
+
+    // Check for saved copy first if requested
+    if (checkSaved) {
+      const hasSavedCopy = await loadSavedCopy(sessionId);
+      if (hasSavedCopy) {
+        setLoading(false);
+        return;
+      }
+    }
+
+    setIsStreaming(true);
     setStreamingContent('');
     setGeneratedCopy(null);
 
@@ -43,7 +64,7 @@ export const useStreamingCopy = () => {
           response.data,
           setStreamingContent,
           (sessionData) => {
-            if (!sessionData) {
+            if (sessionData) {
               setSessionData(sessionData);
             }
           }
@@ -128,6 +149,7 @@ export const useStreamingCopy = () => {
     isStreaming,
     loading,
     generateCopyWithStreaming,
-    stopGeneration
+    stopGeneration,
+    loadSavedCopy
   };
 };

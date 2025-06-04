@@ -1,10 +1,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSaveCopy } from "@/hooks/useSaveCopy";
 
 interface OnboardingSession {
+  id: string;
   clinic_name: string;
 }
 
@@ -15,6 +17,7 @@ interface CopySaveActionsProps {
 
 const CopySaveActions = ({ generatedCopy, sessionData }: CopySaveActionsProps) => {
   const { toast } = useToast();
+  const { saveCopy, loading } = useSaveCopy();
 
   const exportAsJson = () => {
     if (!generatedCopy) return;
@@ -34,6 +37,12 @@ const CopySaveActions = ({ generatedCopy, sessionData }: CopySaveActionsProps) =
     });
   };
 
+  const handleSaveCopy = async () => {
+    if (!generatedCopy || !sessionData?.id) return;
+    
+    await saveCopy(sessionData.id, generatedCopy);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -44,13 +53,17 @@ const CopySaveActions = ({ generatedCopy, sessionData }: CopySaveActionsProps) =
       </CardHeader>
       <CardContent>
         <div className="flex gap-4">
-          <Button onClick={exportAsJson} className="flex-1">
+          <Button onClick={exportAsJson} className="flex-1" variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Download as JSON
           </Button>
-          <Button variant="outline" className="flex-1" disabled>
-            Save to Project
-            <span className="text-xs ml-2">(Coming Soon)</span>
+          <Button 
+            onClick={handleSaveCopy} 
+            className="flex-1"
+            disabled={loading || !generatedCopy || !sessionData?.id}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Saving...' : 'Save to Project'}
           </Button>
         </div>
       </CardContent>

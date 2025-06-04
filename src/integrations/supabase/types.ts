@@ -9,6 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_generated_copy: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          session_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          session_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          session_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_generated_copy_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_sessions: {
         Row: {
           address: string | null
