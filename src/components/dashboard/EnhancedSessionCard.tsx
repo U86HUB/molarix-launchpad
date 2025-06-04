@@ -8,7 +8,7 @@ import { useSessionStatus } from '@/hooks/useSessionStatus';
 import { useSessionCopy } from '@/hooks/useSessionCopy';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Edit, Duplicate, Trash2, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Eye, Edit, Copy, Trash2, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -146,7 +146,7 @@ const EnhancedSessionCard = ({
                       onClick={() => onDuplicate(session.id, session.clinic_name || 'Untitled')}
                       className="flex items-center gap-1 px-3 border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
-                      <Duplicate className="h-3 w-3" />
+                      <Copy className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
