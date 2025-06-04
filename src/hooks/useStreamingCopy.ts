@@ -67,8 +67,7 @@ export const useStreamingCopy = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-copy', {
-        body: { sessionId, stream: true },
-        signal: abortControllerRef.current.signal
+        body: { sessionId, stream: true }
       });
 
       if (error) {
