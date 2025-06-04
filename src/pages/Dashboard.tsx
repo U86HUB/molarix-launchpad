@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,7 @@ const Dashboard = () => {
   const { sessions, loading, refreshSessions, deleteSession } = useDashboardSessions();
 
   const handleContinueEditing = (sessionId: string) => {
-    navigate(`/template-preview?sessionId=${sessionId}`);
+    navigate(`/ai-copy-preview?sessionId=${sessionId}&resume=true`);
   };
 
   const handlePreview = (sessionId: string) => {
