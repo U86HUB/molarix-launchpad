@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,44 +16,53 @@ interface Clinic {
 }
 
 export const useUserClinics = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchClinics = async () => {
-    if (!user) {
-      console.log('useUserClinics: No user found, skipping fetch');
-      setLoading(false);
-      return;
-    }
-
     console.log('=== FETCHING CLINICS DEBUG START ===');
-    console.log('Current user:', { id: user.id, email: user.email });
-    console.log('Fetching clinics for user:', user.id);
-
+    
     try {
-      // First, let's check what we get without the filter to debug RLS
-      console.log('🔍 Testing query without RLS filter...');
-      const { data: allData, error: allError } = await supabase
-        .from('clinics')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Get the current user from Supabase auth
+      console.log('🔄 Getting current user for clinics fetch...');
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      console.log('👤 User data for clinics fetch:', { 
+        userData: userData?.user ? { 
+          id: userData.user.id, 
+          email: userData.user.email 
+        } : null, 
+        userError 
+      });
 
-      console.log('All clinics query result:', { data: allData, error: allError });
+      if (userError) {
+        console.log('❌ Error getting user:', userError);
+        setLoading(false);
+        return;
+      }
+
+      if (!userData?.user?.id) {
+        console.log('⚠️ No user found, skipping fetch');
+        setLoading(false);
+        return;
+      }
+
+      const userId = userData.user.id;
+      console.log('✅ Valid user ID for clinics fetch:', userId);
 
       // Now the actual query with user filter
       console.log('🔍 Executing main clinics query...');
       const { data, error } = await supabase
         .from('clinics')
         .select('*')
-        .eq('created_by', user.id)
+        .eq('created_by', userId)
         .order('created_at', { ascending: false });
 
-      console.log('User clinics query result:', { 
+      console.log('📊 User clinics query result:', { 
         data, 
         error, 
-        userIdUsed: user.id,
+        userIdUsed: userId,
         dataLength: data?.length || 0 
       });
 
@@ -81,7 +89,7 @@ export const useUserClinics = () => {
 
   useEffect(() => {
     fetchClinics();
-  }, [user]);
+  }, []);
 
   return {
     clinics,

@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ interface AddNewClinicInlineProps {
 }
 
 export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicInlineProps) => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [clinicName, setClinicName] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
@@ -29,17 +27,6 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       clinicAddress: clinicAddress.trim(),
       timestamp: new Date().toISOString()
     });
-    console.log('Current user:', user);
-
-    if (!user) {
-      console.log('❌ No user found');
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to create a clinic.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     if (!clinicName.trim()) {
       console.log('❌ Empty clinic name');
@@ -54,20 +41,38 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
     setIsCreating(true);
 
     try {
-      console.log('🔄 Starting Supabase insert...');
+      // Get the current user from Supabase auth
+      console.log('🔄 Getting current user from Supabase auth...');
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       
+      console.log('👤 User data response:', { 
+        userData: userData?.user ? { 
+          id: userData.user.id, 
+          email: userData.user.email 
+        } : null, 
+        userError 
+      });
+
+      if (userError) {
+        console.log('❌ Error getting user:', userError);
+        throw new Error('Authentication error: ' + userError.message);
+      }
+
+      if (!userData?.user?.id) {
+        console.log('❌ No user ID found');
+        throw new Error('User not authenticated');
+      }
+
+      const userId = userData.user.id;
+      console.log('✅ Valid user ID found:', userId);
+
       const insertPayload = {
         name: clinicName.trim(),
         address: clinicAddress.trim() || null,
-        created_by: user.id,
+        created_by: userId,
       };
       
       console.log('📝 Insert payload:', insertPayload);
-      console.log('🔐 User context:', { 
-        userId: user.id, 
-        userEmail: user.email,
-        aud: user.aud 
-      });
 
       const { data: clinicData, error: clinicError } = await supabase
         .from('clinics')
@@ -88,7 +93,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
           hint: clinicError.hint,
           code: clinicError.code
         });
-        throw clinicError;
+        throw new Error(clinicError.message);
       }
 
       if (!clinicData) {
@@ -109,6 +114,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         .from('clinics')
         .select('*')
         .eq('id', clinicData.id)
+        .eq('created_by', userId)
         .single();
 
       console.log('🔍 Verification query result:', { 
