@@ -48,12 +48,14 @@ export type Database = {
         Row: {
           address: string | null
           clinic_name: string | null
+          completion_score: number | null
           compliance_flags: Json | null
           created_at: string | null
           created_by: string | null
           email: string | null
           font_style: string | null
           id: string
+          last_updated: string | null
           logo_url: string | null
           phone: string | null
           primary_color: string | null
@@ -62,12 +64,14 @@ export type Database = {
         Insert: {
           address?: string | null
           clinic_name?: string | null
+          completion_score?: number | null
           compliance_flags?: Json | null
           created_at?: string | null
           created_by?: string | null
           email?: string | null
           font_style?: string | null
           id?: string
+          last_updated?: string | null
           logo_url?: string | null
           phone?: string | null
           primary_color?: string | null
@@ -76,12 +80,14 @@ export type Database = {
         Update: {
           address?: string | null
           clinic_name?: string | null
+          completion_score?: number | null
           compliance_flags?: Json | null
           created_at?: string | null
           created_by?: string | null
           email?: string | null
           font_style?: string | null
           id?: string
+          last_updated?: string | null
           logo_url?: string | null
           phone?: string | null
           primary_color?: string | null

@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
-import { BarChart3, Calendar, FileText, Eye } from 'lucide-react';
+import { BarChart3, Calendar, FileText, TrendingUp } from 'lucide-react';
 
 interface DashboardStatsProps {
   sessions: DashboardSession[];
@@ -10,12 +10,16 @@ interface DashboardStatsProps {
 const DashboardStats = ({ sessions }: DashboardStatsProps) => {
   // Calculate statistics
   const totalSessions = sessions.length;
-  const draftSessions = sessions.length; // All sessions are currently drafts since we don't have a published status
-  const publishedSessions = 0; // Placeholder for when publishing feature is added
   
-  // Get the most recent edit timestamp
+  // Calculate average completion score
+  const sessionsWithCompletion = sessions.filter(session => session.completion_score !== null);
+  const averageCompletion = sessionsWithCompletion.length > 0 
+    ? Math.round(sessionsWithCompletion.reduce((sum, session) => sum + (session.completion_score || 0), 0) / sessionsWithCompletion.length)
+    : 0;
+  
+  // Get the most recent edit timestamp from last_updated
   const lastEditTimestamp = sessions.length > 0 
-    ? Math.max(...sessions.map(session => new Date(session.created_at).getTime()))
+    ? Math.max(...sessions.map(session => new Date(session.last_updated || session.created_at).getTime()))
     : null;
 
   const formatLastEdit = () => {
@@ -35,25 +39,25 @@ const DashboardStats = ({ sessions }: DashboardStatsProps) => {
     return lastEdit.toLocaleDateString();
   };
 
-  // Placeholder visits data - this would come from actual analytics when implemented
-  const totalVisits = sessions.reduce((total, session) => {
-    // Simulate some visit data based on session age
-    const sessionAge = Math.floor((Date.now() - new Date(session.created_at).getTime()) / (1000 * 60 * 60 * 24));
-    return total + Math.max(0, Math.floor(Math.random() * sessionAge * 3));
-  }, 0);
+  // Calculate sessions with recent activity (within last 7 days)
+  const recentActivityCount = sessions.filter(session => {
+    const lastUpdate = new Date(session.last_updated || session.created_at);
+    const daysSinceUpdate = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceUpdate <= 7;
+  }).length;
 
   const statsData = [
     {
-      title: "Total Sessions",
+      title: "Total Websites",
       value: totalSessions,
       icon: FileText,
       description: `${totalSessions} website${totalSessions !== 1 ? 's' : ''} created`
     },
     {
-      title: "Status Overview",
-      value: `${draftSessions}/${publishedSessions}`,
+      title: "Avg. Completion",
+      value: `${averageCompletion}%`,
       icon: BarChart3,
-      description: `${draftSessions} drafts, ${publishedSessions} published`
+      description: sessionsWithCompletion.length > 0 ? "Content completeness" : "No completion data"
     },
     {
       title: "Last Activity",
@@ -62,10 +66,10 @@ const DashboardStats = ({ sessions }: DashboardStatsProps) => {
       description: lastEditTimestamp ? "Most recent edit" : "No activity"
     },
     {
-      title: "Total Visits",
-      value: totalVisits,
-      icon: Eye,
-      description: "Across all websites"
+      title: "Recent Activity",
+      value: recentActivityCount,
+      icon: TrendingUp,
+      description: "Active in last 7 days"
     }
   ];
 

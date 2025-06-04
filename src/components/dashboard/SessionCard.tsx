@@ -1,8 +1,9 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
-import { Calendar, Eye, Edit, Trash2, Building } from 'lucide-react';
+import { Calendar, Eye, Edit, Trash2, Building, Clock } from 'lucide-react';
 import TemplateThumbnail from './TemplateThumbnail';
 
 interface SessionCardProps {
@@ -21,8 +22,28 @@ const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: Sessio
     });
   };
 
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Less than an hour ago';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return formatDate(dateString);
+  };
+
   const getStatusBadge = () => {
-    // For now, we'll show all as "Draft" since we don't have a status field
+    if (session.completion_score !== null) {
+      const score = session.completion_score;
+      if (score >= 80) return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Complete</Badge>;
+      if (score >= 50) return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">In Progress</Badge>;
+      return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">Started</Badge>;
+    }
     return <Badge variant="secondary">Draft</Badge>;
   };
 
@@ -72,8 +93,21 @@ const SessionCard = ({ session, onContinueEditing, onPreview, onDelete }: Sessio
             </div>
           )}
           
-          <div className="text-sm text-gray-600 dark:text-gray-300">
-            Template: <span className="font-medium">{session.selected_template || 'Not selected'}</span>
+          <div className="space-y-2">
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Template: <span className="font-medium">{session.selected_template || 'Not selected'}</span>
+            </div>
+            
+            {session.completion_score !== null && (
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Completion: <span className="font-medium">{session.completion_score}%</span>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Clock className="h-3 w-3" />
+              Last updated {formatTimeAgo(session.last_updated || session.created_at)}
+            </div>
           </div>
           
           <div className="flex gap-2">

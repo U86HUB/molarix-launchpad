@@ -8,6 +8,8 @@ export interface DashboardSession {
   id: string;
   clinic_name: string;
   created_at: string;
+  last_updated: string;
+  completion_score: number | null;
   selected_template: string;
   logo_url?: string;
   primary_color?: string;
@@ -26,8 +28,8 @@ export const useDashboardSessions = () => {
     try {
       const { data, error } = await supabase
         .from('onboarding_sessions')
-        .select('id, clinic_name, created_at, selected_template, logo_url, primary_color')
-        .order('created_at', { ascending: false });
+        .select('id, clinic_name, created_at, last_updated, completion_score, selected_template, logo_url, primary_color')
+        .order('last_updated', { ascending: false });
 
       if (error) throw error;
 
