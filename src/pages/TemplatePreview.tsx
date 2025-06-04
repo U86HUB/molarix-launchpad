@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import TemplateRenderer from "@/components/preview/TemplateRenderer";
+import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
+import { FullPageLoader } from "@/components/ui/loading-states";
+import EmptyState from "@/components/ui/empty-state";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { GeneratedCopy } from "@/types/copy";
 
@@ -25,6 +28,7 @@ interface OnboardingSession {
 
 const TemplatePreview = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { toast } = useToast();
   const [sessionData, setSessionData] = useState<OnboardingSession | null>(null);
@@ -105,65 +109,57 @@ const TemplatePreview = () => {
     fetchData();
   }, [sessionId, toast]);
 
+  const breadcrumbItems = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Template Preview' },
+  ];
+
   if (loading || copyLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading preview...</span>
-        </div>
-      </div>
-    );
+    return <FullPageLoader text="Loading preview..." />;
   }
 
   if (!sessionData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Session Not Found</CardTitle>
-            <CardDescription>
-              The onboarding session could not be found.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.history.back()} className="w-full">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          title="Session Not Found"
+          description="The onboarding session could not be found."
+          actions={[
+            {
+              label: 'Go Back',
+              onClick: () => navigate(-1),
+              variant: 'default',
+              icon: ArrowLeft,
+            }
+          ]}
+        />
       </div>
     );
   }
 
   if (noPublishedCopyFound) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>No Published Version Available</CardTitle>
-            <CardDescription>
-              No published version available yet. Please publish from editing mode first.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={() => window.location.href = `/ai-copy-preview?sessionId=${sessionId}&mode=edit`}
-              className="w-full"
-            >
-              Go to Editing Mode
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.history.back()} 
-              className="w-full"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <BreadcrumbNav items={breadcrumbItems} />
+          <EmptyState
+            title="No Published Version Available"
+            description="No published version available yet. Please publish from editing mode first."
+            actions={[
+              {
+                label: 'Go to Editing Mode',
+                onClick: () => navigate(`/ai-copy-preview?sessionId=${sessionId}&mode=edit`),
+                variant: 'default',
+              },
+              {
+                label: 'Go Back',
+                onClick: () => navigate(-1),
+                variant: 'outline',
+                icon: ArrowLeft,
+              }
+            ]}
+          />
+        </div>
       </div>
     );
   }
@@ -171,10 +167,12 @@ const TemplatePreview = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        <BreadcrumbNav items={breadcrumbItems} />
+        
         <div className="mb-8">
           <Button
             variant="outline"
-            onClick={() => window.history.back()}
+            onClick={() => navigate(-1)}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

@@ -1,10 +1,11 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { GroupingType } from '@/hooks/useSessionGrouping';
 import GroupedSessionsGrid from './GroupedSessionsGrid';
 import ClinicGroupedSessionsGrid from './ClinicGroupedSessionsGrid';
+import EmptyState from '@/components/ui/empty-state';
+import { Search, Filter, RotateCcw } from 'lucide-react';
 
 interface DashboardContentRendererProps {
   sessions: DashboardSession[];
@@ -34,39 +35,45 @@ const DashboardContentRenderer = ({
   onResetAllFilters
 }: DashboardContentRendererProps) => {
   if (sessions.length === 0) {
+    const hasActiveFilters = searchQuery || selectedClinicId;
+    
     return (
-      <Card className="text-center py-12 shadow-sm border-border bg-white dark:bg-gray-800">
-        <CardHeader>
-          <CardTitle className="text-xl">
-            {searchQuery || selectedClinicId ? 'No websites match your filters' : 'No websites match your filters'}
-          </CardTitle>
-          <CardDescription className="text-base">
-            {searchQuery || selectedClinicId
-              ? `Try adjusting your search or clinic filter to see more results`
-              : `Try adjusting your sort and filter options to see more results`
+      <EmptyState
+        icon={hasActiveFilters ? Search : Filter}
+        title={hasActiveFilters ? 'No websites match your filters' : 'No websites match your filters'}
+        description={
+          hasActiveFilters
+            ? 'Try adjusting your search or clinic filter to see more results'
+            : 'Try adjusting your sort and filter options to see more results'
+        }
+        actions={[
+          ...(hasActiveFilters ? [
+            {
+              label: 'Clear Filters',
+              onClick: onClearFilters,
+              variant: 'outline' as const,
+              icon: Filter,
             }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {(searchQuery || selectedClinicId) && (
-              <Button 
-                onClick={onClearFilters} 
-                variant="outline"
-                className="border-blue-200 text-blue-700 hover:bg-blue-50"
-              >
-                Clear Filters
-              </Button>
-            )}
-            <Button 
-              onClick={onResetAllFilters} 
-              variant="outline"
-            >
-              Reset All Filters
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          ] : []),
+          {
+            label: 'Reset All Filters',
+            onClick: onResetAllFilters,
+            variant: 'outline' as const,
+            icon: RotateCcw,
+          }
+        ]}
+        suggestions={hasActiveFilters ? [
+          'Check your spelling in the search box',
+          'Try selecting a different clinic',
+          'Remove some filter criteria',
+          'Use broader search terms'
+        ] : [
+          'Try changing the sort order',
+          'Adjust the status filter',
+          'Check if you have any websites created',
+          'Create a new website to get started'
+        ]}
+      />
     );
   }
 

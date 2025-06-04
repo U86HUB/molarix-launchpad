@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardSession } from '@/hooks/useDashboardSessions';
 import { useSessionFilters, SortOption, FilterOption } from '@/hooks/useSessionFilters';
 import { useMultipleSessionStatuses } from '@/hooks/useSessionStatus';
@@ -10,6 +10,7 @@ import DashboardEmpty from './DashboardEmpty';
 import DashboardActionsSection from './DashboardActionsSection';
 import DashboardContentRenderer from './DashboardContentRenderer';
 import DashboardModals from './DashboardModals';
+import GettingStartedGuide from './GettingStartedGuide';
 
 interface DashboardContentProps {
   sessions: DashboardSession[];
@@ -40,6 +41,9 @@ const DashboardContent = ({
   // Create website modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+  // Getting started guide state
+  const [showGettingStarted, setShowGettingStarted] = useState(false);
+
   // Get session statuses for filtering
   const sessionStatuses = useMultipleSessionStatuses(sessions);
 
@@ -49,6 +53,14 @@ const DashboardContent = ({
     filterBy,
     sessionStatuses
   });
+
+  // Show getting started guide for new users
+  useEffect(() => {
+    const hasSeenGuide = localStorage.getItem('hasSeenGettingStartedGuide');
+    if (!hasSeenGuide && sessions.length === 0) {
+      setShowGettingStarted(true);
+    }
+  }, [sessions.length]);
 
   // Apply search filtering
   const searchFilteredSessions = filteredSessions.filter(session => {
@@ -96,6 +108,11 @@ const DashboardContent = ({
     refreshSessions();
   };
 
+  const handleDismissGettingStarted = () => {
+    setShowGettingStarted(false);
+    localStorage.setItem('hasSeenGettingStartedGuide', 'true');
+  };
+
   const handleClearFilters = () => {
     setSearchQuery('');
     setSelectedClinicId(undefined);
@@ -112,6 +129,12 @@ const DashboardContent = ({
   if (sessions.length === 0) {
     return (
       <div className="mt-12">
+        {showGettingStarted && (
+          <GettingStartedGuide
+            onDismiss={handleDismissGettingStarted}
+            onCreateWebsite={handleCreateNew}
+          />
+        )}
         <DashboardEmpty onCreateNew={handleCreateNew} />
         <DashboardModals
           previewSessionId={previewSessionId}
@@ -126,6 +149,14 @@ const DashboardContent = ({
 
   return (
     <>
+      {/* Show getting started guide for users with content */}
+      {showGettingStarted && (
+        <GettingStartedGuide
+          onDismiss={handleDismissGettingStarted}
+          onCreateWebsite={handleCreateNew}
+        />
+      )}
+
       {/* Enhanced Analytics Stats Section with background container */}
       <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-white/20 dark:border-gray-700/20 mb-8">
         <DashboardStats sessions={sessions} />

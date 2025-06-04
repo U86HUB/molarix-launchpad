@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,8 @@ import OnboardingClinicInfo from "@/components/onboarding/OnboardingClinicInfo";
 import OnboardingBrandSettings from "@/components/onboarding/OnboardingBrandSettings";
 import OnboardingCompliance from "@/components/onboarding/OnboardingCompliance";
 import OnboardingTemplateSelection from "@/components/onboarding/OnboardingTemplateSelection";
+import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
+import WorkflowProgress, { WorkflowStep } from "@/components/ui/workflow-progress";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useOnboardingSubmission } from "@/hooks/useOnboardingSubmission";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
@@ -56,6 +59,33 @@ const Onboarding = () => {
     },
     selectedTemplateId: null,
   });
+
+  const workflowSteps: WorkflowStep[] = [
+    {
+      id: 'clinic',
+      label: 'Clinic Info',
+      description: 'Basic clinic details',
+      status: activeStep === 'clinic' ? 'current' : (progress > 25 ? 'completed' : 'upcoming'),
+    },
+    {
+      id: 'brand',
+      label: 'Branding',
+      description: 'Logo and style',
+      status: activeStep === 'brand' ? 'current' : (progress > 50 ? 'completed' : 'upcoming'),
+    },
+    {
+      id: 'compliance',
+      label: 'Compliance',
+      description: 'Privacy settings',
+      status: activeStep === 'compliance' ? 'current' : (progress > 75 ? 'completed' : 'upcoming'),
+    },
+    {
+      id: 'templates',
+      label: 'Templates',
+      description: 'Choose design',
+      status: activeStep === 'templates' ? 'current' : (progress === 100 ? 'completed' : 'upcoming'),
+    },
+  ];
 
   const updateClinicData = (data: typeof onboardingData.clinic) => {
     setOnboardingData(prev => ({ ...prev, clinic: data }));
@@ -110,9 +140,16 @@ const Onboarding = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Onboarding' },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
+        <BreadcrumbNav items={breadcrumbItems} />
+        
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             {t('onboardingTitle') || 'Welcome to Molarix'}
@@ -121,6 +158,8 @@ const Onboarding = () => {
             {t('onboardingSubtitle') || 'Complete the setup to get started with your dental clinic portal'}
           </p>
         </div>
+
+        <WorkflowProgress steps={workflowSteps} className="mb-8" />
 
         <Progress value={progress} className="h-2 mb-8" />
 
