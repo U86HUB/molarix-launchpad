@@ -53,7 +53,7 @@ export const useCopyHistory = ({ sessionId }: UseCopyHistoryParams) => {
       // Transform the data to ensure it's properly typed
       const transformedData: CopyHistoryItem[] = (data || []).map(item => ({
         ...item,
-        data: item.data as GeneratedCopy
+        data: item.data as unknown as GeneratedCopy
       }));
 
       setHistory(transformedData);
