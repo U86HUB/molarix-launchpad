@@ -66,7 +66,7 @@ export const useWebsiteInitialization = (): UseWebsiteInitializationResult => {
     }
   }, [handleProgress, navigate, toast]);
 
-  const retryInitialization = useCallback((data: WebsiteInitializationData): void => {
+  const retryInitializeWebsite = useCallback((data: WebsiteInitializationData): void => {
     setHasError(false);
     initializeWebsite(data);
   }, [initializeWebsite]);
@@ -78,6 +78,6 @@ export const useWebsiteInitialization = (): UseWebsiteInitializationResult => {
     isCompleted,
     hasError,
     initializeWebsite,
-    retryInitialization,
+    retryInitialization: retryInitializeWebsite,
   };
 };

@@ -108,5 +108,5 @@ export interface UseWebsiteInitializationResult {
   isCompleted: boolean;
   hasError: boolean;
   initializeWebsite: (data: WebsiteInitializationData) => Promise<void>;
-  retryInitialization: () => void;
+  retryInitialization: (data: WebsiteInitializationData) => void;
 }
