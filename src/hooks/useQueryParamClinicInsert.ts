@@ -129,11 +129,12 @@ export const useQueryParamClinicInsert = () => {
         // Clean up URL parameters
         navigate('/dashboard', { replace: true });
 
-      } catch (error: any) {
+      } catch (error) {
         console.error('❌ Unexpected error in clinic creation:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         toast({
           title: "Unexpected Error",
-          description: error?.message || "An unexpected error occurred.",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
