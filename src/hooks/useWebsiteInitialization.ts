@@ -7,7 +7,7 @@ import {
   WebsiteInitializationData, 
   InitializationProgress 
 } from '@/services/websiteInitializationService';
-import { UseWebsiteInitializationResult } from '@/types/onboarding';
+import { UseWebsiteInitializationResult, WebsiteInitializer } from '@/types/onboarding';
 
 export const useWebsiteInitialization = (): UseWebsiteInitializationResult => {
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ export const useWebsiteInitialization = (): UseWebsiteInitializationResult => {
     setIsCompleted(progress.completed);
   }, []);
 
-  const initializeWebsite = useCallback(async (data: WebsiteInitializationData): Promise<void> => {
+  const initializeWebsite: WebsiteInitializer = useCallback(async (data: WebsiteInitializationData): Promise<void> => {
     try {
       setIsInitializing(true);
       setHasError(false);

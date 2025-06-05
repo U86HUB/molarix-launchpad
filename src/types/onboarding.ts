@@ -60,6 +60,9 @@ export interface WebsiteInitializationData {
   };
 }
 
+// Shared type for website initialization functions
+export type WebsiteInitializer = (data: WebsiteInitializationData) => Promise<void>;
+
 export interface UseUnifiedOnboardingSubmissionResult {
   isSubmitting: boolean;
   isInitializing: boolean;
@@ -107,6 +110,6 @@ export interface UseWebsiteInitializationResult {
   currentMessage: string;
   isCompleted: boolean;
   hasError: boolean;
-  initializeWebsite: (data: WebsiteInitializationData) => Promise<void>;
+  initializeWebsite: WebsiteInitializer;
   retryInitialization: (data: WebsiteInitializationData) => void;
 }

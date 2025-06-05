@@ -88,10 +88,12 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
     }
   };
 
-  // Create a no-parameter retry function that uses the stored website data
+  // Create a no-parameter retry function with fallback logging
   const retryInitialization = (): void => {
     if (lastWebsiteData) {
       initializeWebsite(lastWebsiteData);
+    } else {
+      console.warn("⚠️ Cannot retry: No previous website data available.");
     }
   };
 
