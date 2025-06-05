@@ -56,7 +56,7 @@ const UnifiedOnboardingFlow = () => {
         currentStep={initStep}
         currentMessage={currentMessage}
         isCompleted={initCompleted}
-        hasError={initError}
+        hasError={!!initError}
         onRetry={() => {
           console.log('Retry initialization requested');
         }}

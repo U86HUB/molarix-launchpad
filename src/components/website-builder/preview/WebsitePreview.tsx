@@ -53,9 +53,20 @@ const WebsitePreview: React.FC<WebsitePreviewProps> = ({
     }
   }, [activeSection, selectedSectionId, onSectionSelect]);
 
-  const handleReorder = useCallback((newSections: Section[]) => {
+  const handleReorder = useCallback((draggedId: string, targetId: string, position: 'before' | 'after') => {
+    const draggedIndex = sections.findIndex(s => s.id === draggedId);
+    const targetIndex = sections.findIndex(s => s.id === targetId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newSections = [...sections];
+    const [draggedSection] = newSections.splice(draggedIndex, 1);
+    
+    const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+    newSections.splice(insertIndex, 0, draggedSection);
+    
     onSectionReorder(newSections);
-  }, [onSectionReorder]);
+  }, [sections, onSectionReorder]);
 
   const handleSectionUpdateInternal = useCallback((sectionId: string, updates: Partial<Section>) => {
     onSectionUpdate(sectionId, updates);
@@ -127,21 +138,23 @@ const WebsitePreview: React.FC<WebsitePreviewProps> = ({
           "bg-white rounded-lg shadow-sm overflow-hidden",
           viewMode === 'mobile' ? "w-full" : "w-full max-w-6xl mx-auto"
         )}>
-          {sections.map((section, index) => (
+          {sections.map((section) => (
             <DraggableSection
               key={section.id}
               section={section}
-              index={index}
-              sections={sections}
-              isSelected={activeSection === section.id}
-              isEditMode={isEditMode}
-              copyMode={copyMode}
-              viewMode={viewMode}
-              onSectionClick={handleSectionClickInternal}
-              onSectionUpdate={handleSectionUpdateInternal}
-              onSectionReorder={handleReorder}
-              onRegisterSection={registerSection}
-            />
+              isActive={activeSection === section.id}
+              isVisible={true}
+              onRegister={registerSection}
+              onReorder={handleReorder}
+            >
+              <div 
+                className="p-4 border-b cursor-pointer hover:bg-gray-50"
+                onClick={() => handleSectionClickInternal(section.id)}
+              >
+                <h3 className="font-medium text-gray-900">{section.type}</h3>
+                <p className="text-sm text-gray-500">Click to edit this section</p>
+              </div>
+            </DraggableSection>
           ))}
         </div>
       </div>

@@ -67,6 +67,11 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
     scrollToSection(sectionId);
   };
 
+  const handleSectionSelect = (sectionId: string) => {
+    // Handle section selection logic
+    console.log('Section selected:', sectionId);
+  };
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
@@ -191,10 +196,12 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
           <ResizablePanel defaultSize={70}>
             <div className="h-full bg-white dark:bg-gray-900">
               <WebsitePreview 
-                website={website} 
                 sections={sections} 
-                onReorderSections={reorderSections}
-                onAddSection={addSection}
+                onSectionSelect={handleSectionSelect}
+                onSectionReorder={reorderSections}
+                onSectionUpdate={updateSection}
+                selectedSectionId={activeSection || undefined}
+                isEditMode={true}
               />
             </div>
           </ResizablePanel>
