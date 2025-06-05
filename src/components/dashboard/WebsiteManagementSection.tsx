@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,19 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Globe, Plus, Settings, BarChart3, Eye, Building2, Loader2 } from 'lucide-react';
 import { CreateWebsiteModal } from './CreateWebsiteModal';
 import { WebsiteCard } from './website/WebsiteCard';
-
-interface Website {
-  id: string;
-  name: string;
-  template_type: string;
-  status: 'draft' | 'published' | 'archived';
-  clinic_id: string;
-  created_at: string;
-  updated_at: string;
-  clinic?: {
-    name: string;
-  };
-}
+import { Website } from '@/types/website';
 
 interface Clinic {
   id: string;
@@ -84,6 +71,7 @@ export const WebsiteManagementSection = () => {
           clinic_id,
           created_at,
           updated_at,
+          created_by,
           clinics!inner(name)
         `)
         .in('clinic_id', clinicIds)
@@ -91,8 +79,16 @@ export const WebsiteManagementSection = () => {
 
       if (error) throw error;
 
-      const transformedWebsites = (data || []).map(website => ({
-        ...website,
+      // Transform the data to match the Website interface
+      const transformedWebsites: Website[] = (data || []).map(website => ({
+        id: website.id,
+        name: website.name,
+        template_type: website.template_type,
+        status: website.status as 'draft' | 'published' | 'archived',
+        clinic_id: website.clinic_id,
+        created_at: website.created_at,
+        updated_at: website.updated_at,
+        created_by: website.created_by,
         clinic: { name: website.clinics.name }
       }));
 
@@ -116,6 +112,31 @@ export const WebsiteManagementSection = () => {
   const handleWebsiteCreate = (newWebsite: Website) => {
     setWebsites([newWebsite, ...websites]);
     setShowCreateModal(false);
+  };
+
+  const handleWebsiteDelete = async (websiteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('websites')
+        .delete()
+        .eq('id', websiteId);
+
+      if (error) throw error;
+
+      setWebsites(websites.filter(w => w.id !== websiteId));
+      
+      toast({
+        title: "Success",
+        description: "Website deleted successfully",
+      });
+    } catch (error: any) {
+      console.error('Error deleting website:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete website",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -245,56 +266,11 @@ export const WebsiteManagementSection = () => {
               ) : (
                 <div className="grid gap-6">
                   {websites.map((website) => (
-                    <div key={website.id} className="border rounded-lg p-6 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Globe className="h-6 w-6 text-primary" />
-                          <div>
-                            <h3 className="text-lg font-semibold">{website.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {website.clinic?.name}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(website.status)}>
-                            {website.status.charAt(0).toUpperCase() + website.status.slice(1)}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <label className="text-muted-foreground">Template</label>
-                          <p className="font-medium">{formatTemplate(website.template_type)}</p>
-                        </div>
-                        <div>
-                          <label className="text-muted-foreground">Last Updated</label>
-                          <p className="font-medium">
-                            {new Date(website.updated_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-muted-foreground">Completion</label>
-                          <p className="font-medium">85%</p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-2 pt-4 border-t">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Preview
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button size="sm">
-                          <BarChart3 className="h-4 w-4 mr-2" />
-                          Analytics
-                        </Button>
-                      </div>
-                    </div>
+                    <WebsiteCard
+                      key={website.id}
+                      website={website}
+                      onDelete={handleWebsiteDelete}
+                    />
                   ))}
                 </div>
               )}

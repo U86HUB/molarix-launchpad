@@ -1,6 +1,12 @@
 
 import PreviewModal from './PreviewModal';
 import { CreateWebsiteModal } from './CreateWebsiteModal';
+import { Website } from '@/types/website';
+
+interface Clinic {
+  id: string;
+  name: string;
+}
 
 interface DashboardModalsProps {
   previewSessionId: string | null;
@@ -8,6 +14,8 @@ interface DashboardModalsProps {
   isCreateModalOpen: boolean;
   onClosePreviewModal: () => void;
   onCloseCreateModal: () => void;
+  onWebsiteCreate?: (website: Website) => void;
+  clinics?: Clinic[];
 }
 
 const DashboardModals = ({
@@ -15,7 +23,9 @@ const DashboardModals = ({
   isPreviewModalOpen,
   isCreateModalOpen,
   onClosePreviewModal,
-  onCloseCreateModal
+  onCloseCreateModal,
+  onWebsiteCreate = () => {},
+  clinics = []
 }: DashboardModalsProps) => {
   return (
     <>
@@ -27,6 +37,8 @@ const DashboardModals = ({
       <CreateWebsiteModal
         isOpen={isCreateModalOpen}
         onClose={onCloseCreateModal}
+        onWebsiteCreate={onWebsiteCreate}
+        clinics={clinics}
       />
     </>
   );

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,19 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Loader2, Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-
-interface Website {
-  id: string;
-  name: string;
-  template_type: string;
-  status: 'draft' | 'published' | 'archived';
-  clinic_id: string;
-  created_at: string;
-  updated_at: string;
-  clinic?: {
-    name: string;
-  };
-}
+import { Website } from '@/types/website';
 
 interface Clinic {
   id: string;
@@ -135,8 +122,16 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
 
       if (error) throw error;
 
-      const websiteWithClinic = {
-        ...newWebsite,
+      // Type the response properly to match Website interface
+      const websiteWithClinic: Website = {
+        id: newWebsite.id,
+        name: newWebsite.name,
+        template_type: newWebsite.template_type,
+        status: newWebsite.status as 'draft' | 'published' | 'archived',
+        clinic_id: newWebsite.clinic_id,
+        created_at: newWebsite.created_at,
+        updated_at: newWebsite.updated_at,
+        created_by: user.id,
         clinic: { name: newWebsite.clinics.name }
       };
 

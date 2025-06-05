@@ -15,19 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-
-interface Website {
-  id: string;
-  name: string;
-  template_type: string;
-  status: 'draft' | 'published' | 'archived';
-  clinic_id: string;
-  created_at: string;
-  updated_at: string;
-  clinic?: {
-    name: string;
-  };
-}
+import { Website } from '@/types/website';
 
 interface WebsiteCardProps {
   website: Website;
