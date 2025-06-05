@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,8 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import OnboardingClinicStep from "./OnboardingClinicStep";
 import OnboardingWebsiteStep from "./OnboardingWebsiteStep";
 import OnboardingPreferencesStep from "./OnboardingPreferencesStep";
+import WebsiteInitializationLoader from "../website-builder/WebsiteInitializationLoader";
+import { useWebsiteInitialization } from "@/hooks/useWebsiteInitialization";
 import { handleSupabaseError, handleOperationSuccess } from "@/utils/errorHandling";
 
 export interface UnifiedOnboardingData {
@@ -44,6 +47,16 @@ const UnifiedOnboardingFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingClinics, setExistingClinics] = useState<any[]>([]);
   
+  const {
+    isInitializing,
+    currentStep: initStep,
+    currentMessage,
+    isCompleted: initCompleted,
+    hasError: initError,
+    initializeWebsite,
+    retryInitialization,
+  } = useWebsiteInitialization();
+
   const [onboardingData, setOnboardingData] = useState<UnifiedOnboardingData>({
     clinic: {
       name: "",
@@ -332,21 +345,23 @@ const UnifiedOnboardingFlow = () => {
           },
           'Setup was partially completed but failed to save preferences. You can still access your website.'
         );
-        
-        // Still redirect to website builder even if session creation fails
-        navigate(`/website-builder/${websiteData.id}`);
-        return;
       }
 
       console.log('Onboarding session created successfully');
 
-      handleOperationSuccess(
-        'complete onboarding',
-        'Your clinic and website have been set up successfully!'
-      );
-
-      // Redirect to website builder
-      navigate(`/website-builder/${websiteData.id}`);
+      // Step 4: Initialize website with loading screen
+      await initializeWebsite({
+        websiteId: websiteData.id,
+        templateType: onboardingData.website.selectedTemplate,
+        primaryColor: onboardingData.website.primaryColor,
+        fontStyle: onboardingData.website.fontStyle,
+        clinicData: {
+          name: onboardingData.clinic.name || existingClinics.find(c => c.id === clinicId)?.name || 'Your Practice',
+          address: onboardingData.clinic.address,
+          phone: onboardingData.clinic.phone,
+          email: onboardingData.clinic.email,
+        }
+      });
 
     } catch (error: any) {
       console.error('Onboarding submission error:', error);
@@ -407,70 +422,84 @@ const UnifiedOnboardingFlow = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Welcome to Molarix
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            Let's get your clinic website set up in just a few steps
-          </p>
-        </div>
+    <>
+      <WebsiteInitializationLoader
+        isVisible={isInitializing}
+        currentStep={initStep}
+        currentMessage={currentMessage}
+        isCompleted={initCompleted}
+        hasError={initError}
+        onRetry={() => {
+          // We'll need to store the initialization data to retry
+          console.log('Retry initialization requested');
+        }}
+      />
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-            <span className={currentStep >= 1 ? "text-blue-600 font-medium" : ""}>
-              Step 1: Clinic
-            </span>
-            <span className={currentStep >= 2 ? "text-blue-600 font-medium" : ""}>
-              Step 2: Website
-            </span>
-            <span className={currentStep >= 3 ? "text-blue-600 font-medium" : ""}>
-              Step 3: Preferences
-            </span>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Welcome to Molarix
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              Let's get your clinic website set up in just a few steps
+            </p>
           </div>
-          <Progress value={getProgressPercentage()} className="h-2" />
-        </div>
 
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl">{getStepTitle()}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderCurrentStep()}
-
-            {/* Navigation */}
-            <div className="flex justify-between mt-8">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={currentStep === 1 || isSubmitting}
-                className="flex items-center gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back
-              </Button>
-              
-              <Button 
-                onClick={handleNext}
-                disabled={!canProceed() || isSubmitting}
-                className="flex items-center gap-2"
-              >
-                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {currentStep === 3 
-                  ? isSubmitting 
-                    ? 'Creating...' 
-                    : 'Complete Setup'
-                  : 'Next Step'}
-                {!isSubmitting && currentStep < 3 && <ChevronRight className="h-4 w-4" />}
-              </Button>
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <span className={currentStep >= 1 ? "text-blue-600 font-medium" : ""}>
+                Step 1: Clinic
+              </span>
+              <span className={currentStep >= 2 ? "text-blue-600 font-medium" : ""}>
+                Step 2: Website
+              </span>
+              <span className={currentStep >= 3 ? "text-blue-600 font-medium" : ""}>
+                Step 3: Preferences
+              </span>
             </div>
-          </CardContent>
-        </Card>
+            <Progress value={getProgressPercentage()} className="h-2" />
+          </div>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">{getStepTitle()}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderCurrentStep()}
+
+              {/* Navigation */}
+              <div className="flex justify-between mt-8">
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={currentStep === 1 || isSubmitting}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                
+                <Button 
+                  onClick={handleNext}
+                  disabled={!canProceed() || isSubmitting}
+                  className="flex items-center gap-2"
+                >
+                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {currentStep === 3 
+                    ? isSubmitting 
+                      ? 'Creating...' 
+                      : 'Complete Setup'
+                    : 'Next Step'}
+                  {!isSubmitting && currentStep < 3 && <ChevronRight className="h-4 w-4" />}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

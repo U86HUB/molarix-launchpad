@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building2, Loader2, Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Website } from '@/types/website';
+import WebsiteInitializationLoader from '../website-builder/WebsiteInitializationLoader';
+import { useWebsiteInitialization } from '@/hooks/useWebsiteInitialization';
 
 interface Clinic {
   id: string;
@@ -64,8 +67,18 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
     template: ''
   });
 
+  const {
+    isInitializing,
+    currentStep: initStep,
+    currentMessage,
+    isCompleted: initCompleted,
+    hasError: initError,
+    initializeWebsite,
+    retryInitialization,
+  } = useWebsiteInitialization();
+
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
+    if (!open && !isInitializing) {
       onClose();
       setStep(1);
       setFormData({ name: '', clinicId: '', template: '' });
@@ -99,6 +112,7 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
     setCreating(true);
 
     try {
+      // Create the basic website record
       const { data: newWebsite, error } = await supabase
         .from('websites')
         .insert({
@@ -106,6 +120,8 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
           clinic_id: formData.clinicId,
           template_type: formData.template,
           status: 'draft',
+          primary_color: '#4f46e5',
+          font_style: 'default',
           created_by: user.id,
         })
         .select(`
@@ -114,6 +130,8 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
           template_type,
           status,
           clinic_id,
+          primary_color,
+          font_style,
           created_at,
           updated_at,
           clinics!inner(name)
@@ -129,20 +147,33 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
         template_type: newWebsite.template_type,
         status: newWebsite.status as 'draft' | 'published' | 'archived',
         clinic_id: newWebsite.clinic_id,
+        primary_color: newWebsite.primary_color,
+        font_style: newWebsite.font_style,
         created_at: newWebsite.created_at,
         updated_at: newWebsite.updated_at,
         created_by: user.id,
         clinic: { name: newWebsite.clinics.name }
       };
 
-      onWebsiteCreate(websiteWithClinic);
+      // Get clinic data for initialization
+      const selectedClinic = clinics.find(c => c.id === formData.clinicId);
 
-      toast({
-        title: "Success",
-        description: "Website created successfully",
+      // Initialize the website with sections and content
+      await initializeWebsite({
+        websiteId: newWebsite.id,
+        templateType: formData.template,
+        primaryColor: '#4f46e5',
+        fontStyle: 'default',
+        clinicData: {
+          name: selectedClinic?.name || 'Your Practice'
+        }
       });
 
-      handleOpenChange(false);
+      onWebsiteCreate(websiteWithClinic);
+      
+      // Note: The initialization hook will handle the redirect to website builder
+      // and the modal will close when initialization completes
+
     } catch (error: any) {
       console.error('Error creating website:', error);
       toast({
@@ -150,150 +181,170 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
         description: "Failed to create website",
         variant: "destructive",
       });
-    } finally {
       setCreating(false);
     }
   };
+
+  // Close modal when initialization completes successfully
+  if (initCompleted && isOpen) {
+    setTimeout(() => {
+      handleOpenChange(false);
+    }, 1000);
+  }
 
   const selectedClinic = clinics.find(c => c.id === formData.clinicId);
   const selectedTemplate = templates.find(t => t.id === formData.template);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Create New Website
-            <span className="text-sm font-normal text-muted-foreground ml-2">
-              Step {step} of 2
-            </span>
-          </DialogTitle>
-          <DialogDescription>
-            {step === 1 
-              ? "Enter basic information for your new website"
-              : "Choose a template that best fits your clinic's style"
-            }
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <WebsiteInitializationLoader
+        isVisible={isInitializing}
+        currentStep={initStep}
+        currentMessage={currentMessage}
+        isCompleted={initCompleted}
+        hasError={initError}
+        onRetry={() => {
+          // Could implement retry logic here if needed
+          console.log('Retry initialization requested');
+        }}
+      />
 
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="website-name">Website Name *</Label>
-              <Input
-                id="website-name"
-                placeholder="Enter website name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
+      <Dialog open={isOpen && !isInitializing} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Create New Website
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                Step {step} of 2
+              </span>
+            </DialogTitle>
+            <DialogDescription>
+              {step === 1 
+                ? "Enter basic information for your new website"
+                : "Choose a template that best fits your clinic's style"
+              }
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="clinic-select">Select Clinic *</Label>
-              <Select value={formData.clinicId} onValueChange={(value) => setFormData(prev => ({ ...prev, clinicId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a clinic" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clinics.map((clinic) => (
-                    <SelectItem key={clinic.id} value={clinic.id}>
-                      {clinic.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleNext} 
-                disabled={!formData.name || !formData.clinicId}
-              >
-                Next: Choose Template
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-4">
-            <div className="bg-muted p-3 rounded-lg text-sm">
-              <strong>Website:</strong> {formData.name} <br />
-              <strong>Clinic:</strong> {selectedClinic?.name}
-            </div>
-
-            <div className="space-y-3">
-              <Label>Choose a Template *</Label>
-              <div className="grid gap-4">
-                {templates.map((template) => (
-                  <Card 
-                    key={template.id} 
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      formData.template === template.id 
-                        ? 'ring-2 ring-primary bg-primary/5' 
-                        : ''
-                    }`}
-                    onClick={() => handleTemplateSelect(template.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        <img 
-                          src={template.image} 
-                          alt={template.name}
-                          className="w-20 h-16 rounded object-cover"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{template.name}</h3>
-                            {formData.template === template.id && (
-                              <Check className="h-4 w-4 text-primary" />
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {template.description}
-                          </p>
-                          <div className="flex gap-2">
-                            {template.features.map((feature, idx) => (
-                              <span 
-                                key={idx}
-                                className="text-xs bg-secondary px-2 py-1 rounded"
-                              >
-                                {feature}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="website-name">Website Name *</Label>
+                <Input
+                  id="website-name"
+                  placeholder="Enter website name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                />
               </div>
-            </div>
 
-            <div className="flex justify-between gap-2 pt-4">
-              <Button variant="outline" onClick={handleBack}>
-                Back
-              </Button>
-              <div className="flex gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="clinic-select">Select Clinic *</Label>
+                <Select value={formData.clinicId} onValueChange={(value) => setFormData(prev => ({ ...prev, clinicId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a clinic" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clinics.map((clinic) => (
+                      <SelectItem key={clinic.id} value={clinic.id}>
+                        {clinic.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => handleOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button 
-                  onClick={handleCreate} 
-                  disabled={!formData.template || creating}
+                  onClick={handleNext} 
+                  disabled={!formData.name || !formData.clinicId}
                 >
-                  {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Create Website
+                  Next: Choose Template
                 </Button>
               </div>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="bg-muted p-3 rounded-lg text-sm">
+                <strong>Website:</strong> {formData.name} <br />
+                <strong>Clinic:</strong> {selectedClinic?.name}
+              </div>
+
+              <div className="space-y-3">
+                <Label>Choose a Template *</Label>
+                <div className="grid gap-4">
+                  {templates.map((template) => (
+                    <Card 
+                      key={template.id} 
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        formData.template === template.id 
+                          ? 'ring-2 ring-primary bg-primary/5' 
+                          : ''
+                      }`}
+                      onClick={() => handleTemplateSelect(template.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <img 
+                            src={template.image} 
+                            alt={template.name}
+                            className="w-20 h-16 rounded object-cover"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{template.name}</h3>
+                              {formData.template === template.id && (
+                                <Check className="h-4 w-4 text-primary" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {template.description}
+                            </p>
+                            <div className="flex gap-2">
+                              {template.features.map((feature, idx) => (
+                                <span 
+                                  key={idx}
+                                  className="text-xs bg-secondary px-2 py-1 rounded"
+                                >
+                                  {feature}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-2 pt-4">
+                <Button variant="outline" onClick={handleBack}>
+                  Back
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCreate} 
+                    disabled={!formData.template || creating}
+                  >
+                    {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Create Website
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
