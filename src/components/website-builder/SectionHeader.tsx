@@ -3,7 +3,7 @@ import { CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Section } from '@/types/website';
-import { Eye, EyeOff, Settings, Trash2, GripVertical } from 'lucide-react';
+import { Eye, EyeOff, Settings, Trash2, GripVertical, FileText } from 'lucide-react';
 
 interface SectionHeaderProps {
   section: Section;
@@ -12,6 +12,8 @@ interface SectionHeaderProps {
   onVisibilityToggle: () => void;
   onToggleEditing: () => void;
   onDelete: () => void;
+  hasCopy?: boolean;
+  copyLoading?: boolean;
 }
 
 const SectionHeader = ({
@@ -21,6 +23,8 @@ const SectionHeader = ({
   onVisibilityToggle,
   onToggleEditing,
   onDelete,
+  hasCopy = false,
+  copyLoading = false,
 }: SectionHeaderProps) => {
   return (
     <CardHeader className="pb-3">
@@ -38,6 +42,20 @@ const SectionHeader = ({
           {!section.is_visible && (
             <Badge variant="outline" className="text-xs">
               Hidden
+            </Badge>
+          )}
+          {copyLoading ? (
+            <Badge variant="outline" className="text-xs">
+              Loading copy...
+            </Badge>
+          ) : hasCopy ? (
+            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+              <FileText className="h-3 w-3 mr-1" />
+              Copy
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-xs text-gray-500">
+              No copy
             </Badge>
           )}
         </div>

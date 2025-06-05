@@ -2,8 +2,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Section } from '@/types/website';
 import { useSectionEditor } from '@/hooks/useSectionEditor';
+import { useCopyLinking } from '@/hooks/useCopyLinking';
 import SectionHeader from './SectionHeader';
 import SectionSettingsForm from './SectionSettingsForm';
+import SectionCopyControls from './SectionCopyControls';
 
 interface SectionEditorProps {
   section: Section;
@@ -31,6 +33,8 @@ const SectionEditor = ({
     toggleEditing,
   } = useSectionEditor({ section, onUpdate, onDelete });
 
+  const { copy, loading: copyLoading } = useCopyLinking(section, 'draft');
+
   return (
     <Card 
       className={`transition-all duration-200 ${
@@ -47,14 +51,25 @@ const SectionEditor = ({
         onVisibilityToggle={handleVisibilityToggle}
         onToggleEditing={toggleEditing}
         onDelete={handleDelete}
+        hasCopy={!!copy}
+        copyLoading={copyLoading}
       />
 
       {isEditing && (
-        <CardContent className="animate-fade-in">
+        <CardContent className="animate-fade-in space-y-4">
+          {/* Section Settings */}
           <SectionSettingsForm
             section={section}
             settings={settings}
             onSettingsChange={handleSettingsChange}
+          />
+
+          {/* Copy Management */}
+          <SectionCopyControls
+            section={section}
+            copy={copy}
+            loading={copyLoading}
+            onUpdate={onUpdate}
           />
         </CardContent>
       )}

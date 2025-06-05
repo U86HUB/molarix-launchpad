@@ -1,19 +1,11 @@
 
 import { useEffect, useState } from 'react';
 import { Website, Section } from '@/types/website';
-import { GeneratedCopy } from '@/types/copy';
-import { supabase } from '@/integrations/supabase/client';
 import { Eye } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import HeroSection from './HeroSection';
-import AboutSection from './AboutSection';
-import ServicesSection from './ServicesSection';
-import ContactSection from './ContactSection';
-import TestimonialsSection from './TestimonialsSection';
-import FeaturesSection from './FeaturesSection';
 import FloatingToolbar from './FloatingToolbar';
 import DraggableSection from './DraggableSection';
+import SectionWithCopy from './SectionWithCopy';
 import { usePreviewInteractions } from '@/hooks/usePreviewInteractions';
 
 interface WebsitePreviewProps {
@@ -23,9 +15,6 @@ interface WebsitePreviewProps {
 }
 
 const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreviewProps) => {
-  const [copy, setCopy] = useState<GeneratedCopy | null>(null);
-  const [loading, setLoading] = useState(false);
-
   const {
     activeSection,
     viewMode,
@@ -56,43 +45,6 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
       root.style.removeProperty('--preview-font');
     };
   }, [website.primary_color, website.font_style]);
-
-  useEffect(() => {
-    const fetchCopy = async () => {
-      if (!website.id) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('ai_generated_copy')
-          .select('*')
-          .eq('session_id', website.id)
-          .eq('type', copyMode)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching copy:', error);
-          setCopy(null);
-          return;
-        }
-
-        if (data) {
-          setCopy(data.data as unknown as GeneratedCopy);
-        } else {
-          setCopy(null);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        setCopy(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCopy();
-  }, [website.id, copyMode]);
 
   const handleSectionReorder = (draggedId: string, targetId: string, position: 'before' | 'after') => {
     if (!onReorderSections) return;
@@ -126,38 +78,7 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
   };
 
   const renderSection = (section: Section) => {
-    const sectionCopy = copy ? getCopyForSection(copy, section.type) : null;
     const isActive = activeSection === section.id;
-
-    const sectionContent = (() => {
-      switch (section.type) {
-        case 'hero':
-          return <HeroSection key={section.id} section={section} copy={sectionCopy} />;
-        case 'about':
-          return <AboutSection key={section.id} section={section} copy={sectionCopy} />;
-        case 'services':
-          return <ServicesSection key={section.id} section={section} copy={sectionCopy} />;
-        case 'contact':
-          return <ContactSection key={section.id} section={section} copy={sectionCopy} />;
-        case 'testimonials':
-          return <TestimonialsSection key={section.id} section={section} copy={sectionCopy} />;
-        case 'features':
-          return <FeaturesSection key={section.id} section={section} copy={sectionCopy} />;
-        default:
-          return (
-            <section className="py-8 px-4 bg-gray-100 dark:bg-gray-800">
-              <div className="max-w-4xl mx-auto text-center">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  {section.type.charAt(0).toUpperCase() + section.type.slice(1)} Section
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  This section type is not yet implemented in the preview.
-                </p>
-              </div>
-            </section>
-          );
-      }
-    })();
 
     return (
       <DraggableSection
@@ -168,22 +89,13 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
         onRegister={registerSection}
         onReorder={handleSectionReorder}
       >
-        {sectionContent}
+        <SectionWithCopy
+          section={section}
+          copyMode={copyMode}
+          isActive={isActive}
+        />
       </DraggableSection>
     );
-  };
-
-  const getCopyForSection = (copy: GeneratedCopy, sectionType: string) => {
-    switch (sectionType) {
-      case 'hero':
-        return copy.homepage;
-      case 'about':
-        return copy.about;
-      case 'services':
-        return copy.services;
-      default:
-        return null;
-    }
   };
 
   if (sections.length === 0) {
@@ -197,18 +109,6 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
           <p className="text-gray-600 dark:text-gray-400">
             Add sections from the left panel to see your website preview
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="h-full overflow-auto">
-        <div className="space-y-8 p-6">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
         </div>
       </div>
     );
