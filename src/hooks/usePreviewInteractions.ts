@@ -1,10 +1,14 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Section } from '@/types/website';
 
 export const usePreviewInteractions = (sections: Section[]) => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [copyMode, setCopyMode] = useState<boolean>(false);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [registeredSections, setRegisteredSections] = useState<Map<string, HTMLElement>>(new Map());
 
   // Auto-select first section when sections load
   useEffect(() => {
@@ -18,7 +22,8 @@ export const usePreviewInteractions = (sections: Section[]) => {
     setActiveSection(sectionId);
 
     // Find the section element and scroll to it
-    const element = document.querySelector(`[data-section-id="${sectionId}"]`);
+    const element = registeredSections.get(sectionId) || 
+                   document.querySelector(`[data-section-id="${sectionId}"]`);
     if (element) {
       element.scrollIntoView({ 
         behavior: 'smooth', 
@@ -30,13 +35,21 @@ export const usePreviewInteractions = (sections: Section[]) => {
     setTimeout(() => {
       setIsScrolling(false);
     }, 1000);
-  }, []);
+  }, [registeredSections]);
 
   const handleSectionClick = useCallback((sectionId: string) => {
     if (!isScrolling) {
       setActiveSection(sectionId);
     }
   }, [isScrolling]);
+
+  const registerSection = useCallback((sectionId: string, element: HTMLElement) => {
+    setRegisteredSections(prev => {
+      const newMap = new Map(prev);
+      newMap.set(sectionId, element);
+      return newMap;
+    });
+  }, []);
 
   const getNextSection = useCallback(() => {
     if (!activeSection || sections.length === 0) return null;
@@ -76,6 +89,12 @@ export const usePreviewInteractions = (sections: Section[]) => {
     activeSection,
     setActiveSection,
     isScrolling,
+    viewMode,
+    copyMode,
+    previewRef,
+    setViewMode,
+    setCopyMode,
+    registerSection,
     scrollToSection,
     handleSectionClick,
     navigateToNext,

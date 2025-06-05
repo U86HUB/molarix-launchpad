@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from './errorService';
 
 export interface SupabaseOperationConfig {
-  table: string;
   operation: string;
   component?: string;
   userMessage?: string;
@@ -22,7 +21,6 @@ export class SupabaseService {
         ErrorService.handle(error, {
           operation: config.operation,
           component: config.component,
-          additionalData: { table: config.table }
         }, {
           userMessage: config.userMessage,
           severity: 'medium'
@@ -34,13 +32,12 @@ export class SupabaseService {
         return null;
       }
 
-      console.log(`✅ ${config.operation} successful on ${config.table}:`, data);
+      console.log(`✅ ${config.operation} successful:`, data);
       return data;
     } catch (error: any) {
       ErrorService.handle(error, {
         operation: config.operation,
         component: config.component,
-        additionalData: { table: config.table }
       }, {
         userMessage: config.userMessage,
         severity: 'high'
@@ -64,34 +61,37 @@ export class SupabaseService {
     }
   ): Promise<T[]> {
     const config: SupabaseOperationConfig = {
-      table,
       operation: 'fetch records',
       component: options?.component,
       userMessage: `Failed to load ${table}`,
     };
 
-    let query = supabase.from(table).select(options?.select || '*');
+    const queryFn = async () => {
+      let query = supabase.from(table as any).select(options?.select || '*');
 
-    // Apply filters
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-    }
+      // Apply filters
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          query = query.eq(key, value);
+        });
+      }
 
-    // Apply ordering
-    if (options?.orderBy) {
-      query = query.order(options.orderBy.column, { 
-        ascending: options.orderBy.ascending ?? false 
-      });
-    }
+      // Apply ordering
+      if (options?.orderBy) {
+        query = query.order(options.orderBy.column, { 
+          ascending: options.orderBy.ascending ?? false 
+        });
+      }
 
-    // Apply limit
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+      // Apply limit
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
 
-    const result = await this.executeQuery(() => query, config);
+      return query;
+    };
+
+    const result = await this.executeQuery(queryFn, config);
     return (result as T[]) || [];
   }
 
@@ -105,25 +105,24 @@ export class SupabaseService {
     }
   ): Promise<T | null> {
     const config: SupabaseOperationConfig = {
-      table,
       operation: 'fetch record',
       component: options?.component,
       userMessage: `Failed to load ${table} record`,
       throwOnError: options?.required
     };
 
-    let query = supabase.from(table).select(options?.select || '*');
+    const queryFn = async () => {
+      let query = supabase.from(table as any).select(options?.select || '*');
 
-    // Apply filters
-    Object.entries(filters).forEach(([key, value]) => {
-      query = query.eq(key, value);
-    });
+      // Apply filters
+      Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
 
-    const result = await this.executeQuery(
-      () => options?.required ? query.single() : query.maybeSingle(),
-      config
-    );
+      return options?.required ? query.single() : query.maybeSingle();
+    };
 
+    const result = await this.executeQuery(queryFn, config);
     return result as T;
   }
 
@@ -137,16 +136,16 @@ export class SupabaseService {
     }
   ): Promise<T | null> {
     const config: SupabaseOperationConfig = {
-      table,
       operation: 'create record',
       component: options?.component,
       userMessage: `Failed to create ${table} record`,
     };
 
-    const result = await this.executeQuery(
-      () => supabase.from(table).insert(data).select(options?.select || '*').single(),
-      config
-    );
+    const queryFn = async () => {
+      return supabase.from(table as any).insert(data).select(options?.select || '*').single();
+    };
+
+    const result = await this.executeQuery(queryFn, config);
 
     if (result && options?.successMessage) {
       ErrorService.success('create record', options.successMessage, options.component);
@@ -166,27 +165,28 @@ export class SupabaseService {
     }
   ): Promise<T | null> {
     const config: SupabaseOperationConfig = {
-      table,
       operation: 'update record',
       component: options?.component,
       userMessage: `Failed to update ${table} record`,
     };
 
-    let query = supabase.from(table).update(updates);
+    const queryFn = async () => {
+      let query = supabase.from(table as any).update(updates);
 
-    // Apply filters
-    Object.entries(filters).forEach(([key, value]) => {
-      query = query.eq(key, value);
-    });
+      // Apply filters
+      Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
 
-    if (options?.select) {
-      query = query.select(options.select);
-    }
+      if (options?.select) {
+        query = query.select(options.select);
+        return query.single();
+      }
 
-    const result = await this.executeQuery(
-      () => options?.select ? query.single() : query,
-      config
-    );
+      return query;
+    };
+
+    const result = await this.executeQuery(queryFn, config);
 
     if (result && options?.successMessage) {
       ErrorService.success('update record', options.successMessage, options.component);
@@ -204,20 +204,23 @@ export class SupabaseService {
     }
   ): Promise<boolean> {
     const config: SupabaseOperationConfig = {
-      table,
       operation: 'delete record',
       component: options?.component,
       userMessage: `Failed to delete ${table} record`,
     };
 
-    let query = supabase.from(table).delete();
+    const queryFn = async () => {
+      let query = supabase.from(table as any).delete();
 
-    // Apply filters
-    Object.entries(filters).forEach(([key, value]) => {
-      query = query.eq(key, value);
-    });
+      // Apply filters
+      Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
 
-    const result = await this.executeQuery(() => query, config);
+      return query;
+    };
+
+    const result = await this.executeQuery(queryFn, config);
 
     if (result !== null && options?.successMessage) {
       ErrorService.success('delete record', options.successMessage, options.component);
