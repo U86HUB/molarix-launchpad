@@ -6,6 +6,7 @@ import { WebsiteManagementHeader } from './website/WebsiteManagementHeader';
 import { QuickActions } from './website/QuickActions';
 import { WebsitesList } from './website/WebsitesList';
 import { useWebsiteManagement } from '@/hooks/useWebsiteManagement';
+import { Website } from '@/types/website';
 
 export const WebsiteManagementSection = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -18,6 +19,30 @@ export const WebsiteManagementSection = () => {
   } = useWebsiteManagement();
 
   const onCreateWebsite = () => setShowCreateModal(true);
+
+  // Wrapper functions to handle the type mismatches
+  const handleDelete = async (websiteId: string): Promise<void> => {
+    await handleWebsiteDelete(websiteId);
+  };
+
+  const handleCreate = (website: Website): void => {
+    // This function expects a Website object but the modal provides creation data
+    // We'll handle this in the modal's onWebsiteCreate callback
+    setShowCreateModal(false);
+  };
+
+  const onWebsiteCreateFromModal = async (websiteData: {
+    name: string;
+    clinicId: string;
+    templateType: string;
+    primaryColor: string;
+    fontStyle: string;
+  }) => {
+    const success = await handleWebsiteCreate(websiteData);
+    if (success) {
+      setShowCreateModal(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -50,7 +75,7 @@ export const WebsiteManagementSection = () => {
       {clinics.length > 0 && (
         <WebsitesList
           websites={websites}
-          onWebsiteDelete={handleWebsiteDelete}
+          onWebsiteDelete={handleDelete}
           onCreateWebsite={onCreateWebsite}
         />
       )}
@@ -58,7 +83,7 @@ export const WebsiteManagementSection = () => {
       <CreateWebsiteModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onWebsiteCreate={handleWebsiteCreate}
+        onWebsiteCreate={onWebsiteCreateFromModal}
         clinics={clinics}
       />
     </div>

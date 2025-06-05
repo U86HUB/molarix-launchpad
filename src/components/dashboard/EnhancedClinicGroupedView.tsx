@@ -33,7 +33,7 @@ const EnhancedClinicGroupedView = ({
   if (clinics.length === 0) {
     return (
       <DashboardEmptyClinicState 
-        onCreateClinic={() => onCreateWebsite?.()}
+        onCreateClinic={onCreateWebsite}
       />
     );
   }

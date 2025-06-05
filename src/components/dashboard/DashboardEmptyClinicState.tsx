@@ -6,13 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Building2, ArrowRight, X } from 'lucide-react';
 import { useOnboardingValidation } from '@/hooks/useOnboardingValidation';
 
-export const DashboardEmptyClinicState = () => {
+interface DashboardEmptyClinicStateProps {
+  onCreateClinic?: () => void;
+}
+
+export const DashboardEmptyClinicState = ({ onCreateClinic }: DashboardEmptyClinicStateProps) => {
   const navigate = useNavigate();
   const { needsOnboarding, markOnboardingCompleted } = useOnboardingValidation();
   const [dismissed, setDismissed] = useState(false);
 
   const handleStartOnboarding = () => {
-    navigate('/unified-onboarding');
+    if (onCreateClinic) {
+      onCreateClinic();
+    } else {
+      navigate('/unified-onboarding');
+    }
   };
 
   const handleDismiss = () => {
