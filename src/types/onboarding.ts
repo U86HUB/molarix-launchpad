@@ -1,8 +1,28 @@
 
-// Import the existing type
-import type { UnifiedOnboardingData } from '@/hooks/useUnifiedOnboardingData';
-
 // Type definitions for onboarding system
+
+export interface UnifiedOnboardingData {
+  clinic: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    skipClinic: boolean;
+    selectedClinicId?: string;
+  };
+  website: {
+    name: string;
+    selectedTemplate: string;
+    logo: File | null;
+    primaryColor: string;
+    fontStyle: string;
+  };
+  preferences: {
+    toneOfVoice: string;
+    hipaa: boolean;
+    gdpr: boolean;
+  };
+}
 
 export interface UnifiedOnboardingSubmissionState {
   isSubmitting: boolean;
@@ -90,6 +110,3 @@ export interface UseWebsiteInitializationResult {
   initializeWebsite: (data: WebsiteInitializationData) => Promise<void>;
   retryInitialization: () => void;
 }
-
-// Re-export the imported type for convenience
-export type { UnifiedOnboardingData };

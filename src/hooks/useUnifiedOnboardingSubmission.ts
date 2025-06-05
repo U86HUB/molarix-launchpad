@@ -4,9 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useWebsiteInitialization } from "@/hooks/useWebsiteInitialization";
 import { handleSupabaseError } from "@/utils/errorHandling";
-import { UnifiedOnboardingData } from "./useUnifiedOnboardingData";
 import { executeOnboardingFlow } from "@/services/onboarding/onboardingOrchestrator";
-import { UseUnifiedOnboardingSubmissionResult, WebsiteInitializationData } from "@/types/onboarding";
+import { UseUnifiedOnboardingSubmissionResult, WebsiteInitializationData, UnifiedOnboardingData } from "@/types/onboarding";
 
 export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmissionResult => {
   const { user } = useAuth();
@@ -21,7 +20,6 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
     isCompleted: initCompleted,
     hasError: initError,
     initializeWebsite,
-    retryInitialization: originalRetryInitialization,
   } = useWebsiteInitialization();
 
   const submitOnboarding = async (
@@ -93,7 +91,7 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
   // Create a no-parameter retry function that uses the stored website data
   const retryInitialization = (): void => {
     if (lastWebsiteData) {
-      originalRetryInitialization(lastWebsiteData);
+      initializeWebsite(lastWebsiteData);
     }
   };
 

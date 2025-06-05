@@ -1,6 +1,5 @@
 
-import { UnifiedOnboardingData } from "./useUnifiedOnboardingData";
-import { UseUnifiedOnboardingValidationResult } from "@/types/onboarding";
+import { UnifiedOnboardingData, UseUnifiedOnboardingValidationResult } from "@/types/onboarding";
 
 export const useUnifiedOnboardingValidation = (): UseUnifiedOnboardingValidationResult => {
   const canProceed = (

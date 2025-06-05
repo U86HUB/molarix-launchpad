@@ -1,28 +1,6 @@
 
 import { useState } from "react";
-
-export interface UnifiedOnboardingData {
-  clinic: {
-    name: string;
-    address: string;
-    phone: string;
-    email: string;
-    skipClinic: boolean;
-    selectedClinicId?: string;
-  };
-  website: {
-    name: string;
-    selectedTemplate: string;
-    logo: File | null;
-    primaryColor: string;
-    fontStyle: string;
-  };
-  preferences: {
-    toneOfVoice: string;
-    hipaa: boolean;
-    gdpr: boolean;
-  };
-}
+import { UnifiedOnboardingData } from "@/types/onboarding";
 
 export const useUnifiedOnboardingData = () => {
   const [onboardingData, setOnboardingData] = useState<UnifiedOnboardingData>({
@@ -66,3 +44,6 @@ export const useUnifiedOnboardingData = () => {
     updatePreferencesData,
   };
 };
+
+// Re-export the type for backwards compatibility
+export type { UnifiedOnboardingData };

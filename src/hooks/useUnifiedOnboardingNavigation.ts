@@ -1,9 +1,8 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { UnifiedOnboardingData } from "./useUnifiedOnboardingData";
+import { UnifiedOnboardingData, UseUnifiedOnboardingNavigationResult } from "@/types/onboarding";
 import { useUnifiedOnboardingValidation } from "./useUnifiedOnboardingValidation";
-import { UseUnifiedOnboardingNavigationResult } from "@/types/onboarding";
 
 export const useUnifiedOnboardingNavigation = (): UseUnifiedOnboardingNavigationResult => {
   const [currentStep, setCurrentStep] = useState<number>(1);
