@@ -15,10 +15,19 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
   const [clinicAddress, setClinicAddress] = useState('');
   const [clinicPhone, setClinicPhone] = useState('');
   const [clinicEmail, setClinicEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { createClinic, isCreating } = useClinicCreation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submissions
+    if (isSubmitting || isCreating) {
+      console.log('🔄 Submission already in progress, ignoring...');
+      return;
+    }
+
+    setIsSubmitting(true);
     
     console.log('🔄 Submitting clinic creation form:', {
       clinicName: clinicName.trim(),
@@ -27,30 +36,36 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       clinicEmail: clinicEmail.trim()
     });
     
-    const clinicData = await createClinic(
-      clinicName, 
-      clinicAddress, 
-      clinicPhone, 
-      clinicEmail
-    );
-    
-    if (clinicData) {
-      console.log('🔄 Calling onClinicCreated with ID:', clinicData.id);
-      onClinicCreated(clinicData.id);
+    try {
+      const clinicData = await createClinic(
+        clinicName, 
+        clinicAddress, 
+        clinicPhone, 
+        clinicEmail
+      );
+      
+      if (clinicData) {
+        console.log('🔄 Calling onClinicCreated with ID:', clinicData.id);
+        onClinicCreated(clinicData.id);
 
-      // Reset form
-      setClinicName('');
-      setClinicAddress('');
-      setClinicPhone('');
-      setClinicEmail('');
+        // Reset form
+        setClinicName('');
+        setClinicAddress('');
+        setClinicPhone('');
+        setClinicEmail('');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isLoading = isCreating || isSubmitting;
 
   return (
     <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
       <ClinicFormHeader 
         onCancel={onCancel}
-        isCreating={isCreating}
+        isCreating={isLoading}
       />
       
       <form onSubmit={handleSubmit} className="space-y-3" noValidate>
@@ -63,12 +78,12 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
           setClinicPhone={setClinicPhone}
           clinicEmail={clinicEmail}
           setClinicEmail={setClinicEmail}
-          isCreating={isCreating}
+          isCreating={isLoading}
         />
         
         <ClinicFormActions
           clinicName={clinicName}
-          isCreating={isCreating}
+          isCreating={isLoading}
           onCancel={onCancel}
         />
       </form>

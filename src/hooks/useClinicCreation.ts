@@ -20,8 +20,8 @@ export const useClinicCreation = () => {
       });
     }
 
-    // Validate input data
-    const validation = validateClinicData(clinicName);
+    // Validate input data - now passing clinicEmail to validation
+    const validation = validateClinicData(clinicName, clinicEmail);
     if (!validation.isValid) {
       toast({
         title: "Missing Information",
@@ -56,7 +56,7 @@ export const useClinicCreation = () => {
         
         // Show specific error message
         toast({
-          title: "Creation Failed",
+          title: "Could not create clinic",
           description: result.error,
           variant: "destructive",
         });
@@ -76,7 +76,7 @@ export const useClinicCreation = () => {
 
       // Show success toast
       toast({
-        title: "Clinic Created Successfully",
+        title: "Clinic created successfully!",
         description: `"${clinicData.name}" has been created and selected.`,
       });
 
@@ -95,8 +95,8 @@ export const useClinicCreation = () => {
       }
       
       toast({
-        title: "Unexpected Error",
-        description: "An unexpected error occurred. Please try again or contact support.",
+        title: "Could not create clinic",
+        description: error?.message || "An unexpected error occurred. Please try again or contact support.",
         variant: "destructive",
       });
       

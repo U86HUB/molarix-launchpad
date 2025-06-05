@@ -41,7 +41,7 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
       console.error('❌ No authenticated user found');
       return {
         success: false,
-        error: 'You must be logged in to create a clinic. Please log in and try again.'
+        error: 'You must be logged in to create a clinic.'
       };
     }
 
@@ -59,11 +59,12 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
     
     console.log('📤 Inserting clinic with payload:', insertPayload);
 
-    // 3. Insert with error handling
+    // 3. Insert with proper error handling and throwOnError
     const { data: clinicData, error: clinicError } = await supabase
       .from('clinics')
-      .insert(insertPayload)
+      .insert([insertPayload])
       .select()
+      .throwOnError()
       .single();
 
     console.log('📊 Clinic insert result:', { 
@@ -92,7 +93,7 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
       
       return {
         success: false,
-        error: `Failed to create clinic: ${clinicError.message}`
+        error: clinicError.message
       };
     }
 
