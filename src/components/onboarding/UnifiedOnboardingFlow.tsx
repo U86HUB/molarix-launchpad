@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WebsiteInitializationLoader from "../website-builder/WebsiteInitializationLoader";
@@ -56,7 +55,7 @@ const UnifiedOnboardingFlow = () => {
         currentStep={initStep}
         currentMessage={currentMessage}
         isCompleted={initCompleted}
-        hasError={Boolean(initError)}
+        hasError={initError ? true : false}
         onRetry={() => {
           console.log('Retry initialization requested');
         }}
