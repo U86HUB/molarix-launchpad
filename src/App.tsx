@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Account from "./pages/Account";
 import Onboarding from "./pages/Onboarding";
+import UnifiedOnboarding from "./pages/UnifiedOnboarding";
 import TemplatePreview from "./pages/TemplatePreview";
 import WebsitePreview from "./pages/WebsitePreview";
 import WebsiteBuilderPage from "./pages/WebsiteBuilder";
@@ -68,6 +69,7 @@ function App() {
                     <Route path="/dashboard/websites" element={<ProtectedRoute><UnifiedDashboard /></ProtectedRoute>} />
                     <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
                     <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                    <Route path="/unified-onboarding" element={<ProtectedRoute><UnifiedOnboarding /></ProtectedRoute>} />
                     <Route path="/template-preview" element={<ProtectedRoute><TemplatePreview /></ProtectedRoute>} />
                     <Route path="/website-preview/:websiteId" element={<ProtectedRoute><WebsitePreview /></ProtectedRoute>} />
                     <Route path="/website-builder/:websiteId" element={<ProtectedRoute><WebsiteBuilderPage /></ProtectedRoute>} />
