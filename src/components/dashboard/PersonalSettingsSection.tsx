@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -93,6 +92,7 @@ export const PersonalSettingsSection = () => {
             id: user.id,
             first_name: '',
             last_name: '',
+            avatar_url: null,
             email: authUser.user?.email || null,
             phone: null,
             email_notifications: true,
