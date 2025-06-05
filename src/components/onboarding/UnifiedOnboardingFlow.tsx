@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +10,7 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import OnboardingClinicStep from "./OnboardingClinicStep";
 import OnboardingWebsiteStep from "./OnboardingWebsiteStep";
 import OnboardingPreferencesStep from "./OnboardingPreferencesStep";
+import { handleSupabaseError, handleOperationSuccess } from "@/utils/errorHandling";
 
 export interface UnifiedOnboardingData {
   clinic: {
@@ -81,10 +81,29 @@ const UnifiedOnboardingFlow = () => {
         .select('id, name')
         .eq('created_by', user.id);
 
-      if (error) throw error;
+      if (error) {
+        handleSupabaseError(
+          error,
+          {
+            operation: 'fetch existing clinics',
+            table: 'clinics',
+            userId: user.id
+          }
+        );
+        return;
+      }
+
       setExistingClinics(clinics || []);
+      console.log('Found existing clinics:', clinics?.length || 0);
     } catch (error) {
       console.error('Error fetching clinics:', error);
+      handleSupabaseError(
+        error,
+        {
+          operation: 'fetch existing clinics',
+          userId: user.id
+        }
+      );
     }
   };
 
@@ -99,14 +118,31 @@ const UnifiedOnboardingFlow = () => {
         .eq('completion_score', 100)
         .limit(1);
 
-      if (error) throw error;
+      if (error) {
+        handleSupabaseError(
+          error,
+          {
+            operation: 'check onboarding completion',
+            table: 'onboarding_sessions',
+            userId: user.id
+          }
+        );
+        return;
+      }
       
       if (sessions && sessions.length > 0) {
-        // User has completed onboarding before, redirect to dashboard
+        console.log('User has completed onboarding, redirecting to dashboard');
         navigate('/dashboard');
       }
     } catch (error) {
       console.error('Error checking onboarding status:', error);
+      handleSupabaseError(
+        error,
+        {
+          operation: 'check onboarding status',
+          userId: user.id
+        }
+      );
     }
   };
 
@@ -155,15 +191,35 @@ const UnifiedOnboardingFlow = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to complete onboarding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!canProceed()) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
+    console.log('Starting onboarding submission for user:', user.id);
 
     try {
       let clinicId = onboardingData.clinic.selectedClinicId;
 
       // Step 1: Create clinic if not skipped
       if (!onboardingData.clinic.skipClinic) {
+        console.log('Creating new clinic:', onboardingData.clinic.name);
+        
         const { data: clinicData, error: clinicError } = await supabase
           .from('clinics')
           .insert({
@@ -176,11 +232,38 @@ const UnifiedOnboardingFlow = () => {
           .select()
           .single();
 
-        if (clinicError) throw clinicError;
+        if (clinicError) {
+          handleSupabaseError(
+            clinicError,
+            {
+              operation: 'create clinic during onboarding',
+              table: 'clinics',
+              userId: user.id,
+              additionalData: { clinicName: onboardingData.clinic.name }
+            },
+            'Failed to create clinic. Please check your information and try again.'
+          );
+          return;
+        }
+
         clinicId = clinicData.id;
+        console.log('Clinic created successfully:', clinicId);
+      } else {
+        console.log('Using existing clinic:', clinicId);
+      }
+
+      if (!clinicId) {
+        toast({
+          title: "Clinic Required",
+          description: "Please select or create a clinic to continue.",
+          variant: "destructive",
+        });
+        return;
       }
 
       // Step 2: Create website
+      console.log('Creating website:', onboardingData.website.name);
+      
       const { data: websiteData, error: websiteError } = await supabase
         .from('websites')
         .insert({
@@ -195,9 +278,28 @@ const UnifiedOnboardingFlow = () => {
         .select()
         .single();
 
-      if (websiteError) throw websiteError;
+      if (websiteError) {
+        handleSupabaseError(
+          websiteError,
+          {
+            operation: 'create website during onboarding',
+            table: 'websites',
+            userId: user.id,
+            additionalData: { 
+              websiteName: onboardingData.website.name,
+              clinicId 
+            }
+          },
+          'Failed to create website. Please try again.'
+        );
+        return;
+      }
+
+      console.log('Website created successfully:', websiteData.id);
 
       // Step 3: Create onboarding session
+      console.log('Creating onboarding session');
+      
       const { error: sessionError } = await supabase
         .from('onboarding_sessions')
         .insert({
@@ -219,23 +321,44 @@ const UnifiedOnboardingFlow = () => {
           last_updated: new Date().toISOString(),
         });
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        handleSupabaseError(
+          sessionError,
+          {
+            operation: 'create onboarding session',
+            table: 'onboarding_sessions',
+            userId: user.id,
+            additionalData: { clinicId, websiteId: websiteData.id }
+          },
+          'Setup was partially completed but failed to save preferences. You can still access your website.'
+        );
+        
+        // Still redirect to website builder even if session creation fails
+        navigate(`/website-builder/${websiteData.id}`);
+        return;
+      }
 
-      toast({
-        title: "Onboarding Complete!",
-        description: "Your clinic and website have been set up successfully.",
-      });
+      console.log('Onboarding session created successfully');
+
+      handleOperationSuccess(
+        'complete onboarding',
+        'Your clinic and website have been set up successfully!'
+      );
 
       // Redirect to website builder
       navigate(`/website-builder/${websiteData.id}`);
 
     } catch (error: any) {
       console.error('Onboarding submission error:', error);
-      toast({
-        title: "Setup Failed",
-        description: error.message || "Failed to complete onboarding. Please try again.",
-        variant: "destructive",
-      });
+      handleSupabaseError(
+        error,
+        {
+          operation: 'complete onboarding',
+          userId: user.id,
+          additionalData: onboardingData
+        },
+        'Failed to complete setup. Please try again or contact support if the problem persists.'
+      );
     } finally {
       setIsSubmitting(false);
     }

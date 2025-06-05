@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { validateClinicData } from '@/utils/clinicValidation';
 import { createClinicInDatabase } from '@/services/clinicService';
+import { handleSupabaseError, handleOperationSuccess } from '@/utils/errorHandling';
 
 const isDebugMode = () => localStorage.getItem('debugMode') === 'true';
 
@@ -28,7 +29,7 @@ export const useClinicCreation = () => {
       });
     }
 
-    // Validate input data - now passing clinicEmail to validation
+    // Validate input data
     console.log('🏥 Validating clinic data...');
     const validation = validateClinicData(clinicName, clinicEmail);
     if (!validation.isValid) {
@@ -48,7 +49,6 @@ export const useClinicCreation = () => {
     try {
       console.log('🏥 Calling createClinicInDatabase...');
       
-      // Create clinic in database with comprehensive error handling
       const result = await createClinicInDatabase({
         name: clinicName,
         address: clinicAddress,
@@ -61,23 +61,15 @@ export const useClinicCreation = () => {
       if (!result.success) {
         console.error('❌ Clinic creation failed:', result.error);
         
-        if (isDebugMode()) {
-          console.error('🔍 Detailed clinic creation error:', {
-            error: result.error,
-            clinicName,
-            clinicAddress,
-            timestamp: new Date().toISOString()
-          });
-        }
-        
-        // Show specific error message
-        toast({
-          title: "Could not create clinic",
-          description: result.error,
-          variant: "destructive",
-        });
-        
-        return null;
+        return handleSupabaseError(
+          { message: result.error },
+          {
+            operation: 'create clinic',
+            table: 'clinics',
+            additionalData: { clinicName, clinicAddress }
+          },
+          result.error
+        );
       }
 
       const clinicData = result.data;
@@ -91,11 +83,10 @@ export const useClinicCreation = () => {
         });
       }
 
-      // Show success toast
-      toast({
-        title: "Clinic created successfully!",
-        description: `"${clinicData.name}" has been created and selected.`,
-      });
+      handleOperationSuccess(
+        'create clinic',
+        `"${clinicData.name}" has been created and selected.`
+      );
 
       return clinicData;
 
@@ -103,22 +94,16 @@ export const useClinicCreation = () => {
       console.error('❌ Unexpected error in clinic creation:', error?.message);
       console.error('❌ Full error object:', error);
       
-      if (isDebugMode()) {
-        console.error('🔍 Detailed unexpected error:', {
-          error,
-          clinicName,
-          clinicAddress,
-          timestamp: new Date().toISOString()
-        });
-      }
+      return handleSupabaseError(
+        error,
+        {
+          operation: 'create clinic',
+          table: 'clinics',
+          additionalData: { clinicName, clinicAddress }
+        },
+        "An unexpected error occurred. Please try again or contact support."
+      );
       
-      toast({
-        title: "Could not create clinic",
-        description: error?.message || "An unexpected error occurred. Please try again or contact support.",
-        variant: "destructive",
-      });
-      
-      return null;
     } finally {
       setIsCreating(false);
       console.log('🏥 Setting isCreating to false');
