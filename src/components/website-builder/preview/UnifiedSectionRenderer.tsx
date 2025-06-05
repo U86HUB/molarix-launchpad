@@ -106,11 +106,11 @@ const getCopyForSectionType = (copy: GeneratedCopy, sectionType: string) => {
     case 'services':
       return copy.services;
     case 'contact':
-      return copy.contact;
+      return copy.contact || null;
     case 'testimonials':
-      return copy.testimonials;
+      return copy.testimonials || null;
     case 'features':
-      return copy.features;
+      return copy.features || null;
     default:
       return null;
   }

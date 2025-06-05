@@ -73,9 +73,13 @@ export const useEnhancedWebsiteData = (websiteId?: string): EnhancedWebsiteData 
           // Don't throw, copy might not exist yet
         }
 
-        // Process copy data
-        const publishedCopy = copyData?.find(c => c.type === 'published')?.data as GeneratedCopy || null;
-        const draftCopy = copyData?.find(c => c.type === 'draft')?.data as GeneratedCopy || null;
+        // Process copy data with proper type casting
+        const publishedCopy = copyData?.find(c => c.type === 'published')?.data 
+          ? (copyData.find(c => c.type === 'published')?.data as unknown as GeneratedCopy)
+          : null;
+        const draftCopy = copyData?.find(c => c.type === 'draft')?.data 
+          ? (copyData.find(c => c.type === 'draft')?.data as unknown as GeneratedCopy)
+          : null;
 
         console.log('Enhanced data loaded:', {
           website: !!websiteData,

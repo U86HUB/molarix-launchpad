@@ -23,6 +23,31 @@ export interface GeneratedCopy {
       description: string;
     }>;
   };
+  contact?: {
+    title: string;
+    intro: string;
+    phone: string;
+    email: string;
+    address: string;
+  };
+  testimonials?: {
+    title: string;
+    intro: string;
+    testimonials: Array<{
+      name: string;
+      text: string;
+      role: string;
+    }>;
+  };
+  features?: {
+    title: string;
+    intro: string;
+    features: Array<{
+      name: string;
+      description: string;
+      icon: string;
+    }>;
+  };
 }
 
 export interface OnboardingSession {
