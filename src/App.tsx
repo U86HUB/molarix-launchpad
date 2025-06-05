@@ -4,8 +4,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { ThemeProvider } from './components/ThemeProvider';
 import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
+import UnifiedDashboard from './pages/UnifiedDashboard';
 import AICopyPreview from './pages/AiCopyPreview';
 import WebsiteBuilderPage from './pages/WebsiteBuilder';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -31,63 +33,100 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LanguageProvider>
-          <BrowserRouter>
-            <ErrorBoundary>
-              <Routes>
-                {/* Public routes - no authentication required */}
-                <Route path="/" element={<Landing />} />
-                <Route path="/index" element={<Index />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/features" element={<Features />} />
-                <Route path="/how-it-works" element={<HowItWorks />} />
-                <Route path="/templates" element={<Templates />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:id" element={<BlogArticle />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                
-                {/* Protected routes - authentication required */}
-                <Route path="/ai-copy-preview" element={<ProtectedRoute><AICopyPreview /></ProtectedRoute>} />
-                
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } 
-                />
+      <ThemeProvider defaultTheme="system" storageKey="molarix-theme">
+        <AuthProvider>
+          <LanguageProvider>
+            <BrowserRouter>
+              <ErrorBoundary>
+                <Routes>
+                  {/* Public routes - no authentication required */}
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/index" element={<Index />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/features" element={<Features />} />
+                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/templates" element={<Templates />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:id" element={<BlogArticle />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  
+                  {/* Protected routes - authentication required */}
+                  <Route path="/ai-copy-preview" element={<ProtectedRoute><AICopyPreview /></ProtectedRoute>} />
+                  
+                  {/* Legacy Dashboard */}
+                  <Route 
+                    path="/dashboard-legacy" 
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
 
-                <Route 
-                  path="/website-builder/:websiteId" 
-                  element={
-                    <ProtectedRoute>
-                      <WebsiteBuilderPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="/admin/diagnostics" 
-                  element={
-                    <ProtectedRoute>
-                      <AdminDiagnostics />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                {/* Fallback routes */}
-                <Route path="/not-found" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster />
-            </ErrorBoundary>
-          </BrowserRouter>
-        </LanguageProvider>
-      </AuthProvider>
+                  {/* New Unified Dashboard Routes */}
+                  <Route 
+                    path="/dashboard" 
+                    element={
+                      <ProtectedRoute>
+                        <UnifiedDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard/personal" 
+                    element={
+                      <ProtectedRoute>
+                        <UnifiedDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard/clinic" 
+                    element={
+                      <ProtectedRoute>
+                        <UnifiedDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard/websites" 
+                    element={
+                      <ProtectedRoute>
+                        <UnifiedDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+
+                  <Route 
+                    path="/website-builder/:websiteId" 
+                    element={
+                      <ProtectedRoute>
+                        <WebsiteBuilderPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/admin/diagnostics" 
+                    element={
+                      <ProtectedRoute>
+                        <AdminDiagnostics />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Fallback routes */}
+                  <Route path="/not-found" element={<NotFound />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <Toaster />
+              </ErrorBoundary>
+            </BrowserRouter>
+          </LanguageProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
