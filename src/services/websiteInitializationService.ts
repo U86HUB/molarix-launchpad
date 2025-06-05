@@ -6,7 +6,7 @@ export interface WebsiteInitializationData {
   templateType: string;
   primaryColor: string;
   fontStyle: string;
-  clinicData?: {
+  clinicData: {
     name: string;
     address?: string;
     phone?: string;
