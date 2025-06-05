@@ -9,13 +9,15 @@ export const useQueryParamClinicInsert = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasInsertedFromParams, setHasInsertedFromParams] = useState(false);
   const [newClinicId, setNewClinicId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleClinicCreation = async () => {
-      // Only process if we have clinicName parameter and not already processing
       const clinicName = searchParams.get('clinicName');
-      if (!clinicName || isProcessing) {
+      
+      // Guard conditions: only process if we have clinicName, haven't already processed, and not currently processing
+      if (!clinicName || hasInsertedFromParams || isProcessing) {
         return;
       }
 
@@ -23,7 +25,9 @@ export const useQueryParamClinicInsert = () => {
         clinicName,
         clinicAddress: searchParams.get('clinicAddress'),
         clinicPhone: searchParams.get('clinicPhone'),
-        clinicEmail: searchParams.get('clinicEmail')
+        clinicEmail: searchParams.get('clinicEmail'),
+        hasInsertedFromParams,
+        isProcessing
       });
 
       setIsProcessing(true);
@@ -83,7 +87,7 @@ export const useQueryParamClinicInsert = () => {
           // Set the existing clinic as the new clinic for potential redirection
           setNewClinicId(existingClinics[0].id);
           
-          // Clean up URL parameters
+          // Clean up URL parameters with shallow routing
           navigate('/dashboard', { replace: true });
           return;
         }
@@ -124,7 +128,7 @@ export const useQueryParamClinicInsert = () => {
           description: `"${newClinic.name}" has been created successfully.`,
         });
 
-        // Clean up URL parameters
+        // Clean up URL parameters with shallow routing
         navigate('/dashboard', { replace: true });
 
       } catch (error: unknown) {
@@ -137,14 +141,16 @@ export const useQueryParamClinicInsert = () => {
         });
       } finally {
         setIsProcessing(false);
+        setHasInsertedFromParams(true); // Mark as completed regardless of success/failure
       }
     };
 
     handleClinicCreation();
-  }, [searchParams, navigate, toast, isProcessing]);
+  }, [searchParams, navigate, toast, isProcessing, hasInsertedFromParams]);
 
   return {
     isProcessing,
     newClinicId,
+    hasInsertedFromParams,
   };
 };

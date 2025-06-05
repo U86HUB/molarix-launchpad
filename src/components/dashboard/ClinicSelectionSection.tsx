@@ -12,6 +12,7 @@ import { Loader2, Plus, Building2, AlertTriangle } from 'lucide-react';
 import { useUserClinics } from '@/hooks/useUserClinics';
 import { AddNewClinicInline } from './AddNewClinicInline';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ClinicSelectionSectionProps {
   selectedClinicId: string;
@@ -26,6 +27,9 @@ export const ClinicSelectionSection = ({
 }: ClinicSelectionSectionProps) => {
   const { clinics, loading: clinicsLoading, refreshClinics } = useUserClinics();
   const [showAddNewClinic, setShowAddNewClinic] = useState(false);
+  
+  // Debounce clinic changes to prevent excessive API calls
+  const debouncedSelectedClinicId = useDebounce(selectedClinicId, 300);
 
   const handleClinicCreated = async (clinicId: string) => {
     console.log('=== CLINIC SELECTION DEBUG START ===');
@@ -54,10 +58,10 @@ export const ClinicSelectionSection = ({
     console.log('=== CLINIC SELECTION DEBUG END ===');
   };
 
-  const selectedClinic = clinics.find(clinic => clinic.id === selectedClinicId);
+  const selectedClinic = clinics.find(clinic => clinic.id === debouncedSelectedClinicId);
 
   console.log('🎯 ClinicSelectionSection render:', {
-    selectedClinicId,
+    selectedClinicId: debouncedSelectedClinicId,
     clinicsCount: clinics.length,
     clinicsLoading,
     selectedClinic: selectedClinic ? { id: selectedClinic.id, name: selectedClinic.name } : null,
@@ -85,7 +89,7 @@ export const ClinicSelectionSection = ({
         </div>
       ) : (
         <Select
-          value={selectedClinicId}
+          value={debouncedSelectedClinicId}
           onValueChange={(value) => {
             console.log('🔄 Select value changed to:', value);
             if (value === 'add-new') {
@@ -130,6 +134,7 @@ export const ClinicSelectionSection = ({
           </SelectContent>
         </Select>
       )}
+      
       {selectedClinic && (
         <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-md border">
           <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
