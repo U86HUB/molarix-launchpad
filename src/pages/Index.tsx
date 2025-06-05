@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/Header";
-import { TypingAnimation } from "@/components/TypingAnimation";
+import Header from "@/components/Header";
+import TypingAnimation from "@/components/TypingAnimation";
 import { ArrowRight, Eye } from "lucide-react";
 import { Link } from 'react-router-dom';
 
@@ -13,7 +14,10 @@ const Index = () => {
       {/* Hero Section */}
       <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <TypingAnimation />
+          <TypingAnimation 
+            text="Build Beautiful Dental Websites with AI"
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight"
+          />
           <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Create beautiful, professional dental websites with AI-powered content generation. 
             No technical expertise required - just answer a few questions and watch your website come to life.
