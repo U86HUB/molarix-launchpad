@@ -1,4 +1,7 @@
 
+// Import the existing type
+import type { UnifiedOnboardingData } from '@/hooks/useUnifiedOnboardingData';
+
 // Type definitions for onboarding system
 
 export interface UnifiedOnboardingSubmissionState {
@@ -85,8 +88,8 @@ export interface UseWebsiteInitializationResult {
   isCompleted: boolean;
   hasError: boolean;
   initializeWebsite: (data: WebsiteInitializationData) => Promise<void>;
-  retryInitialization: (data: WebsiteInitializationData) => void;
+  retryInitialization: () => void;
 }
 
-// Import the existing type
-export type { UnifiedOnboardingData } from '@/hooks/useUnifiedOnboardingData';
+// Re-export the imported type for convenience
+export type { UnifiedOnboardingData };

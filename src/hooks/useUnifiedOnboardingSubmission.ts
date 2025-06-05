@@ -6,12 +6,13 @@ import { useWebsiteInitialization } from "@/hooks/useWebsiteInitialization";
 import { handleSupabaseError } from "@/utils/errorHandling";
 import { UnifiedOnboardingData } from "./useUnifiedOnboardingData";
 import { executeOnboardingFlow } from "@/services/onboarding/onboardingOrchestrator";
-import { UseUnifiedOnboardingSubmissionResult } from "@/types/onboarding";
+import { UseUnifiedOnboardingSubmissionResult, WebsiteInitializationData } from "@/types/onboarding";
 
 export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmissionResult => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [lastWebsiteData, setLastWebsiteData] = useState<WebsiteInitializationData | null>(null);
   
   const {
     isInitializing,
@@ -20,7 +21,7 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
     isCompleted: initCompleted,
     hasError: initError,
     initializeWebsite,
-    retryInitialization,
+    retryInitialization: originalRetryInitialization,
   } = useWebsiteInitialization();
 
   const submitOnboarding = async (
@@ -54,7 +55,7 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
 
       // Initialize website with loading screen
       if (result.websiteId) {
-        await initializeWebsite({
+        const websiteData: WebsiteInitializationData = {
           websiteId: result.websiteId,
           templateType: onboardingData.website.selectedTemplate,
           primaryColor: onboardingData.website.primaryColor,
@@ -65,7 +66,12 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
             phone: onboardingData.clinic.phone,
             email: onboardingData.clinic.email,
           }
-        });
+        };
+        
+        // Store the website data for potential retry
+        setLastWebsiteData(websiteData);
+        
+        await initializeWebsite(websiteData);
       }
 
     } catch (error: any) {
@@ -81,6 +87,13 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Create a no-parameter retry function that uses the stored website data
+  const retryInitialization = (): void => {
+    if (lastWebsiteData) {
+      originalRetryInitialization(lastWebsiteData);
     }
   };
 
