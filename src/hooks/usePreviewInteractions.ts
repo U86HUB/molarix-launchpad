@@ -1,81 +1,86 @@
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Section } from '@/types/website';
 
 export const usePreviewInteractions = (sections: Section[]) => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [copyMode, setCopyMode] = useState<'draft' | 'published'>('draft');
-  const previewRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Record<string, HTMLElement>>({});
+  const [isScrolling, setIsScrolling] = useState(false);
 
-  // Register section elements for scroll tracking
-  const registerSection = useCallback((sectionId: string, element: HTMLElement | null) => {
-    if (element) {
-      sectionRefs.current[sectionId] = element;
-    } else {
-      delete sectionRefs.current[sectionId];
+  // Auto-select first section when sections load
+  useEffect(() => {
+    if (sections.length > 0 && !activeSection) {
+      setActiveSection(sections[0].id);
     }
+  }, [sections, activeSection]);
+
+  const scrollToSection = useCallback((sectionId: string) => {
+    setIsScrolling(true);
+    setActiveSection(sectionId);
+
+    // Find the section element and scroll to it
+    const element = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+
+    // Reset scrolling state after animation
+    setTimeout(() => {
+      setIsScrolling(false);
+    }, 1000);
   }, []);
 
-  // Scroll to specific section
-  const scrollToSection = useCallback((sectionId: string) => {
-    const element = sectionRefs.current[sectionId];
-    if (element && previewRef.current) {
-      const container = previewRef.current;
-      const elementTop = element.offsetTop;
-      const containerTop = container.scrollTop;
-      const targetScroll = elementTop - 80; // Offset for header
-
-      container.scrollTo({
-        top: targetScroll,
-        behavior: 'smooth'
-      });
-      
+  const handleSectionClick = useCallback((sectionId: string) => {
+    if (!isScrolling) {
       setActiveSection(sectionId);
     }
-  }, []);
+  }, [isScrolling]);
 
-  // Handle scroll to update active section
-  const handleScroll = useCallback(() => {
-    if (!previewRef.current) return;
-
-    const container = previewRef.current;
-    const scrollTop = container.scrollTop + 100; // Offset for header
-
-    let currentActiveSection = null;
-    let minDistance = Infinity;
-
-    Object.entries(sectionRefs.current).forEach(([sectionId, element]) => {
-      const distance = Math.abs(element.offsetTop - scrollTop);
-      if (distance < minDistance) {
-        minDistance = distance;
-        currentActiveSection = sectionId;
-      }
-    });
-
-    if (currentActiveSection !== activeSection) {
-      setActiveSection(currentActiveSection);
+  const getNextSection = useCallback(() => {
+    if (!activeSection || sections.length === 0) return null;
+    
+    const currentIndex = sections.findIndex(s => s.id === activeSection);
+    if (currentIndex < sections.length - 1) {
+      return sections[currentIndex + 1].id;
     }
-  }, [activeSection]);
+    return null;
+  }, [activeSection, sections]);
 
-  // Setup scroll listener
-  useEffect(() => {
-    const container = previewRef.current;
-    if (!container) return;
+  const getPreviousSection = useCallback(() => {
+    if (!activeSection || sections.length === 0) return null;
+    
+    const currentIndex = sections.findIndex(s => s.id === activeSection);
+    if (currentIndex > 0) {
+      return sections[currentIndex - 1].id;
+    }
+    return null;
+  }, [activeSection, sections]);
 
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+  const navigateToNext = useCallback(() => {
+    const nextId = getNextSection();
+    if (nextId) {
+      scrollToSection(nextId);
+    }
+  }, [getNextSection, scrollToSection]);
+
+  const navigateToPrevious = useCallback(() => {
+    const prevId = getPreviousSection();
+    if (prevId) {
+      scrollToSection(prevId);
+    }
+  }, [getPreviousSection, scrollToSection]);
 
   return {
     activeSection,
-    viewMode,
-    copyMode,
-    previewRef,
-    setViewMode,
-    setCopyMode,
-    registerSection,
+    setActiveSection,
+    isScrolling,
     scrollToSection,
+    handleSectionClick,
+    navigateToNext,
+    navigateToPrevious,
+    getNextSection,
+    getPreviousSection
   };
 };

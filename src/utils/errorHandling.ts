@@ -1,6 +1,11 @@
 
-import { toast } from "@/hooks/use-toast";
+import { ErrorService } from '@/services/errorService';
 
+// Re-export for backward compatibility
+export const handleSupabaseError = ErrorService.handle;
+export const handleOperationSuccess = ErrorService.success;
+
+// Legacy interface for backward compatibility
 export interface ErrorContext {
   operation: string;
   table?: string;
@@ -8,43 +13,12 @@ export interface ErrorContext {
   additionalData?: Record<string, any>;
 }
 
-export const handleSupabaseError = (
-  error: any, 
-  context: ErrorContext,
-  userMessage?: string
-) => {
-  // Log detailed error to console for debugging
-  console.error(`Supabase ${context.operation} failed:`, {
-    error: error.message || error,
-    code: error.code,
-    table: context.table,
-    userId: context.userId,
-    timestamp: new Date().toISOString(),
-    ...context.additionalData
-  });
+/**
+ * @deprecated Use ErrorService.handle instead
+ */
+export const handleError = ErrorService.handle;
 
-  // Show user-friendly toast message
-  const defaultMessage = `Failed to ${context.operation.toLowerCase()}. Please try again.`;
-  
-  toast({
-    title: "Error",
-    description: userMessage || defaultMessage,
-    variant: "destructive",
-  });
-
-  return false;
-};
-
-export const handleOperationSuccess = (
-  operation: string,
-  successMessage?: string
-) => {
-  console.log(`Operation successful: ${operation}`);
-  
-  if (successMessage) {
-    toast({
-      title: "Success",
-      description: successMessage,
-    });
-  }
-};
+/**
+ * @deprecated Use ErrorService.success instead  
+ */
+export const handleSuccess = ErrorService.success;
