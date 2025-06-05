@@ -20,19 +20,12 @@ import * as axe from 'axe-core';
 
 interface AccessibilityResult {
   id: string;
-  impact: 'minor' | 'moderate' | 'serious' | 'critical';
+  impact: 'minor' | 'moderate' | 'serious' | 'critical' | null;
   tags: string[];
   description: string;
   help: string;
   helpUrl: string;
   nodes: any[];
-}
-
-interface AuditResults {
-  violations: AccessibilityResult[];
-  passes: AccessibilityResult[];
-  incomplete: AccessibilityResult[];
-  inapplicable: AccessibilityResult[];
 }
 
 interface ContrastCheck {
@@ -53,7 +46,7 @@ interface LandmarkCheck {
 }
 
 const AccessibilityAuditor = () => {
-  const [auditResults, setAuditResults] = useState<AuditResults | null>(null);
+  const [auditResults, setAuditResults] = useState<axe.AxeResults | null>(null);
   const [contrastResults, setContrastResults] = useState<ContrastCheck[]>([]);
   const [landmarkResults, setLandmarkResults] = useState<LandmarkCheck[]>([]);
   const [focusResults, setFocusResults] = useState<string[]>([]);
@@ -67,8 +60,7 @@ const AccessibilityAuditor = () => {
     try {
       // Configure axe for WCAG 2.1 AA compliance
       axe.configure({
-        rules: [],
-        tags: ['wcag2a', 'wcag2aa', 'wcag21aa']
+        rules: []
       });
 
       setProgress(25);
@@ -196,7 +188,7 @@ const AccessibilityAuditor = () => {
     return issues;
   };
 
-  const getImpactColor = (impact: string) => {
+  const getImpactColor = (impact: string | null | undefined) => {
     switch (impact) {
       case 'critical': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'serious': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
@@ -325,7 +317,7 @@ const AccessibilityAuditor = () => {
                           </p>
                         </div>
                         <Badge className={getImpactColor(violation.impact)}>
-                          {violation.impact}
+                          {violation.impact || 'unknown'}
                         </Badge>
                       </div>
                       <div className="flex flex-wrap gap-2">
