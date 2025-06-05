@@ -19,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Website } from '@/types/website';
 import WebsiteInitializationLoader from '../website-builder/WebsiteInitializationLoader';
 import { useWebsiteInitialization } from '@/hooks/useWebsiteInitialization';
+import { useWebsiteCreationGuard } from '@/hooks/useWebsiteCreationGuard';
 
 interface Clinic {
   id: string;
@@ -60,7 +61,6 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     clinicId: '',
@@ -74,14 +74,22 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
     isCompleted: initCompleted,
     hasError: initError,
     initializeWebsite,
-    retryInitialization,
   } = useWebsiteInitialization();
 
+  const {
+    isCreating,
+    canCreate,
+    startCreation,
+    completeCreation,
+    resetCreation,
+  } = useWebsiteCreationGuard();
+
   const handleOpenChange = (open: boolean) => {
-    if (!open && !isInitializing) {
+    if (!open && !isInitializing && !isCreating) {
       onClose();
       setStep(1);
       setFormData({ name: '', clinicId: '', template: '' });
+      resetCreation();
     }
   };
 
@@ -109,14 +117,22 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
       return;
     }
 
-    setCreating(true);
+    const websiteName = formData.name.trim();
+    
+    // Use creation guard to prevent duplicates
+    if (!canCreate(websiteName)) {
+      return;
+    }
+
+    startCreation(websiteName);
+    console.log('🔄 Creating website:', websiteName);
 
     try {
       // Create the basic website record
       const { data: newWebsite, error } = await supabase
         .from('websites')
         .insert({
-          name: formData.name,
+          name: websiteName,
           clinic_id: formData.clinicId,
           template_type: formData.template,
           status: 'draft',
@@ -138,7 +154,14 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Website creation error:', error);
+        resetCreation();
+        throw error;
+      }
+
+      console.log('✅ Website created successfully:', newWebsite.id);
+      completeCreation(newWebsite.id);
 
       // Type the response properly to match Website interface
       const websiteWithClinic: Website = {
@@ -170,18 +193,15 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
       });
 
       onWebsiteCreate(websiteWithClinic);
-      
-      // Note: The initialization hook will handle the redirect to website builder
-      // and the modal will close when initialization completes
 
     } catch (error: any) {
-      console.error('Error creating website:', error);
+      console.error('❌ Error creating website:', error);
+      resetCreation();
       toast({
         title: "Error",
         description: "Failed to create website",
         variant: "destructive",
       });
-      setCreating(false);
     }
   };
 
@@ -194,6 +214,7 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
 
   const selectedClinic = clinics.find(c => c.id === formData.clinicId);
   const selectedTemplate = templates.find(t => t.id === formData.template);
+  const isBusy = isCreating || isInitializing;
 
   return (
     <>
@@ -204,7 +225,6 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
         isCompleted={initCompleted}
         hasError={initError}
         onRetry={() => {
-          // Could implement retry logic here if needed
           console.log('Retry initialization requested');
         }}
       />
@@ -236,13 +256,14 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
                   placeholder="Enter website name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  disabled={isBusy}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="clinic-select">Select Clinic *</Label>
                 <Select value={formData.clinicId} onValueChange={(value) => setFormData(prev => ({ ...prev, clinicId: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger disabled={isBusy}>
                     <SelectValue placeholder="Choose a clinic" />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,12 +277,12 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isBusy}>
                   Cancel
                 </Button>
                 <Button 
                   onClick={handleNext} 
-                  disabled={!formData.name || !formData.clinicId}
+                  disabled={!formData.name || !formData.clinicId || isBusy}
                 >
                   Next: Choose Template
                 </Button>
@@ -286,8 +307,8 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
                         formData.template === template.id 
                           ? 'ring-2 ring-primary bg-primary/5' 
                           : ''
-                      }`}
-                      onClick={() => handleTemplateSelect(template.id)}
+                      } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => !isBusy && handleTemplateSelect(template.id)}
                     >
                       <CardContent className="p-4">
                         <div className="flex gap-4">
@@ -325,19 +346,19 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
               </div>
 
               <div className="flex justify-between gap-2 pt-4">
-                <Button variant="outline" onClick={handleBack}>
+                <Button variant="outline" onClick={handleBack} disabled={isBusy}>
                   Back
                 </Button>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                  <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isBusy}>
                     Cancel
                   </Button>
                   <Button 
                     onClick={handleCreate} 
-                    disabled={!formData.template || creating}
+                    disabled={!formData.template || isBusy}
                   >
-                    {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    Create Website
+                    {isCreating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    {isCreating ? 'Creating...' : 'Create Website'}
                   </Button>
                 </div>
               </div>

@@ -21,6 +21,9 @@ export interface InitializationProgress {
   completed: boolean;
 }
 
+// Track websites being initialized to prevent duplicates
+const initializingWebsites = new Set<string>();
+
 export class WebsiteInitializationService {
   private progressCallback: (progress: InitializationProgress) => void;
 
@@ -29,7 +32,21 @@ export class WebsiteInitializationService {
   }
 
   async initializeWebsite(data: WebsiteInitializationData): Promise<boolean> {
+    // Check if this website is already being initialized
+    if (initializingWebsites.has(data.websiteId)) {
+      console.warn('🚫 Website initialization already in progress for:', data.websiteId);
+      this.progressCallback({
+        step: 4,
+        message: 'Initialization already in progress',
+        completed: false
+      });
+      return false;
+    }
+
     try {
+      initializingWebsites.add(data.websiteId);
+      console.log('🔄 Starting website initialization for:', data.websiteId);
+
       // Step 1: Verify website exists
       this.progressCallback({
         step: 1,
@@ -88,16 +105,21 @@ export class WebsiteInitializationService {
           { type: 'contact', position: 3 }
         ];
 
+        // Insert sections one by one to avoid conflicts
         for (const section of defaultSections) {
-          await supabase
-            .from('sections')
-            .insert({
-              website_id: data.websiteId,
-              type: section.type,
-              position: section.position,
-              settings: {},
-              is_visible: true
-            });
+          try {
+            await supabase
+              .from('sections')
+              .insert({
+                website_id: data.websiteId,
+                type: section.type,
+                position: section.position,
+                settings: {},
+                is_visible: true
+              });
+          } catch (sectionError) {
+            console.warn(`⚠️ Section ${section.type} creation failed (may already exist):`, sectionError);
+          }
         }
       }
 
@@ -110,13 +132,16 @@ export class WebsiteInitializationService {
 
       return true;
     } catch (error) {
-      console.error('Website initialization failed:', error);
+      console.error('❌ Website initialization failed:', error);
       this.progressCallback({
         step: 4,
         message: 'Initialization failed',
         completed: false
       });
       throw error;
+    } finally {
+      // Clean up tracking
+      initializingWebsites.delete(data.websiteId);
     }
   }
 }

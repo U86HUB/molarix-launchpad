@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useWebsiteInitialization } from "@/hooks/useWebsiteInitialization";
+import { useWebsiteCreationGuard } from "@/hooks/useWebsiteCreationGuard";
 import { handleSupabaseError } from "@/utils/errorHandling";
 import { executeOnboardingFlow } from "@/services/onboarding/onboardingOrchestrator";
 import { UseUnifiedOnboardingSubmissionResult, WebsiteInitializationData, UnifiedOnboardingData } from "@/types/onboarding";
@@ -10,7 +11,6 @@ import { UseUnifiedOnboardingSubmissionResult, WebsiteInitializationData, Unifie
 export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmissionResult => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [lastWebsiteData, setLastWebsiteData] = useState<WebsiteInitializationData | null>(null);
   
   const {
@@ -21,6 +21,18 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
     hasError: initError,
     initializeWebsite,
   } = useWebsiteInitialization();
+
+  const {
+    isCreating,
+    createdWebsiteId,
+    canCreate,
+    startCreation,
+    completeCreation,
+    resetCreation,
+  } = useWebsiteCreationGuard();
+
+  // Combined loading state
+  const isSubmitting = isCreating || isInitializing;
 
   const submitOnboarding = async (
     onboardingData: UnifiedOnboardingData,
@@ -35,11 +47,19 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       return;
     }
 
-    setIsSubmitting(true);
-    console.log('Starting onboarding submission for user:', user.id);
+    const websiteName = onboardingData.website.name;
+    
+    // Check if we can proceed with creation
+    if (!canCreate(websiteName)) {
+      return;
+    }
+
+    // Start creation guard
+    startCreation(websiteName);
+    console.log('🔄 Starting onboarding submission for user:', user.id, 'Website:', websiteName);
 
     try {
-      // Execute the onboarding flow
+      // Execute the onboarding flow with duplicate protection
       const result = await executeOnboardingFlow(onboardingData, existingClinics, user.id);
       
       if (!result.success) {
@@ -48,32 +68,42 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
           description: result.error || "Failed to complete setup. Please try again.",
           variant: "destructive",
         });
+        resetCreation();
         return;
       }
 
-      // Initialize website with loading screen
-      if (result.websiteId) {
-        const websiteData: WebsiteInitializationData = {
-          websiteId: result.websiteId,
-          templateType: onboardingData.website.selectedTemplate,
-          primaryColor: onboardingData.website.primaryColor,
-          fontStyle: onboardingData.website.fontStyle,
-          clinicData: {
-            name: onboardingData.clinic.name || existingClinics.find(c => c.id === onboardingData.clinic.selectedClinicId)?.name || 'Your Practice',
-            address: onboardingData.clinic.address,
-            phone: onboardingData.clinic.phone,
-            email: onboardingData.clinic.email,
-          }
-        };
-        
-        // Store the website data for potential retry
-        setLastWebsiteData(websiteData);
-        
-        await initializeWebsite(websiteData);
+      if (!result.websiteId) {
+        console.error('❌ No website ID returned from onboarding flow');
+        resetCreation();
+        return;
       }
 
+      // Mark creation as complete
+      completeCreation(result.websiteId);
+      console.log('✅ Website created successfully with ID:', result.websiteId);
+
+      // Initialize website with loading screen
+      const websiteData: WebsiteInitializationData = {
+        websiteId: result.websiteId,
+        templateType: onboardingData.website.selectedTemplate,
+        primaryColor: onboardingData.website.primaryColor,
+        fontStyle: onboardingData.website.fontStyle,
+        clinicData: {
+          name: onboardingData.clinic.name || existingClinics.find(c => c.id === onboardingData.clinic.selectedClinicId)?.name || 'Your Practice',
+          address: onboardingData.clinic.address,
+          phone: onboardingData.clinic.phone,
+          email: onboardingData.clinic.email,
+        }
+      };
+      
+      // Store the website data for potential retry
+      setLastWebsiteData(websiteData);
+      
+      await initializeWebsite(websiteData);
+
     } catch (error: any) {
-      console.error('Onboarding submission error:', error);
+      console.error('❌ Onboarding submission error:', error);
+      resetCreation();
       handleSupabaseError(
         error,
         {
@@ -83,8 +113,6 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
         },
         'Failed to complete setup. Please try again or contact support if the problem persists.'
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
