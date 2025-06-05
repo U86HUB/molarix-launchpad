@@ -61,8 +61,7 @@ export const useQueryParamClinicInsert = () => {
           .from('clinics')
           .select('id, name')
           .eq('created_by', userId)
-          .eq('name', clinicName.trim())
-          .throwOnError();
+          .eq('name', clinicName.trim());
 
         if (checkError) {
           console.error('❌ Error checking for existing clinic:', checkError);
@@ -105,8 +104,7 @@ export const useQueryParamClinicInsert = () => {
           .from('clinics')
           .insert([clinicData])
           .select()
-          .single()
-          .throwOnError();
+          .single();
 
         if (insertError) {
           console.error('❌ Insert error:', insertError);
@@ -129,7 +127,7 @@ export const useQueryParamClinicInsert = () => {
         // Clean up URL parameters
         navigate('/dashboard', { replace: true });
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('❌ Unexpected error in clinic creation:', error);
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
         toast({
