@@ -25,13 +25,14 @@ export const WebsiteManagementSection = () => {
     await handleWebsiteDelete(websiteId);
   };
 
+  // Fix the type mismatch by updating the function signature
   const onWebsiteCreateFromModal = async (websiteData: {
     name: string;
     clinicId: string;
     templateType: string;
     primaryColor: string;
     fontStyle: string;
-  }) => {
+  }): Promise<void> => {
     const success = await handleWebsiteCreate(websiteData);
     if (success) {
       setShowCreateModal(false);
