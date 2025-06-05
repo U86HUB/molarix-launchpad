@@ -10,11 +10,13 @@ export const useClinicCreation = () => {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
-  const createClinic = async (clinicName: string, clinicAddress: string) => {
+  const createClinic = async (clinicName: string, clinicAddress: string, clinicPhone?: string, clinicEmail?: string) => {
     if (isDebugMode()) {
-      console.log('🏥 Creating clinic:', { 
+      console.log('🏥 Starting clinic creation:', { 
         clinicName: clinicName.trim(), 
-        clinicAddress: clinicAddress.trim()
+        clinicAddress: clinicAddress.trim(),
+        clinicPhone: clinicPhone?.trim(),
+        clinicEmail: clinicEmail?.trim()
       });
     }
 
@@ -32,11 +34,37 @@ export const useClinicCreation = () => {
     setIsCreating(true);
 
     try {
-      // Create clinic in database (userId will be fetched internally)
-      const clinicData = await createClinicInDatabase({
+      // Create clinic in database with comprehensive error handling
+      const result = await createClinicInDatabase({
         name: clinicName,
         address: clinicAddress,
+        phone: clinicPhone,
+        email: clinicEmail,
       });
+
+      if (!result.success) {
+        console.error('❌ Clinic creation failed:', result.error);
+        
+        if (isDebugMode()) {
+          console.error('🔍 Detailed clinic creation error:', {
+            error: result.error,
+            clinicName,
+            clinicAddress,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // Show specific error message
+        toast({
+          title: "Creation Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+        
+        return null;
+      }
+
+      const clinicData = result.data;
 
       if (isDebugMode()) {
         console.log('✅ Clinic created successfully:', {
@@ -55,10 +83,10 @@ export const useClinicCreation = () => {
       return clinicData;
 
     } catch (error: any) {
-      console.error('Error in clinic creation:', error?.message);
+      console.error('❌ Unexpected error in clinic creation:', error?.message);
       
       if (isDebugMode()) {
-        console.error('🔍 Detailed clinic creation error:', {
+        console.error('🔍 Detailed unexpected error:', {
           error,
           clinicName,
           clinicAddress,
@@ -66,18 +94,12 @@ export const useClinicCreation = () => {
         });
       }
       
-      // Show specific error message
-      const errorMessage = error.message?.includes('Row Level Security')
-        ? "Authentication required. Please log in and try again."
-        : error.message?.includes('created_by')
-        ? "Unable to set clinic ownership. Please refresh and try again."
-        : error.message || "Failed to create clinic. Please try again.";
-
       toast({
-        title: "Creation Failed",
-        description: errorMessage,
+        title: "Unexpected Error",
+        description: "An unexpected error occurred. Please try again or contact support.",
         variant: "destructive",
       });
+      
       return null;
     } finally {
       setIsCreating(false);

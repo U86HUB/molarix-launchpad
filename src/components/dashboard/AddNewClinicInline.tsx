@@ -13,21 +13,36 @@ interface AddNewClinicInlineProps {
 export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicInlineProps) => {
   const [clinicName, setClinicName] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
+  const [clinicPhone, setClinicPhone] = useState('');
+  const [clinicEmail, setClinicEmail] = useState('');
   const { createClinic, isCreating } = useClinicCreation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const clinicData = await createClinic(clinicName, clinicAddress);
+    console.log('🔄 Submitting clinic creation form:', {
+      clinicName: clinicName.trim(),
+      clinicAddress: clinicAddress.trim(),
+      clinicPhone: clinicPhone.trim(),
+      clinicEmail: clinicEmail.trim()
+    });
+    
+    const clinicData = await createClinic(
+      clinicName, 
+      clinicAddress, 
+      clinicPhone, 
+      clinicEmail
+    );
     
     if (clinicData) {
-      // Call the callback with the new clinic ID
       console.log('🔄 Calling onClinicCreated with ID:', clinicData.id);
       onClinicCreated(clinicData.id);
 
       // Reset form
       setClinicName('');
       setClinicAddress('');
+      setClinicPhone('');
+      setClinicEmail('');
     }
   };
 
@@ -38,12 +53,16 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         isCreating={isCreating}
       />
       
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3" noValidate>
         <ClinicFormFields
           clinicName={clinicName}
           setClinicName={setClinicName}
           clinicAddress={clinicAddress}
           setClinicAddress={setClinicAddress}
+          clinicPhone={clinicPhone}
+          setClinicPhone={setClinicPhone}
+          clinicEmail={clinicEmail}
+          setClinicEmail={setClinicEmail}
           isCreating={isCreating}
         />
         
