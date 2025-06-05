@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ interface WebsiteCardProps {
 
 export const WebsiteCard = ({ website, onUpdate, onDelete }: WebsiteCardProps) => {
   const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -62,6 +64,14 @@ export const WebsiteCard = ({ website, onUpdate, onDelete }: WebsiteCardProps) =
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handlePreview = () => {
+    navigate(`/website-preview/${website.id}`);
+  };
+
+  const handleEdit = () => {
+    navigate(`/website-builder/${website.id}`);
   };
 
   return (
@@ -111,11 +121,11 @@ export const WebsiteCard = ({ website, onUpdate, onDelete }: WebsiteCardProps) =
 
         <div className="flex justify-between items-center pt-4 border-t">
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handlePreview}>
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleEdit}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
