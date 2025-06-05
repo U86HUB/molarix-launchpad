@@ -11,6 +11,14 @@ export const useClinicCreation = () => {
   const [isCreating, setIsCreating] = useState(false);
 
   const createClinic = async (clinicName: string, clinicAddress: string, clinicPhone?: string, clinicEmail?: string) => {
+    console.log('🏥 useClinicCreation.createClinic() CALLED');
+    console.log('🏥 Input parameters:', { 
+      clinicName: clinicName?.trim(), 
+      clinicAddress: clinicAddress?.trim(),
+      clinicPhone: clinicPhone?.trim(),
+      clinicEmail: clinicEmail?.trim()
+    });
+
     if (isDebugMode()) {
       console.log('🏥 Starting clinic creation:', { 
         clinicName: clinicName.trim(), 
@@ -21,8 +29,10 @@ export const useClinicCreation = () => {
     }
 
     // Validate input data - now passing clinicEmail to validation
+    console.log('🏥 Validating clinic data...');
     const validation = validateClinicData(clinicName, clinicEmail);
     if (!validation.isValid) {
+      console.log('❌ Validation failed:', validation.error);
       toast({
         title: "Missing Information",
         description: validation.error,
@@ -30,10 +40,14 @@ export const useClinicCreation = () => {
       });
       return null;
     }
+    console.log('✅ Validation passed');
 
     setIsCreating(true);
+    console.log('🏥 Setting isCreating to true');
 
     try {
+      console.log('🏥 Calling createClinicInDatabase...');
+      
       // Create clinic in database with comprehensive error handling
       const result = await createClinicInDatabase({
         name: clinicName,
@@ -41,6 +55,8 @@ export const useClinicCreation = () => {
         phone: clinicPhone,
         email: clinicEmail,
       });
+
+      console.log('🏥 createClinicInDatabase result:', result);
 
       if (!result.success) {
         console.error('❌ Clinic creation failed:', result.error);
@@ -65,6 +81,7 @@ export const useClinicCreation = () => {
       }
 
       const clinicData = result.data;
+      console.log('✅ Clinic creation successful, data:', clinicData);
 
       if (isDebugMode()) {
         console.log('✅ Clinic created successfully:', {
@@ -84,6 +101,7 @@ export const useClinicCreation = () => {
 
     } catch (error: any) {
       console.error('❌ Unexpected error in clinic creation:', error?.message);
+      console.error('❌ Full error object:', error);
       
       if (isDebugMode()) {
         console.error('🔍 Detailed unexpected error:', {
@@ -103,6 +121,7 @@ export const useClinicCreation = () => {
       return null;
     } finally {
       setIsCreating(false);
+      console.log('🏥 Setting isCreating to false');
     }
   };
 

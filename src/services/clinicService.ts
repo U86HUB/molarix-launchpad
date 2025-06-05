@@ -15,7 +15,8 @@ export interface ClinicCreationResult {
 }
 
 export const createClinicInDatabase = async ({ name, address, phone, email }: CreateClinicData): Promise<ClinicCreationResult> => {
-  console.log('🏥 Creating clinic in database...');
+  console.log('🏥 createClinicInDatabase() CALLED');
+  console.log('🏥 Input data:', { name, address, phone, email });
 
   try {
     // 1. Get and validate current session
@@ -26,6 +27,7 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
       hasSession: !!sessionData?.session,
       hasUser: !!sessionData?.session?.user,
       userId: sessionData?.session?.user?.id,
+      userEmail: sessionData?.session?.user?.email,
       sessionError 
     });
 
@@ -57,14 +59,31 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
       created_by: userId, // Explicitly set for RLS
     };
     
-    console.log('📤 Inserting clinic with payload:', insertPayload);
+    console.log('📤 Prepared insert payload:', insertPayload);
 
-    // 3. Insert with proper error handling and throwOnError
+    // 3. Test connection to clinics table first
+    console.log('🔍 Testing connection to clinics table...');
+    const { data: testData, error: testError } = await supabase
+      .from('clinics')
+      .select('count(*)')
+      .limit(1);
+    
+    console.log('🔍 Connection test result:', { testData, testError });
+    
+    if (testError) {
+      console.error('❌ Cannot connect to clinics table:', testError);
+      return {
+        success: false,
+        error: `Database connection error: ${testError.message}`
+      };
+    }
+
+    // 4. Insert with comprehensive error handling
+    console.log('📤 Attempting clinic insert...');
     const { data: clinicData, error: clinicError } = await supabase
       .from('clinics')
       .insert([insertPayload])
       .select()
-      .throwOnError()
       .single();
 
     console.log('📊 Clinic insert result:', { 
@@ -74,7 +93,13 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
     });
 
     if (clinicError) {
-      console.error('❌ Supabase error:', clinicError);
+      console.error('❌ Supabase insert error:', clinicError);
+      console.error('❌ Error details:', {
+        message: clinicError.message,
+        code: clinicError.code,
+        details: clinicError.details,
+        hint: clinicError.hint
+      });
       
       // Handle specific error types
       if (clinicError.message?.includes('Row Level Security')) {
@@ -117,7 +142,8 @@ export const createClinicInDatabase = async ({ name, address, phone, email }: Cr
     };
 
   } catch (error: any) {
-    console.error('❌ Error in createClinicInDatabase:', error);
+    console.error('❌ Unexpected error in createClinicInDatabase:', error);
+    console.error('❌ Error stack:', error.stack);
     return {
       success: false,
       error: error.message || 'An unexpected error occurred while creating the clinic.'

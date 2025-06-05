@@ -21,20 +21,29 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🧪 FORM SUBMISSION STARTED - handleSubmit triggered');
+    console.log('🧪 Form data:', {
+      clinicName: clinicName.trim(),
+      clinicAddress: clinicAddress.trim(),
+      clinicPhone: clinicPhone.trim(),
+      clinicEmail: clinicEmail.trim(),
+      isSubmitting,
+      isCreating
+    });
+    
     // Prevent double submissions
     if (isSubmitting || isCreating) {
       console.log('🔄 Submission already in progress, ignoring...');
       return;
     }
 
+    if (!clinicName.trim()) {
+      console.log('❌ Clinic name is empty, not submitting');
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    console.log('🔄 Submitting clinic creation form:', {
-      clinicName: clinicName.trim(),
-      clinicAddress: clinicAddress.trim(),
-      clinicPhone: clinicPhone.trim(),
-      clinicEmail: clinicEmail.trim()
-    });
+    console.log('🔄 Setting isSubmitting to true, calling createClinic...');
     
     try {
       const clinicData = await createClinic(
@@ -43,6 +52,8 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         clinicPhone, 
         clinicEmail
       );
+      
+      console.log('🔄 createClinic returned:', clinicData);
       
       if (clinicData) {
         console.log('🔄 Calling onClinicCreated with ID:', clinicData.id);
@@ -53,9 +64,16 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         setClinicAddress('');
         setClinicPhone('');
         setClinicEmail('');
+        
+        console.log('✅ Form reset and onClinicCreated called');
+      } else {
+        console.log('❌ createClinic returned null/undefined');
       }
+    } catch (error) {
+      console.error('❌ Error in handleSubmit:', error);
     } finally {
       setIsSubmitting(false);
+      console.log('🔄 Setting isSubmitting to false');
     }
   };
 
