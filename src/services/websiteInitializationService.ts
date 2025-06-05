@@ -170,7 +170,9 @@ export class WebsiteInitializationService {
     // Generate basic content for each section
     for (const section of sections || []) {
       try {
-        const content = this.generateSectionContent(section.type, clinicData);
+        // Type assertion to ensure the section type is properly typed
+        const sectionType = section.type as Section['type'];
+        const content = this.generateSectionContent(sectionType, clinicData);
         
         // Create AI copy entry
         const { data: copyData, error: copyError } = await supabase
@@ -283,6 +285,43 @@ export class WebsiteInitializationService {
             'Saturday': '9:00 AM - 3:00 PM',
             'Sunday': 'Closed'
           }
+        };
+
+      case 'features':
+        return {
+          title: 'Why Choose Us',
+          features: [
+            {
+              name: 'Expert Care',
+              description: 'Board-certified professionals with years of experience',
+              icon: 'star'
+            },
+            {
+              name: 'Modern Technology',
+              description: 'State-of-the-art equipment and techniques',
+              icon: 'settings'
+            }
+          ]
+        };
+
+      case 'gallery':
+        return {
+          title: 'Our Facility',
+          images: [],
+          description: 'Take a look at our modern, comfortable facility'
+        };
+
+      case 'team':
+        return {
+          title: 'Meet Our Team',
+          members: [
+            {
+              name: 'Dr. Jane Smith',
+              role: 'Lead Practitioner',
+              bio: 'Specialized in comprehensive care with 15 years of experience',
+              image: ''
+            }
+          ]
         };
 
       default:
