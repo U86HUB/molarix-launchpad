@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, Edit, Trash2, Save, X } from 'lucide-react';
 import { ClinicLogoUpload } from '@/components/clinic/ClinicLogoUpload';
 import { ClinicInfoForm } from '@/components/clinic/ClinicInfoForm';
+import { ClinicDeletionWarningModal } from './ClinicDeletionWarningModal';
+import { clinicDeletionService } from '@/services/clinicDeletionService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +45,9 @@ export const ClinicCard = ({ clinic, onUpdate, onDelete }: ClinicCardProps) => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeletionWarning, setShowDeletionWarning] = useState(false);
+  const [linkedWebsites, setLinkedWebsites] = useState<any[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleLogoUpdate = (logoUrl: string) => {
     const updatedClinic = { ...clinic, logo_url: logoUrl };
@@ -94,13 +98,46 @@ export const ClinicCard = ({ clinic, onUpdate, onDelete }: ClinicCardProps) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteAttempt = async () => {
     if (!user || clinic.created_by !== user.id) {
       toast({
         title: "Unauthorized",
         description: "You can only delete clinics you created",
         variant: "destructive",
       });
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      console.log('Checking clinic deletion prerequisites...');
+      const deletionCheck = await clinicDeletionService.checkClinicDeletion(clinic.id);
+
+      if (!deletionCheck.canDelete) {
+        console.log('Clinic cannot be deleted, showing warning modal');
+        setLinkedWebsites(deletionCheck.linkedWebsites);
+        setShowDeletionWarning(true);
+        setDeleting(false);
+        return;
+      }
+
+      console.log('Clinic can be safely deleted, showing confirmation');
+      setShowDeleteConfirm(true);
+      setDeleting(false);
+    } catch (error: any) {
+      console.error('Error checking clinic deletion prerequisites:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check clinic deletion prerequisites",
+        variant: "destructive",
+      });
+      setDeleting(false);
+    }
+  };
+
+  const handleConfirmedDelete = async () => {
+    if (!user || clinic.created_by !== user.id) {
       return;
     }
 
@@ -131,131 +168,144 @@ export const ClinicCard = ({ clinic, onUpdate, onDelete }: ClinicCardProps) => {
       });
     } finally {
       setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
   const canEdit = user && clinic.created_by === user.id;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Building2 className="h-6 w-6 text-primary" />
-            <div>
-              <CardTitle className="text-xl">{clinic.name}</CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary" className="text-xs">
-                  Created {new Date(clinic.created_at).toLocaleDateString()}
-                </Badge>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle className="text-xl">{clinic.name}</CardTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="secondary" className="text-xs">
+                    Created {new Date(clinic.created_at).toLocaleDateString()}
+                  </Badge>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {canEdit && (
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsEditing(false)}
-                >
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-              ) : (
-                <>
+            
+            {canEdit && (
+              <div className="flex items-center gap-2">
+                {isEditing ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => setIsEditing(false)}
                   >
-                    <Edit className="h-4 w-4" />
-                    Edit
+                    <X className="h-4 w-4" />
+                    Cancel
                   </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={deleting}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Clinic</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{clinic.name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete Clinic
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDeleteAttempt}
+                      disabled={deleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {canEdit && (
+            <ClinicLogoUpload
+              clinic={clinic}
+              onLogoUpdate={handleLogoUpdate}
+            />
+          )}
+
+          {!canEdit && clinic.logo_url && (
+            <div className="flex items-center gap-4">
+              <img
+                src={clinic.logo_url}
+                alt="Clinic logo"
+                className="h-20 w-20 rounded-lg object-cover"
+              />
             </div>
           )}
-        </div>
-      </CardHeader>
 
-      <CardContent className="space-y-6">
-        {canEdit && (
-          <ClinicLogoUpload
-            clinic={clinic}
-            onLogoUpdate={handleLogoUpdate}
-          />
-        )}
-
-        {!canEdit && clinic.logo_url && (
-          <div className="flex items-center gap-4">
-            <img
-              src={clinic.logo_url}
-              alt="Clinic logo"
-              className="h-20 w-20 rounded-lg object-cover"
+          {isEditing && canEdit ? (
+            <ClinicInfoForm
+              clinic={clinic}
+              onSubmit={handleInfoUpdate}
             />
-          </div>
-        )}
-
-        {isEditing && canEdit ? (
-          <ClinicInfoForm
-            clinic={clinic}
-            onSubmit={handleInfoUpdate}
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Address</label>
-                <p className="text-sm">{clinic.address || 'Not provided'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                <p className="text-sm">{clinic.phone || 'Not provided'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p className="text-sm">{clinic.email || 'Not provided'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
-                <p className="text-sm">{new Date(clinic.updated_at).toLocaleDateString()}</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Address</label>
+                  <p className="text-sm">{clinic.address || 'Not provided'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                  <p className="text-sm">{clinic.phone || 'Not provided'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                  <p className="text-sm">{clinic.email || 'Not provided'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                  <p className="text-sm">{new Date(clinic.updated_at).toLocaleDateString()}</p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Deletion Warning Modal */}
+      <ClinicDeletionWarningModal
+        open={showDeletionWarning}
+        onOpenChange={setShowDeletionWarning}
+        clinicName={clinic.name}
+        linkedWebsites={linkedWebsites}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Clinic</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{clinic.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmedDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Clinic'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
