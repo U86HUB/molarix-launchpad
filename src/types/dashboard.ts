@@ -9,6 +9,7 @@ export interface DashboardSession {
   logo_url?: string;
   primary_color?: string;
   clinic_id?: string;
+  created_by?: string;
   // Added clinic information
   clinic?: {
     id: string;
