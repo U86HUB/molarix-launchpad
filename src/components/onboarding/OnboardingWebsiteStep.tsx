@@ -26,6 +26,7 @@ const OnboardingWebsiteStep = ({
   updateWebsiteData 
 }: OnboardingWebsiteStepProps) => {
   const [formData, setFormData] = useState<WebsiteData>(websiteData);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   useEffect(() => {
     setFormData(websiteData);
@@ -41,6 +42,29 @@ const OnboardingWebsiteStep = ({
     const file = event.target.files?.[0];
     if (file) {
       handleChange('logo', file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        handleChange('logo', file);
+      }
     }
   };
 
@@ -180,18 +204,34 @@ const OnboardingWebsiteStep = ({
               </Button>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-2">
-                Click to upload or drag and drop
-              </p>
-              <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
+            <div 
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                isDragOver 
+                  ? 'border-blue-400 bg-blue-50' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <input
+                id="logo-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleLogoUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="hidden"
               />
+              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <div className="space-y-2">
+                <label 
+                  htmlFor="logo-upload" 
+                  className="inline-block cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-medium underline"
+                >
+                  Click to upload
+                </label>
+                <p className="text-sm text-gray-600">or drag and drop</p>
+                <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
+              </div>
             </div>
           )}
         </div>
