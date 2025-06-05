@@ -25,18 +25,23 @@ export const WebsiteManagementSection = () => {
     await handleWebsiteDelete(websiteId);
   };
 
-  // Fix the type mismatch by updating the function signature
-  const onWebsiteCreateFromModal = async (websiteData: {
-    name: string;
-    clinicId: string;
-    templateType: string;
-    primaryColor: string;
-    fontStyle: string;
-  }): Promise<void> => {
-    const success = await handleWebsiteCreate(websiteData);
-    if (success) {
-      setShowCreateModal(false);
-    }
+  // Fix the callback to match what CreateWebsiteModal expects
+  const onWebsiteCreateFromModal = (website: Website): void => {
+    // Convert the Website object to the format expected by handleWebsiteCreate
+    const websiteData = {
+      name: website.name,
+      clinicId: website.clinic_id,
+      templateType: website.template_type,
+      primaryColor: website.primary_color || '',
+      fontStyle: website.font_style || '',
+    };
+    
+    // Call the async function but don't await it since this callback should be void
+    handleWebsiteCreate(websiteData).then((success) => {
+      if (success) {
+        setShowCreateModal(false);
+      }
+    });
   };
 
   if (loading) {

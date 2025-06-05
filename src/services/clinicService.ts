@@ -1,7 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError } from '@/utils/errorHandling';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface Clinic {
   id: string;
@@ -9,6 +7,7 @@ export interface Clinic {
   address?: string;
   phone?: string;
   email?: string;
+  created_by: string;
 }
 
 export interface CreateClinicData {

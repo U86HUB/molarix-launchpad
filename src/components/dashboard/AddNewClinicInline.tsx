@@ -55,7 +55,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
       
       console.log('🔄 createClinic returned:', clinicData);
       
-      if (clinicData) {
+      if (clinicData && typeof clinicData === 'object' && 'id' in clinicData) {
         console.log('🔄 Calling onClinicCreated with ID:', clinicData.id);
         onClinicCreated(clinicData.id);
 
@@ -67,7 +67,7 @@ export const AddNewClinicInline = ({ onClinicCreated, onCancel }: AddNewClinicIn
         
         console.log('✅ Form reset and onClinicCreated called');
       } else {
-        console.log('❌ createClinic returned null/undefined');
+        console.log('❌ createClinic returned invalid data');
       }
     } catch (error) {
       console.error('❌ Error in handleSubmit:', error);
