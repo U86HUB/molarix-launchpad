@@ -8,11 +8,13 @@ import { useSessionStatus } from '@/hooks/useSessionStatus';
 import { useSessionCopy } from '@/hooks/useSessionCopy';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Edit, Copy, Trash2, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Eye, Edit, Copy, Trash2, CheckCircle, AlertTriangle, Clock, Database } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
+
+const isDebugMode = () => localStorage.getItem('debugMode') === 'true';
 
 interface EnhancedSessionCardProps {
   session: DashboardSession;
@@ -77,6 +79,17 @@ const EnhancedSessionCard = ({
     );
   };
 
+  const getSourceTableBadge = () => {
+    if (!isDebugMode()) return null;
+    
+    return (
+      <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-600 text-xs">
+        <Database className="w-3 h-3 mr-1" />
+        websites
+      </Badge>
+    );
+  };
+
   return (
     <TooltipProvider>
       <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600">
@@ -89,6 +102,7 @@ const EnhancedSessionCard = ({
               <div className="flex flex-wrap items-center gap-3">
                 {getTemplateBadge()}
                 {getStatusBadge()}
+                {getSourceTableBadge()}
               </div>
             </div>
           </div>
@@ -101,6 +115,16 @@ const EnhancedSessionCard = ({
               <Clock className="h-3 w-3" />
               <span>Last updated: {dayjs(session.last_updated || session.created_at).fromNow()}</span>
             </div>
+
+            {/* Debug info */}
+            {isDebugMode() && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                <div>ID: {session.id}</div>
+                <div>Clinic ID: {session.clinic_id || 'null'}</div>
+                <div>Created By: {session.created_by || 'null'}</div>
+                <div>Completion: {session.completion_score || 0}%</div>
+              </div>
+            )}
             
             {/* Enhanced action buttons with improved styling */}
             <div className="flex flex-wrap gap-2">

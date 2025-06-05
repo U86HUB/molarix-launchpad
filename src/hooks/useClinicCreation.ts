@@ -4,15 +4,19 @@ import { useToast } from '@/hooks/use-toast';
 import { validateClinicData } from '@/utils/clinicValidation';
 import { createClinicInDatabase } from '@/services/clinicService';
 
+const isDebugMode = () => localStorage.getItem('debugMode') === 'true';
+
 export const useClinicCreation = () => {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
 
   const createClinic = async (clinicName: string, clinicAddress: string) => {
-    console.log('Creating clinic:', { 
-      clinicName: clinicName.trim(), 
-      clinicAddress: clinicAddress.trim()
-    });
+    if (isDebugMode()) {
+      console.log('🏥 Creating clinic:', { 
+        clinicName: clinicName.trim(), 
+        clinicAddress: clinicAddress.trim()
+      });
+    }
 
     // Validate input data
     const validation = validateClinicData(clinicName);
@@ -34,6 +38,14 @@ export const useClinicCreation = () => {
         address: clinicAddress,
       });
 
+      if (isDebugMode()) {
+        console.log('✅ Clinic created successfully:', {
+          id: clinicData.id,
+          name: clinicData.name,
+          created_by: clinicData.created_by
+        });
+      }
+
       // Show success toast
       toast({
         title: "Clinic Created Successfully",
@@ -44,6 +56,15 @@ export const useClinicCreation = () => {
 
     } catch (error: any) {
       console.error('Error in clinic creation:', error?.message);
+      
+      if (isDebugMode()) {
+        console.error('🔍 Detailed clinic creation error:', {
+          error,
+          clinicName,
+          clinicAddress,
+          timestamp: new Date().toISOString()
+        });
+      }
       
       // Show specific error message
       const errorMessage = error.message?.includes('Row Level Security')

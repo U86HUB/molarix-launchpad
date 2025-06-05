@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardSession } from '@/types/dashboard';
 
+const isDebugMode = () => localStorage.getItem('debugMode') === 'true';
+
 export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateAction<DashboardSession[]>>) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -15,23 +17,25 @@ export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateActio
     }
 
     try {
-      console.log('🗑️ Attempting to delete session:', sessionId);
-      console.log('👤 User ID:', user.id);
+      if (isDebugMode()) {
+        console.log('🗑️ Attempting to delete website:', sessionId);
+        console.log('👤 User ID:', user.id);
+      }
 
-      // First, check if the session exists and belongs to the user
-      const { data: existingSession, error: checkError } = await supabase
-        .from('onboarding_sessions')
-        .select('id, clinic_name, created_by')
+      // First, check if the website exists and belongs to the user
+      const { data: existingWebsite, error: checkError } = await supabase
+        .from('websites')
+        .select('id, name, created_by')
         .eq('id', sessionId)
         .single();
 
       if (checkError) {
-        console.error('❌ Error checking session existence:', checkError);
+        if (isDebugMode()) console.error('❌ Error checking website existence:', checkError);
         throw checkError;
       }
 
-      if (!existingSession) {
-        console.error('❌ Session not found:', sessionId);
+      if (!existingWebsite) {
+        if (isDebugMode()) console.error('❌ Website not found:', sessionId);
         toast({
           title: "Error",
           description: "Website not found",
@@ -40,10 +44,10 @@ export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateActio
         return false;
       }
 
-      console.log('📋 Found session to delete:', existingSession);
+      if (isDebugMode()) console.log('📋 Found website to delete:', existingWebsite);
 
-      if (existingSession.created_by !== user.id) {
-        console.error('❌ User does not own this session');
+      if (existingWebsite.created_by !== user.id) {
+        console.error('❌ User does not own this website');
         toast({
           title: "Error",
           description: "You don't have permission to delete this website",
@@ -52,30 +56,32 @@ export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateActio
         return false;
       }
 
-      // Delete related AI copy first to avoid foreign key constraints
-      console.log('🧹 Cleaning up related AI copy...');
-      const { error: copyDeleteError } = await supabase
-        .from('ai_generated_copy')
+      // Delete related sections first to avoid foreign key constraints
+      if (isDebugMode()) console.log('🧹 Cleaning up related sections...');
+      const { error: sectionsDeleteError } = await supabase
+        .from('sections')
         .delete()
-        .eq('session_id', sessionId);
+        .eq('website_id', sessionId);
 
-      if (copyDeleteError) {
-        console.error('❌ Error deleting related copy:', copyDeleteError);
+      if (sectionsDeleteError) {
+        console.error('❌ Error deleting related sections:', sectionsDeleteError);
         // Don't fail the entire operation, just warn
-        console.warn('⚠️ Could not delete related copy, continuing with session deletion');
-      } else {
-        console.log('✅ Related AI copy cleaned up successfully');
+        console.warn('⚠️ Could not delete related sections, continuing with website deletion');
+      } else if (isDebugMode()) {
+        console.log('✅ Related sections cleaned up successfully');
       }
 
-      // Proceed with session deletion
+      // Proceed with website deletion
       const { data: deleteResult, error: deleteError } = await supabase
-        .from('onboarding_sessions')
+        .from('websites')
         .delete()
         .eq('id', sessionId)
         .eq('created_by', user.id)
-        .select(); // Get the deleted row for confirmation
+        .select();
 
-      console.log('🔍 Delete operation result:', { deleteResult, deleteError });
+      if (isDebugMode()) {
+        console.log('🔍 Delete operation result:', { deleteResult, deleteError });
+      }
 
       if (deleteError) {
         console.error('❌ Error during deletion:', deleteError);
@@ -84,7 +90,7 @@ export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateActio
 
       // Check if anything was actually deleted
       if (!deleteResult || deleteResult.length === 0) {
-        console.error('❌ No rows were deleted - session may not exist or belong to user');
+        console.error('❌ No rows were deleted - website may not exist or belong to user');
         toast({
           title: "Error",
           description: "Website could not be deleted. It may not exist or you don't have permission.",
@@ -93,13 +99,17 @@ export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateActio
         return false;
       }
 
-      console.log('✅ Session deleted successfully:', sessionId);
-      console.log('📊 Deleted session data:', deleteResult[0]);
+      if (isDebugMode()) {
+        console.log('✅ Website deleted successfully:', sessionId);
+        console.log('📊 Deleted website data:', deleteResult[0]);
+      }
 
       // Immediately update local state to remove the deleted session
       setSessions(prevSessions => {
         const updatedSessions = prevSessions.filter(session => session.id !== sessionId);
-        console.log('🔄 Updated local sessions count:', updatedSessions.length);
+        if (isDebugMode()) {
+          console.log('🔄 Updated local sessions count:', updatedSessions.length);
+        }
         return updatedSessions;
       });
 
@@ -110,7 +120,15 @@ export const useDeleteSession = (setSessions: React.Dispatch<React.SetStateActio
 
       return true;
     } catch (error) {
-      console.error('❌ Error deleting session:', error);
+      console.error('❌ Error deleting website:', error);
+      if (isDebugMode()) {
+        console.error('🔍 Detailed deletion error:', {
+          error,
+          sessionId,
+          user_id: user.id,
+          timestamp: new Date().toISOString()
+        });
+      }
       toast({
         title: "Error",
         description: "Failed to delete website",
