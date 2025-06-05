@@ -25,12 +25,6 @@ export const WebsiteManagementSection = () => {
     await handleWebsiteDelete(websiteId);
   };
 
-  const handleCreate = (website: Website): void => {
-    // This function expects a Website object but the modal provides creation data
-    // We'll handle this in the modal's onWebsiteCreate callback
-    setShowCreateModal(false);
-  };
-
   const onWebsiteCreateFromModal = async (websiteData: {
     name: string;
     clinicId: string;
