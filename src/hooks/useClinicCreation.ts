@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { validateClinicData } from '@/utils/clinicValidation';
-import { getCurrentSession } from '@/utils/sessionManager';
 import { createClinicInDatabase } from '@/services/clinicService';
 
 export const useClinicCreation = () => {
@@ -29,14 +28,10 @@ export const useClinicCreation = () => {
     setIsCreating(true);
 
     try {
-      // Get current session
-      const { userId } = await getCurrentSession();
-
-      // Create clinic in database
+      // Create clinic in database (userId will be fetched internally)
       const clinicData = await createClinicInDatabase({
         name: clinicName,
         address: clinicAddress,
-        userId
       });
 
       // Show success toast
@@ -48,10 +43,18 @@ export const useClinicCreation = () => {
       return clinicData;
 
     } catch (error: any) {
-      console.log('Error in clinic creation:', error?.message);
+      console.error('Error in clinic creation:', error?.message);
+      
+      // Show specific error message
+      const errorMessage = error.message?.includes('Row Level Security')
+        ? "Authentication required. Please log in and try again."
+        : error.message?.includes('created_by')
+        ? "Unable to set clinic ownership. Please refresh and try again."
+        : error.message || "Failed to create clinic. Please try again.";
+
       toast({
         title: "Creation Failed",
-        description: error.message || "Failed to create clinic. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       return null;

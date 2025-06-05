@@ -17,9 +17,24 @@ interface SectionWithCopyProps {
 }
 
 const SectionWithCopy = ({ section, copyMode, isActive }: SectionWithCopyProps) => {
+  console.log('SectionWithCopy rendering:', { 
+    sectionId: section.id, 
+    sectionType: section.type, 
+    copyMode,
+    copyId: section.copy_id 
+  });
+
   const { copy, loading, error } = useCopyLinking(section, copyMode);
 
+  console.log('Copy linking result:', { 
+    copy, 
+    loading, 
+    error,
+    sectionType: section.type 
+  });
+
   if (loading) {
+    console.log('Loading copy for section:', section.id);
     return <Skeleton className="h-64 w-full" />;
   }
 
@@ -29,6 +44,12 @@ const SectionWithCopy = ({ section, copyMode, isActive }: SectionWithCopyProps) 
 
   // Get copy for this specific section type
   const sectionCopy = copy ? getCopyForSectionType(copy, section.type) : null;
+  
+  console.log('Section copy extracted:', { 
+    sectionType: section.type, 
+    sectionCopy,
+    hasCopy: !!sectionCopy 
+  });
 
   const renderSection = () => {
     switch (section.type) {
@@ -71,6 +92,7 @@ const SectionWithCopy = ({ section, copyMode, isActive }: SectionWithCopyProps) 
       copy={sectionCopy}
       copyMode={copyMode}
       onCopyUpdated={(updatedCopy) => {
+        console.log('Copy updated in section:', section.id, updatedCopy);
         // Trigger a re-fetch of copy data
         window.location.reload(); // Simple approach for now
       }}
@@ -81,6 +103,8 @@ const SectionWithCopy = ({ section, copyMode, isActive }: SectionWithCopyProps) 
 };
 
 const getCopyForSectionType = (copy: any, sectionType: string) => {
+  console.log('Getting copy for section type:', { sectionType, copy });
+  
   switch (sectionType) {
     case 'hero':
       return copy.homepage;
@@ -88,7 +112,14 @@ const getCopyForSectionType = (copy: any, sectionType: string) => {
       return copy.about;
     case 'services':
       return copy.services;
+    case 'contact':
+      return copy.contact;
+    case 'testimonials':
+      return copy.testimonials;
+    case 'features':
+      return copy.features;
     default:
+      console.warn('No copy mapping for section type:', sectionType);
       return null;
   }
 };

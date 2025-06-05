@@ -1,7 +1,7 @@
 
 import { Section } from '@/types/website';
 import { Card, CardContent } from '@/components/ui/card';
-import { Phone, Mail, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ContactSectionProps {
   section: Section;
@@ -12,51 +12,50 @@ const ContactSection = ({ section, copy }: ContactSectionProps) => {
   const settings = section.settings;
   
   const title = copy?.title || settings.title || 'Contact Us';
-  const address = settings.address || '123 Main St, City, State 12345';
-  const phone = settings.phone || '(555) 123-4567';
-  const email = settings.email || 'info@practice.com';
+  const content = copy?.description || settings.content || 
+    'Get in touch with us to schedule an appointment or ask any questions.';
+  const phone = copy?.phone || settings.phone || '(555) 123-4567';
+  const email = copy?.email || settings.email || 'info@clinic.com';
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8">
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">
-          {title}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="text-center">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+            {title}
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            {content}
+          </p>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-8">
+          <Card>
             <CardContent className="p-6">
-              <div 
-                className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--preview-primary, #4f46e5)' }}
-              >
-                <MapPin className="h-6 w-6 text-white" />
+              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                Contact Information
+              </h3>
+              <div className="space-y-3">
+                <p className="flex items-center text-gray-600 dark:text-gray-300">
+                  <span className="font-medium mr-2">Phone:</span>
+                  {phone}
+                </p>
+                <p className="flex items-center text-gray-600 dark:text-gray-300">
+                  <span className="font-medium mr-2">Email:</span>
+                  {email}
+                </p>
               </div>
-              <h3 className="font-semibold mb-2">Address</h3>
-              <p className="text-gray-600 dark:text-gray-400">{address}</p>
             </CardContent>
           </Card>
-          <Card className="text-center">
+          
+          <Card>
             <CardContent className="p-6">
-              <div 
-                className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--preview-primary, #4f46e5)' }}
-              >
-                <Phone className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="font-semibold mb-2">Phone</h3>
-              <p className="text-gray-600 dark:text-gray-400">{phone}</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div 
-                className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--preview-primary, #4f46e5)' }}
-              >
-                <Mail className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="font-semibold mb-2">Email</h3>
-              <p className="text-gray-600 dark:text-gray-400">{email}</p>
+              <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                Get in Touch
+              </h3>
+              <Button className="w-full">
+                Schedule Appointment
+              </Button>
             </CardContent>
           </Card>
         </div>

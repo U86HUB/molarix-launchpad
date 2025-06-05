@@ -20,6 +20,12 @@ const SectionCopyControls = ({ section, copy, loading, onUpdate }: SectionCopyCo
   const { toast } = useToast();
 
   const handleGenerateCopy = async () => {
+    console.log('Generating copy for section:', {
+      sectionId: section.id,
+      sectionType: section.type,
+      websiteId: section.website_id
+    });
+
     setGenerating(true);
     try {
       // Call the copy generation service for this specific section
@@ -31,11 +37,23 @@ const SectionCopyControls = ({ section, copy, loading, onUpdate }: SectionCopyCo
         }
       });
 
-      if (error) throw error;
+      console.log('Copy generation result:', { data, error });
 
-      if (data.success) {
+      if (error) {
+        console.error('Copy generation error:', error);
+        throw error;
+      }
+
+      if (data && data.success) {
+        console.log('Copy generated successfully:', data);
+        
         // Link the new copy to this section
         if (data.copyId) {
+          console.log('Linking copy to section:', {
+            sectionId: section.id,
+            copyId: data.copyId
+          });
+          
           await onUpdate(section.id, { copy_id: data.copyId });
         }
 
@@ -44,13 +62,13 @@ const SectionCopyControls = ({ section, copy, loading, onUpdate }: SectionCopyCo
           description: `AI copy has been generated for your ${section.type} section.`,
         });
       } else {
-        throw new Error(data.error || 'Failed to generate copy');
+        throw new Error(data?.error || 'Failed to generate copy');
       }
     } catch (error: any) {
       console.error('Error generating copy:', error);
       toast({
         title: "Error",
-        description: "Failed to generate copy. Please try again.",
+        description: error.message || "Failed to generate copy. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -59,6 +77,7 @@ const SectionCopyControls = ({ section, copy, loading, onUpdate }: SectionCopyCo
   };
 
   const handleRegenerateCopy = async () => {
+    console.log('Regenerating copy for section:', section.id);
     // Same as generate but for existing copy
     await handleGenerateCopy();
   };
@@ -78,6 +97,11 @@ const SectionCopyControls = ({ section, copy, loading, onUpdate }: SectionCopyCo
           ) : (
             <Badge variant="outline" className="text-xs">
               Not Generated
+            </Badge>
+          )}
+          {section.copy_id && (
+            <Badge variant="outline" className="text-xs">
+              ID: {section.copy_id.slice(0, 8)}...
             </Badge>
           )}
         </div>
@@ -121,8 +145,8 @@ const SectionCopyControls = ({ section, copy, loading, onUpdate }: SectionCopyCo
           <p className="text-xs text-gray-600 mb-1">Preview:</p>
           <p className="text-sm text-gray-800 truncate">
             {typeof copy === 'object' ? 
-              copy.headline || copy.title || 'Copy generated successfully' : 
-              'Copy available'}
+              copy.headline || copy.title || JSON.stringify(copy).slice(0, 50) + '...' : 
+              String(copy).slice(0, 50) + '...'}
           </p>
         </div>
       )}

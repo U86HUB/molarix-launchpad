@@ -15,6 +15,12 @@ interface WebsitePreviewProps {
 }
 
 const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreviewProps) => {
+  console.log('WebsitePreview rendering:', {
+    websiteId: website.id,
+    sectionsCount: sections.length,
+    sections: sections.map(s => ({ id: s.id, type: s.type, copyId: s.copy_id }))
+  });
+
   const {
     activeSection,
     viewMode,
@@ -27,15 +33,19 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
   } = usePreviewInteractions(sections);
 
   useEffect(() => {
+    console.log('WebsitePreview: Setting up CSS variables for website:', website.id);
+    
     // Apply dynamic CSS variables for the selected colors and fonts
     const root = document.documentElement;
     
     if (website.primary_color) {
       root.style.setProperty('--preview-primary', website.primary_color);
+      console.log('Set primary color:', website.primary_color);
     }
 
     if (website.font_style && website.font_style !== 'default') {
       root.style.setProperty('--preview-font', website.font_style);
+      console.log('Set font style:', website.font_style);
     } else {
       root.style.setProperty('--preview-font', 'Inter, system-ui, sans-serif');
     }
@@ -48,6 +58,8 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
 
   const handleSectionReorder = (draggedId: string, targetId: string, position: 'before' | 'after') => {
     if (!onReorderSections) return;
+
+    console.log('Reordering sections:', { draggedId, targetId, position });
 
     const draggedSection = sections.find(s => s.id === draggedId);
     const targetSection = sections.find(s => s.id === targetId);
@@ -79,6 +91,14 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
 
   const renderSection = (section: Section) => {
     const isActive = activeSection === section.id;
+
+    console.log('Rendering section:', {
+      sectionId: section.id,
+      sectionType: section.type,
+      isActive,
+      copyMode,
+      isVisible: section.is_visible
+    });
 
     return (
       <DraggableSection
@@ -117,6 +137,13 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
   const visibleSections = sections
     .filter(section => section.is_visible)
     .sort((a, b) => a.position - b.position);
+
+  console.log('Visible sections to render:', visibleSections.map(s => ({ 
+    id: s.id, 
+    type: s.type, 
+    position: s.position,
+    copyId: s.copy_id 
+  })));
 
   return (
     <div className="h-full flex flex-col relative">
