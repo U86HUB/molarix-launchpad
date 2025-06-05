@@ -1,8 +1,8 @@
 
 // Re-export types and classes for backward compatibility
-export { SupabaseOperationConfig } from './supabase/baseOperations';
-export { FetchManyOptions, FetchOneOptions } from './supabase/queryOperations';
-export { InsertOptions, UpdateOptions, DeleteOptions } from './supabase/mutationOperations';
+export type { SupabaseOperationConfig } from './supabase/baseOperations';
+export type { FetchManyOptions, FetchOneOptions } from './supabase/queryOperations';
+export type { InsertOptions, UpdateOptions, DeleteOptions } from './supabase/mutationOperations';
 
 // Import the operations
 import { BaseSupabaseOperations } from './supabase/baseOperations';
