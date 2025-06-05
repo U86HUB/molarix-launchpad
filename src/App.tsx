@@ -12,6 +12,20 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminDiagnostics from "./pages/AdminDiagnostics";
 import { Toaster } from '@/components/ui/toaster';
 
+// Import public pages
+import Index from './pages/Index';
+import Landing from './pages/Landing';
+import About from './pages/About';
+import Features from './pages/Features';
+import HowItWorks from './pages/HowItWorks';
+import Templates from './pages/Templates';
+import Blog from './pages/Blog';
+import BlogArticle from './pages/BlogArticle';
+import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import NotFound from './pages/NotFound';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -22,7 +36,20 @@ function App() {
           <BrowserRouter>
             <ErrorBoundary>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                {/* Public routes - no authentication required */}
+                <Route path="/" element={<Landing />} />
+                <Route path="/index" element={<Index />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/templates" element={<Templates />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogArticle />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                
+                {/* Protected routes - authentication required */}
                 <Route path="/ai-copy-preview" element={<ProtectedRoute><AICopyPreview /></ProtectedRoute>} />
                 
                 <Route 
@@ -52,7 +79,9 @@ function App() {
                   } 
                 />
                 
-                <Route path="*" element={<Dashboard />} />
+                {/* Fallback routes */}
+                <Route path="/not-found" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />
             </ErrorBoundary>
