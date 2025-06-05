@@ -2,9 +2,11 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { usePreviewInteractions } from '@/hooks/usePreviewInteractions';
 import { Section } from '@/types/website';
+import { GeneratedCopy } from '@/types/copy';
 import { Monitor, Smartphone, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import UnifiedSectionRenderer from './UnifiedSectionRenderer';
 import DraggableSection from './DraggableSection';
 
 interface WebsitePreviewProps {
@@ -15,6 +17,8 @@ interface WebsitePreviewProps {
   selectedSectionId?: string;
   isEditMode?: boolean;
   className?: string;
+  fallbackCopy?: GeneratedCopy | null;
+  copyMode?: 'draft' | 'published';
 }
 
 const WebsitePreview: React.FC<WebsitePreviewProps> = ({
@@ -24,16 +28,16 @@ const WebsitePreview: React.FC<WebsitePreviewProps> = ({
   onSectionUpdate,
   selectedSectionId,
   isEditMode = false,
-  className
+  className,
+  fallbackCopy,
+  copyMode = 'draft'
 }) => {
   const {
     activeSection,
     setActiveSection,
     viewMode,
-    copyMode,
     previewRef,
     setViewMode,
-    setCopyMode,
     registerSection,
     scrollToSection,
     handleSectionClick
@@ -67,10 +71,6 @@ const WebsitePreview: React.FC<WebsitePreviewProps> = ({
     
     onSectionReorder(newSections);
   }, [sections, onSectionReorder]);
-
-  const handleSectionUpdateInternal = useCallback((sectionId: string, updates: Partial<Section>) => {
-    onSectionUpdate(sectionId, updates);
-  }, [onSectionUpdate]);
 
   const handleSectionClickInternal = useCallback((sectionId: string) => {
     handleSectionClick(sectionId);
@@ -117,13 +117,9 @@ const WebsitePreview: React.FC<WebsitePreviewProps> = ({
           </Button>
         </div>
 
-        <Button
-          variant={copyMode ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setCopyMode(!copyMode)}
-        >
-          {copyMode ? 'Exit Copy Mode' : 'Edit Copy'}
-        </Button>
+        <div className="text-sm text-gray-500">
+          {fallbackCopy ? `Using ${copyMode} copy` : 'No copy loaded'}
+        </div>
       </div>
 
       {/* Preview Content */}
@@ -138,24 +134,37 @@ const WebsitePreview: React.FC<WebsitePreviewProps> = ({
           "bg-white rounded-lg shadow-sm overflow-hidden",
           viewMode === 'mobile' ? "w-full" : "w-full max-w-6xl mx-auto"
         )}>
-          {sections.map((section) => (
-            <DraggableSection
-              key={section.id}
-              section={section}
-              isActive={activeSection === section.id}
-              isVisible={true}
-              onRegister={registerSection}
-              onReorder={handleReorder}
-            >
-              <div 
-                className="p-4 border-b cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSectionClickInternal(section.id)}
-              >
-                <h3 className="font-medium text-gray-900">{section.type}</h3>
-                <p className="text-sm text-gray-500">Click to edit this section</p>
-              </div>
-            </DraggableSection>
-          ))}
+          {sections
+            .sort((a, b) => a.position - b.position)
+            .map((section) => (
+              isEditMode ? (
+                <DraggableSection
+                  key={section.id}
+                  section={section}
+                  isActive={activeSection === section.id}
+                  isVisible={true}
+                  onRegister={registerSection}
+                  onReorder={handleReorder}
+                >
+                  <UnifiedSectionRenderer
+                    section={section}
+                    copyMode={copyMode}
+                    fallbackCopy={fallbackCopy}
+                    isActive={activeSection === section.id}
+                    onSectionClick={handleSectionClickInternal}
+                  />
+                </DraggableSection>
+              ) : (
+                <UnifiedSectionRenderer
+                  key={section.id}
+                  section={section}
+                  copyMode={copyMode}
+                  fallbackCopy={fallbackCopy}
+                  isActive={activeSection === section.id}
+                  onSectionClick={handleSectionClickInternal}
+                />
+              )
+            ))}
         </div>
       </div>
     </div>

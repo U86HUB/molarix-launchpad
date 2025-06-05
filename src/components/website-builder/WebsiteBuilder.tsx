@@ -3,14 +3,16 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useWebsiteBuilder } from '@/hooks/useWebsiteBuilder';
+import { useEnhancedWebsiteData } from '@/hooks/useEnhancedWebsiteData';
+import { useSectionOperations } from '@/hooks/useSectionOperations';
 import SectionLibrary from './SectionLibrary';
 import SectionEditor from './SectionEditor';
 import WebsitePreview from './preview/WebsitePreview';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Eye, Settings, Palette, Save } from 'lucide-react';
+import { Eye, Settings, Palette, Save, AlertCircle } from 'lucide-react';
 import { FullPageLoader } from '@/components/ui/loading-states';
 import { usePreviewInteractions } from '@/hooks/usePreviewInteractions';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface WebsiteBuilderProps {
   websiteId: string;
@@ -19,40 +21,63 @@ interface WebsiteBuilderProps {
 const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
   const {
     website,
-    sections,
+    sections: loadedSections,
+    publishedCopy,
+    draftCopy,
     loading,
+    error
+  } = useEnhancedWebsiteData(websiteId);
+
+  const {
+    sections,
     saving,
     addSection,
     updateSection,
     deleteSection,
     reorderSections,
-  } = useWebsiteBuilder(websiteId);
+    setSections
+  } = useSectionOperations();
 
   const [activeTab, setActiveTab] = useState('sections');
-  const [autoCreatingSection, setAutoCreatingSection] = useState(false);
-  const { activeSection, scrollToSection } = usePreviewInteractions(sections);
+  const [copyMode, setCopyMode] = useState<'draft' | 'published'>('draft');
+  const { activeSection } = usePreviewInteractions(sections);
 
-  // Automatically create a hero section if none exist
+  // Sync loaded sections with section operations
+  useEffect(() => {
+    if (loadedSections && loadedSections.length > 0) {
+      setSections(loadedSections);
+    }
+  }, [loadedSections, setSections]);
+
+  // Auto-create hero section if none exist and website is loaded
   useEffect(() => {
     const createInitialSection = async () => {
-      if (!loading && website && sections.length === 0 && !autoCreatingSection) {
+      if (!loading && website && sections.length === 0 && !saving) {
         console.log('No sections found, creating default hero section');
-        setAutoCreatingSection(true);
         try {
-          await addSection('hero');
+          await addSection(websiteId, 'hero');
         } catch (error) {
           console.error('Failed to create initial section:', error);
-        } finally {
-          setAutoCreatingSection(false);
         }
       }
     };
 
     createInitialSection();
-  }, [loading, website, sections.length, addSection, autoCreatingSection]);
+  }, [loading, website, sections.length, addSection, websiteId, saving]);
 
-  if (loading || autoCreatingSection) {
+  if (loading) {
     return <FullPageLoader text="Loading website builder..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   if (!website) {
@@ -63,14 +88,12 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
     );
   }
 
-  const handleSectionScrollTo = (sectionId: string) => {
-    scrollToSection(sectionId);
-  };
-
   const handleSectionSelect = (sectionId: string) => {
-    // Handle section selection logic
     console.log('Section selected:', sectionId);
   };
+
+  // Choose the appropriate copy based on mode
+  const currentCopy = copyMode === 'published' ? publishedCopy : draftCopy;
 
   return (
     <div className="h-screen flex flex-col">
@@ -87,6 +110,13 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
           </div>
           
           <div className="flex items-center gap-2">
+            <Button
+              variant={copyMode === 'published' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCopyMode(copyMode === 'published' ? 'draft' : 'published')}
+            >
+              {copyMode === 'published' ? 'Published Copy' : 'Draft Copy'}
+            </Button>
             <Button variant="outline" size="sm">
               <Eye className="h-4 w-4 mr-2" />
               Preview
@@ -98,6 +128,27 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
           </div>
         </div>
       </div>
+
+      {/* Status Bar */}
+      {(currentCopy || sections.length > 0) && (
+        <div className="bg-blue-50 border-b px-4 py-2">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <span className="text-blue-700">
+                Sections: {sections.length}
+              </span>
+              <span className="text-blue-700">
+                Copy: {currentCopy ? `${copyMode} available` : 'No copy loaded'}
+              </span>
+            </div>
+            {!currentCopy && (
+              <span className="text-amber-600">
+                Generate copy in the AI Preview to see content
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1">
@@ -146,7 +197,7 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
                                 onDelete={deleteSection}
                                 isUpdating={saving}
                                 isActive={activeSection === section.id}
-                                onScrollTo={() => handleSectionScrollTo(section.id)}
+                                onScrollTo={() => {}}
                               />
                             ))}
                         </div>
@@ -155,7 +206,7 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
 
                     {/* Section Library */}
                     <SectionLibrary
-                      onAddSection={addSection}
+                      onAddSection={(type) => addSection(websiteId, type)}
                       isAdding={saving}
                     />
                   </TabsContent>
@@ -202,6 +253,8 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
                 onSectionUpdate={updateSection}
                 selectedSectionId={activeSection || undefined}
                 isEditMode={true}
+                fallbackCopy={currentCopy}
+                copyMode={copyMode}
               />
             </div>
           </ResizablePanel>

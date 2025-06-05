@@ -1,8 +1,19 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SectionCreationService } from './sectionCreationService';
-import { TemplateSettingsService } from './templateSettingsService';
-import { AiCopyCreationService } from './aiCopyCreationService';
+
+export interface WebsiteInitializationData {
+  websiteId: string;
+  templateType: string;
+  primaryColor: string;
+  fontStyle: string;
+  clinicData?: {
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+  };
+  logoUrl?: string;
+}
 
 export interface InitializationProgress {
   step: number;
@@ -10,81 +21,102 @@ export interface InitializationProgress {
   completed: boolean;
 }
 
-export interface WebsiteInitializationData {
-  websiteId: string;
-  templateType: string;
-  primaryColor: string;
-  fontStyle: string;
-  logoUrl?: string;
-  clinicData?: {
-    name: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-  };
-}
-
 export class WebsiteInitializationService {
-  private onProgress?: (progress: InitializationProgress) => void;
+  private progressCallback: (progress: InitializationProgress) => void;
 
-  constructor(onProgress?: (progress: InitializationProgress) => void) {
-    this.onProgress = onProgress;
-  }
-
-  private updateProgress(step: number, message: string, completed: boolean = false) {
-    if (this.onProgress) {
-      this.onProgress({ step, message, completed });
-    }
+  constructor(progressCallback: (progress: InitializationProgress) => void) {
+    this.progressCallback = progressCallback;
   }
 
   async initializeWebsite(data: WebsiteInitializationData): Promise<boolean> {
     try {
-      console.log('Starting website initialization for:', data.websiteId);
+      // Step 1: Verify website exists
+      this.progressCallback({
+        step: 1,
+        message: 'Verifying website configuration...',
+        completed: false
+      });
 
-      // Step 1: Generate website structure
-      this.updateProgress(1, "Generating website structure…");
-      await SectionCreationService.createDefaultSections(data.websiteId, data.templateType);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Allow users to see progress
+      const { data: website, error: websiteError } = await supabase
+        .from('websites')
+        .select('*')
+        .eq('id', data.websiteId)
+        .single();
 
-      // Step 2: Apply template and styling
-      this.updateProgress(2, "Applying selected template and color scheme…");
-      await TemplateSettingsService.applyTemplateSettings(data.websiteId, data);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      if (websiteError || !website) {
+        throw new Error('Website not found');
+      }
 
-      // Step 3: Generate AI content
-      this.updateProgress(3, "Generating AI-powered content…");
-      await AiCopyCreationService.generateInitialContent(data.websiteId, data.clinicData);
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Step 2: Apply template settings
+      this.progressCallback({
+        step: 2,
+        message: 'Applying template settings...',
+        completed: false
+      });
 
-      // Step 4: Finalize layout
-      this.updateProgress(4, "Finalizing layout…");
-      await this.finalizeWebsiteSetup(data.websiteId);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { error: updateError } = await supabase
+        .from('websites')
+        .update({
+          template_type: data.templateType,
+          primary_color: data.primaryColor,
+          font_style: data.fontStyle,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', data.websiteId);
 
-      this.updateProgress(4, "Website ready!", true);
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Step 3: Create default sections if none exist
+      this.progressCallback({
+        step: 3,
+        message: 'Setting up website sections...',
+        completed: false
+      });
+
+      const { data: existingSections } = await supabase
+        .from('sections')
+        .select('id')
+        .eq('website_id', data.websiteId);
+
+      if (!existingSections || existingSections.length === 0) {
+        const defaultSections = [
+          { type: 'hero', position: 0 },
+          { type: 'about', position: 1 },
+          { type: 'services', position: 2 },
+          { type: 'contact', position: 3 }
+        ];
+
+        for (const section of defaultSections) {
+          await supabase
+            .from('sections')
+            .insert({
+              website_id: data.websiteId,
+              type: section.type,
+              position: section.position,
+              settings: {},
+              is_visible: true
+            });
+        }
+      }
+
+      // Step 4: Complete initialization
+      this.progressCallback({
+        step: 4,
+        message: 'Website initialization complete!',
+        completed: true
+      });
+
       return true;
-
     } catch (error) {
       console.error('Website initialization failed:', error);
+      this.progressCallback({
+        step: 4,
+        message: 'Initialization failed',
+        completed: false
+      });
       throw error;
     }
-  }
-
-  private async finalizeWebsiteSetup(websiteId: string): Promise<void> {
-    // Update website status to indicate it's fully initialized
-    const { error } = await supabase
-      .from('websites')
-      .update({ 
-        status: 'draft',
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', websiteId);
-
-    if (error) {
-      console.error('Error finalizing website setup:', error);
-      throw error;
-    }
-
-    console.log('Finalized website setup for:', websiteId);
   }
 }
