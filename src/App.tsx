@@ -24,8 +24,8 @@ import HowItWorks from "./pages/HowItWorks";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
-import { AuthContextProvider } from "./contexts/AuthContext";
-import { LanguageContextProvider } from "./contexts/LanguageContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -36,8 +36,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
-          <LanguageContextProvider>
-            <AuthContextProvider>
+          <LanguageProvider>
+            <AuthProvider>
               <Toaster />
               <BrowserRouter>
                 <ErrorBoundary>
@@ -72,8 +72,8 @@ function App() {
                   </Routes>
                 </ErrorBoundary>
               </BrowserRouter>
-            </AuthContextProvider>
-          </LanguageContextProvider>
+            </AuthProvider>
+          </LanguageProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
