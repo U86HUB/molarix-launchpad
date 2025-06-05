@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,9 +29,29 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
   } = useWebsiteBuilder(websiteId);
 
   const [activeTab, setActiveTab] = useState('sections');
+  const [autoCreatingSection, setAutoCreatingSection] = useState(false);
   const { activeSection, scrollToSection } = usePreviewInteractions(sections);
 
-  if (loading) {
+  // Automatically create a hero section if none exist
+  useEffect(() => {
+    const createInitialSection = async () => {
+      if (!loading && website && sections.length === 0 && !autoCreatingSection) {
+        console.log('No sections found, creating default hero section');
+        setAutoCreatingSection(true);
+        try {
+          await addSection('hero');
+        } catch (error) {
+          console.error('Failed to create initial section:', error);
+        } finally {
+          setAutoCreatingSection(false);
+        }
+      }
+    };
+
+    createInitialSection();
+  }, [loading, website, sections.length, addSection, autoCreatingSection]);
+
+  if (loading || autoCreatingSection) {
     return <FullPageLoader text="Loading website builder..." />;
   }
 
@@ -174,6 +194,7 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
                 website={website} 
                 sections={sections} 
                 onReorderSections={reorderSections}
+                onAddSection={addSection}
               />
             </div>
           </ResizablePanel>

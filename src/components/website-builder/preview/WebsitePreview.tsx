@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from 'react';
 import { Website, Section } from '@/types/website';
-import { Eye } from 'lucide-react';
+import { Eye, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import FloatingToolbar from './FloatingToolbar';
 import DraggableSection from './DraggableSection';
 import SectionWithCopy from './SectionWithCopy';
@@ -12,9 +13,15 @@ interface WebsitePreviewProps {
   website: Website;
   sections: Section[];
   onReorderSections?: (newSections: Section[]) => void;
+  onAddSection?: (type: Section['type']) => void;
 }
 
-const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreviewProps) => {
+const WebsitePreview = ({ 
+  website, 
+  sections, 
+  onReorderSections, 
+  onAddSection 
+}: WebsitePreviewProps) => {
   console.log('WebsitePreview rendering:', {
     websiteId: website.id,
     sectionsCount: sections.length,
@@ -41,6 +48,9 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
     if (website.primary_color) {
       root.style.setProperty('--preview-primary', website.primary_color);
       console.log('Set primary color:', website.primary_color);
+    } else {
+      // Set default primary color if none specified
+      root.style.setProperty('--preview-primary', '#4f46e5');
     }
 
     if (website.font_style && website.font_style !== 'default') {
@@ -54,7 +64,7 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
       root.style.removeProperty('--preview-primary');
       root.style.removeProperty('--preview-font');
     };
-  }, [website.primary_color, website.font_style]);
+  }, [website.primary_color, website.font_style, website.id]);
 
   const handleSectionReorder = (draggedId: string, targetId: string, position: 'before' | 'after') => {
     if (!onReorderSections) return;
@@ -118,22 +128,6 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
     );
   };
 
-  if (sections.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            No Sections Yet
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Add sections from the left panel to see your website preview
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const visibleSections = sections
     .filter(section => section.is_visible)
     .sort((a, b) => a.position - b.position);
@@ -168,7 +162,31 @@ const WebsitePreview = ({ website, sections, onReorderSections }: WebsitePreview
         style={{ fontFamily: 'var(--preview-font)' }}
       >
         <div className="min-h-full">
-          {visibleSections.map(renderSection)}
+          {visibleSections.length === 0 ? (
+            <div className="h-full flex items-center justify-center py-20">
+              <div className="text-center max-w-md mx-auto px-4">
+                <Eye className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  No Sections Yet
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+                  Your website is ready to be built! Add sections from the left panel to see your website come to life.
+                </p>
+                {onAddSection && (
+                  <Button 
+                    onClick={() => onAddSection('hero')}
+                    size="lg"
+                    className="gap-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Add Your First Section
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            visibleSections.map(renderSection)
+          )}
         </div>
       </div>
     </div>

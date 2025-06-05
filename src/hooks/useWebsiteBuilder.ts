@@ -25,8 +25,10 @@ export const useWebsiteBuilder = (websiteId?: string) => {
 
     try {
       setLoading(true);
+      console.log('useWebsiteBuilder: Fetching website data for:', websiteId);
       await fetchWebsite(websiteId);
       await fetchSections(websiteId);
+      console.log('useWebsiteBuilder: Successfully fetched website data');
     } catch (error: any) {
       console.error('Error fetching website data:', error);
       toast({
@@ -41,7 +43,12 @@ export const useWebsiteBuilder = (websiteId?: string) => {
 
   // Wrapper for addSection to include websiteId
   const addSection = async (type: any) => {
-    if (!websiteId) return;
+    if (!websiteId) {
+      console.error('Cannot add section: websiteId is missing');
+      return;
+    }
+    
+    console.log('useWebsiteBuilder: Adding section of type:', type);
     return addSectionOperation(websiteId, type);
   };
 
