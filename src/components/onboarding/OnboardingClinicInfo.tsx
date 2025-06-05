@@ -44,60 +44,80 @@ const OnboardingClinicInfo = ({ clinicData, updateClinicData }: OnboardingClinic
 
       <div className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="name" className="text-sm font-medium">
+          <Label htmlFor="onboarding-clinic-name" className="text-sm font-medium">
             {t('clinicName') || 'Clinic Name'} <span className="text-red-500">*</span>
           </Label>
           <Input
-            id="name"
+            id="onboarding-clinic-name"
             name="name"
             value={formData.name}
             onChange={handleChange}
             placeholder={t('clinicNamePlaceholder') || 'Enter clinic name'}
+            autoComplete="organization"
             required
+            aria-describedby="onboarding-clinic-name-description"
           />
+          <p id="onboarding-clinic-name-description" className="text-xs text-muted-foreground">
+            This is the name that will appear on your website and marketing materials
+          </p>
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="address" className="text-sm font-medium">
+          <Label htmlFor="onboarding-clinic-address" className="text-sm font-medium">
             {t('clinicAddress') || 'Address'}
           </Label>
           <Input
-            id="address"
+            id="onboarding-clinic-address"
             name="address"
             value={formData.address}
             onChange={handleChange}
             placeholder={t('clinicAddressPlaceholder') || 'Enter clinic address'}
+            autoComplete="street-address"
+            aria-describedby="onboarding-clinic-address-description"
           />
+          <p id="onboarding-clinic-address-description" className="text-xs text-muted-foreground">
+            Your clinic's physical address for patients to visit
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="phone" className="text-sm font-medium">
+            <Label htmlFor="onboarding-clinic-phone" className="text-sm font-medium">
               {t('clinicPhone') || 'Phone Number'}
             </Label>
             <Input
-              id="phone"
+              id="onboarding-clinic-phone"
               name="phone"
               type="tel"
               value={formData.phone}
               onChange={handleChange}
               placeholder={t('clinicPhonePlaceholder') || 'Enter phone number'}
+              autoComplete="tel"
+              aria-describedby="onboarding-clinic-phone-description"
             />
+            <p id="onboarding-clinic-phone-description" className="text-xs text-muted-foreground">
+              Main contact number for appointments
+            </p>
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="email" className="text-sm font-medium">
+            <Label htmlFor="onboarding-clinic-email" className="text-sm font-medium">
               {t('clinicEmail') || 'Email Address'} <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="email"
+              id="onboarding-clinic-email"
               name="email"
               type="email"
               value={formData.email}
               onChange={handleChange}
               placeholder={t('clinicEmailPlaceholder') || 'Enter email address'}
+              autoComplete="email"
               required
+              aria-describedby="onboarding-clinic-email-description"
             />
+            <p id="onboarding-clinic-email-description" className="text-xs text-muted-foreground">
+              Contact email for patient inquiries
+            </p>
           </div>
         </div>
       </div>

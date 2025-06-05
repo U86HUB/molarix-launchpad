@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -57,10 +57,18 @@ export const ClinicInfoForm = ({ clinic, onSubmit }: ClinicInfoFormProps) => {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Clinic Name</FormLabel>
+              <FormLabel htmlFor="clinic-info-name">Clinic Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter clinic name" {...field} />
+                <Input 
+                  id="clinic-info-name"
+                  placeholder="Enter clinic name" 
+                  autoComplete="organization"
+                  {...field} 
+                />
               </FormControl>
+              <FormDescription>
+                The official name of your dental practice
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -71,10 +79,18 @@ export const ClinicInfoForm = ({ clinic, onSubmit }: ClinicInfoFormProps) => {
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address</FormLabel>
+              <FormLabel htmlFor="clinic-info-address">Address</FormLabel>
               <FormControl>
-                <Input placeholder="Enter clinic address" {...field} />
+                <Input 
+                  id="clinic-info-address"
+                  placeholder="Enter clinic address" 
+                  autoComplete="street-address"
+                  {...field} 
+                />
               </FormControl>
+              <FormDescription>
+                Your clinic's physical location
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -86,10 +102,19 @@ export const ClinicInfoForm = ({ clinic, onSubmit }: ClinicInfoFormProps) => {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel htmlFor="clinic-info-phone">Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter phone number" {...field} />
+                  <Input 
+                    id="clinic-info-phone"
+                    type="tel"
+                    placeholder="Enter phone number" 
+                    autoComplete="tel"
+                    {...field} 
+                  />
                 </FormControl>
+                <FormDescription>
+                  Main contact number
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -100,10 +125,19 @@ export const ClinicInfoForm = ({ clinic, onSubmit }: ClinicInfoFormProps) => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel htmlFor="clinic-info-email">Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Enter email address" {...field} />
+                  <Input 
+                    id="clinic-info-email"
+                    type="email" 
+                    placeholder="Enter email address" 
+                    autoComplete="email"
+                    {...field} 
+                  />
                 </FormControl>
+                <FormDescription>
+                  Contact email for inquiries
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

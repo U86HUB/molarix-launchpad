@@ -20,12 +20,12 @@ export const ClinicFormFields = ({
   return (
     <div className="space-y-3">
       <div>
-        <Label htmlFor="clinic-name" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+        <Label htmlFor="dashboard-clinic-name" className="text-xs font-medium text-gray-700 dark:text-gray-300">
           Clinic Name <span className="text-red-500">*</span>
         </Label>
         <Input
-          id="clinic-name"
-          name="clinic-name"
+          id="dashboard-clinic-name"
+          name="dashboard-clinic-name"
           value={clinicName}
           onChange={(e) => setClinicName(e.target.value)}
           placeholder="Enter clinic name"
@@ -33,23 +33,31 @@ export const ClinicFormFields = ({
           disabled={isCreating}
           autoComplete="organization"
           className="mt-1"
+          aria-describedby="dashboard-clinic-name-description"
         />
+        <p id="dashboard-clinic-name-description" className="text-xs text-muted-foreground mt-1">
+          The name of your dental practice or clinic
+        </p>
       </div>
 
       <div>
-        <Label htmlFor="clinic-address" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+        <Label htmlFor="dashboard-clinic-address" className="text-xs font-medium text-gray-700 dark:text-gray-300">
           Address (Optional)
         </Label>
         <Input
-          id="clinic-address"
-          name="clinic-address"
+          id="dashboard-clinic-address"
+          name="dashboard-clinic-address"
           value={clinicAddress}
           onChange={(e) => setClinicAddress(e.target.value)}
           placeholder="Enter clinic address"
           disabled={isCreating}
           autoComplete="street-address"
           className="mt-1"
+          aria-describedby="dashboard-clinic-address-description"
         />
+        <p id="dashboard-clinic-address-description" className="text-xs text-muted-foreground mt-1">
+          Your clinic's physical location
+        </p>
       </div>
     </div>
   );

@@ -26,17 +26,26 @@ const EditableField = ({
   placeholder,
   renderDisplay
 }: EditableFieldProps) => {
+  // Create a unique ID for the field based on label
+  const fieldId = `editable-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  const descriptionId = `${fieldId}-description`;
+
   if (isEditing) {
     const commonProps = {
+      id: fieldId,
       value,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
       onBlur,
-      placeholder: placeholder || `Enter ${label.toLowerCase()}`
+      placeholder: placeholder || `Enter ${label.toLowerCase()}`,
+      'aria-describedby': descriptionId,
+      autoComplete: 'off' as const
     };
 
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium">{label}</label>
+        <label htmlFor={fieldId} className="text-sm font-medium">
+          {label}
+        </label>
         {type === 'richtext' ? (
           <RichTextField
             defaultContent={value}
@@ -49,6 +58,9 @@ const EditableField = ({
         ) : (
           <Input {...commonProps} />
         )}
+        <p id={descriptionId} className="text-xs text-muted-foreground sr-only">
+          {type === 'richtext' ? 'Rich text editor for ' : 'Edit field for '}{label.toLowerCase()}
+        </p>
       </div>
     );
   }

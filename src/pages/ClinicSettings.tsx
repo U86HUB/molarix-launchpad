@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -209,66 +208,93 @@ const ClinicSettings = () => {
             <CardTitle>Clinic Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="name">Clinic Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter clinic name"
-                  required
-                />
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="clinic-settings-name">Clinic Name *</Label>
+                  <Input
+                    id="clinic-settings-name"
+                    name="clinic-settings-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter clinic name"
+                    autoComplete="organization"
+                    required
+                    aria-describedby="clinic-settings-name-description"
+                  />
+                  <p id="clinic-settings-name-description" className="text-xs text-muted-foreground mt-1">
+                    Official name of your dental practice
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="clinic-settings-email">Email Address</Label>
+                  <Input
+                    id="clinic-settings-email"
+                    name="clinic-settings-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="clinic@example.com"
+                    autoComplete="email"
+                    aria-describedby="clinic-settings-email-description"
+                  />
+                  <p id="clinic-settings-email-description" className="text-xs text-muted-foreground mt-1">
+                    Contact email for patient inquiries
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="clinic-settings-phone">Phone Number</Label>
+                  <Input
+                    id="clinic-settings-phone"
+                    name="clinic-settings-phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+1 (555) 123-4567"
+                    autoComplete="tel"
+                    aria-describedby="clinic-settings-phone-description"
+                  />
+                  <p id="clinic-settings-phone-description" className="text-xs text-muted-foreground mt-1">
+                    Main contact number for appointments
+                  </p>
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="clinic@example.com"
+                <Label htmlFor="clinic-settings-address">Address</Label>
+                <Textarea
+                  id="clinic-settings-address"
+                  name="clinic-settings-address"
+                  value={formData.address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Enter clinic address"
+                  autoComplete="street-address"
+                  rows={3}
+                  aria-describedby="clinic-settings-address-description"
                 />
+                <p id="clinic-settings-address-description" className="text-xs text-muted-foreground mt-1">
+                  Full address where patients can visit your clinic
+                </p>
               </div>
 
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="+1 (555) 123-4567"
-                />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={saving || !formData.name.trim()}
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Enter clinic address"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSave}
-                disabled={saving || !formData.name.trim()}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
       </div>
