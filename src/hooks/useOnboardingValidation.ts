@@ -4,13 +4,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { handleSupabaseError } from '@/utils/errorHandling';
 
-export const useOnboardingValidation = () => {
-  const { user } = useAuth();
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [loading, setLoading] = useState(true);
+export interface UseOnboardingValidationResult {
+  needsOnboarding: boolean;
+  hasCompletedOnboarding: boolean;
+  loading: boolean;
+  checkOnboardingStatus: () => Promise<void>;
+  markOnboardingCompleted: () => void;
+  resetOnboardingStatus: () => void;
+}
 
-  const checkOnboardingStatus = async () => {
+export const useOnboardingValidation = (): UseOnboardingValidationResult => {
+  const { user } = useAuth();
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const checkOnboardingStatus = async (): Promise<void> => {
     if (!user) {
       setLoading(false);
       return;
@@ -60,8 +69,8 @@ export const useOnboardingValidation = () => {
         return;
       }
 
-      const hasClinics = clinics && clinics.length > 0;
-      const hasCompletedSessions = sessions && sessions.length > 0;
+      const hasClinics = Boolean(clinics && clinics.length > 0);
+      const hasCompletedSessions = Boolean(sessions && sessions.length > 0);
 
       console.log('Onboarding status:', {
         hasClinics,
@@ -86,12 +95,12 @@ export const useOnboardingValidation = () => {
     }
   };
 
-  const markOnboardingCompleted = () => {
+  const markOnboardingCompleted = (): void => {
     setNeedsOnboarding(false);
     setHasCompletedOnboarding(true);
   };
 
-  const resetOnboardingStatus = () => {
+  const resetOnboardingStatus = (): void => {
     setNeedsOnboarding(true);
     setHasCompletedOnboarding(false);
   };

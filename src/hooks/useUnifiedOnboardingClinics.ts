@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/utils/errorHandling";
+import { UseUnifiedOnboardingClinicsResult } from "@/types/onboarding";
 
-export const useUnifiedOnboardingClinics = () => {
+export const useUnifiedOnboardingClinics = (): UseUnifiedOnboardingClinicsResult => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [existingClinics, setExistingClinics] = useState<any[]>([]);
+  const [existingClinics, setExistingClinics] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     if (user) {
@@ -17,7 +18,7 @@ export const useUnifiedOnboardingClinics = () => {
     }
   }, [user]);
 
-  const checkExistingClinics = async () => {
+  const checkExistingClinics = async (): Promise<void> => {
     if (!user) return;
 
     try {
@@ -52,7 +53,7 @@ export const useUnifiedOnboardingClinics = () => {
     }
   };
 
-  const checkIfOnboardingCompleted = async () => {
+  const checkIfOnboardingCompleted = async (): Promise<void> => {
     if (!user) return;
 
     try {

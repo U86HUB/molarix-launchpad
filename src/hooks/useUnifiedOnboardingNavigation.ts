@@ -3,17 +3,18 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedOnboardingData } from "./useUnifiedOnboardingData";
 import { useUnifiedOnboardingValidation } from "./useUnifiedOnboardingValidation";
+import { UseUnifiedOnboardingNavigationResult } from "@/types/onboarding";
 
-export const useUnifiedOnboardingNavigation = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+export const useUnifiedOnboardingNavigation = (): UseUnifiedOnboardingNavigationResult => {
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const { toast } = useToast();
   const { canProceed } = useUnifiedOnboardingValidation();
 
-  const getProgressPercentage = () => {
+  const getProgressPercentage = (): number => {
     return (currentStep / 3) * 100;
   };
 
-  const getStepTitle = () => {
+  const getStepTitle = (): string => {
     switch (currentStep) {
       case 1:
         return "Clinic Information";
@@ -26,7 +27,10 @@ export const useUnifiedOnboardingNavigation = () => {
     }
   };
 
-  const handleNext = (onboardingData: UnifiedOnboardingData, onSubmit: () => void) => {
+  const handleNext = (
+    onboardingData: UnifiedOnboardingData, 
+    onSubmit: () => void
+  ): void => {
     if (!canProceed(currentStep, onboardingData)) {
       toast({
         title: "Missing Information",
@@ -43,7 +47,7 @@ export const useUnifiedOnboardingNavigation = () => {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }

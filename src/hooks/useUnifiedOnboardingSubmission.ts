@@ -6,11 +6,12 @@ import { useWebsiteInitialization } from "@/hooks/useWebsiteInitialization";
 import { handleSupabaseError } from "@/utils/errorHandling";
 import { UnifiedOnboardingData } from "./useUnifiedOnboardingData";
 import { executeOnboardingFlow } from "@/services/onboarding/onboardingOrchestrator";
+import { UseUnifiedOnboardingSubmissionResult } from "@/types/onboarding";
 
-export const useUnifiedOnboardingSubmission = () => {
+export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmissionResult => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   const {
     isInitializing,
@@ -25,7 +26,7 @@ export const useUnifiedOnboardingSubmission = () => {
   const submitOnboarding = async (
     onboardingData: UnifiedOnboardingData,
     existingClinics: any[]
-  ) => {
+  ): Promise<void> => {
     if (!user) {
       toast({
         title: "Authentication Error",

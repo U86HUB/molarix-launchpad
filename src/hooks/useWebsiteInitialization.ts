@@ -7,16 +7,17 @@ import {
   WebsiteInitializationData, 
   InitializationProgress 
 } from '@/services/websiteInitializationService';
+import { UseWebsiteInitializationResult } from '@/types/onboarding';
 
-export const useWebsiteInitialization = () => {
+export const useWebsiteInitialization = (): UseWebsiteInitializationResult => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [currentMessage, setCurrentMessage] = useState('Preparing...');
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [isInitializing, setIsInitializing] = useState<boolean>(false);
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [currentMessage, setCurrentMessage] = useState<string>('Preparing...');
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   const handleProgress = useCallback((progress: InitializationProgress) => {
     setCurrentStep(progress.step);
@@ -24,7 +25,7 @@ export const useWebsiteInitialization = () => {
     setIsCompleted(progress.completed);
   }, []);
 
-  const initializeWebsite = useCallback(async (data: WebsiteInitializationData) => {
+  const initializeWebsite = useCallback(async (data: WebsiteInitializationData): Promise<void> => {
     try {
       setIsInitializing(true);
       setHasError(false);
@@ -65,7 +66,7 @@ export const useWebsiteInitialization = () => {
     }
   }, [handleProgress, navigate, toast]);
 
-  const retryInitialization = useCallback((data: WebsiteInitializationData) => {
+  const retryInitialization = useCallback((data: WebsiteInitializationData): void => {
     setHasError(false);
     initializeWebsite(data);
   }, [initializeWebsite]);
