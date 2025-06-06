@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEnhancedWebsiteData } from '@/hooks/useEnhancedWebsiteData';
 import { useSectionOperations } from '@/hooks/useSectionOperations';
+import { Section } from '@/types/website';
 import SectionLibrary from './SectionLibrary';
 import SectionEditor from './SectionEditor';
 import WebsitePreview from './preview/WebsitePreview';
@@ -90,6 +91,10 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
 
   const handleSectionSelect = (sectionId: string) => {
     console.log('Section selected:', sectionId);
+  };
+
+  const handleAddSection = (type: Section['type']) => {
+    addSection(websiteId, type);
   };
 
   // Choose the appropriate copy based on mode
@@ -206,7 +211,7 @@ const WebsiteBuilder = ({ websiteId }: WebsiteBuilderProps) => {
 
                     {/* Section Library */}
                     <SectionLibrary
-                      onAddSection={(type) => addSection(websiteId, type)}
+                      onAddSection={handleAddSection}
                       isAdding={saving}
                     />
                   </TabsContent>

@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTemplates } from '@/hooks/useTemplates';
 import { LucideIcon, Layout } from "lucide-react";
 import * as Icons from "lucide-react";
+import { Section } from '@/types/website';
 
 // Function to dynamically get Lucide icon component
 const getLucideIcon = (iconName: string): LucideIcon => {
@@ -13,7 +14,7 @@ const getLucideIcon = (iconName: string): LucideIcon => {
 };
 
 interface SectionLibraryProps {
-  onAddSection: (type: string) => void;
+  onAddSection: (type: Section['type']) => void;
   isAdding?: boolean;
 }
 
@@ -56,7 +57,7 @@ const SectionLibrary = ({ onAddSection, isAdding = false }: SectionLibraryProps)
                       <Button 
                         size="sm" 
                         className="w-full" 
-                        onClick={() => onAddSection(section.type)}
+                        onClick={() => onAddSection(section.type as Section['type'])}
                         disabled={isAdding}
                       >
                         Add Section
