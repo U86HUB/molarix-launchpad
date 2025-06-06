@@ -11,6 +11,13 @@ export const useOnboardingSubmissionFlow = () => {
   const { toast } = useToast();
   const [submissionInProgress, setSubmissionInProgress] = useState(false);
   const cancelledRef = useRef<boolean>(false);
+  const lastSubmissionRef = useRef<{
+    websiteName: string | null;
+    timestamp: number | null;
+  }>({
+    websiteName: null,
+    timestamp: null
+  });
 
   // Cleanup on unmount to prevent stale operations
   useEffect(() => {
@@ -29,6 +36,7 @@ export const useOnboardingSubmissionFlow = () => {
   ): Promise<void> => {
     if (!user) return;
 
+    const websiteName = onboardingData.website.name.trim();
     console.warn(`[DEBUG] [${executionId}] executeSubmission() called from:`, new Error().stack?.split('\n').slice(0, 3).join('\n'));
 
     // Check if cancelled before starting
@@ -37,6 +45,27 @@ export const useOnboardingSubmissionFlow = () => {
       return;
     }
 
+    // Prevent duplicate submissions within short timeframe
+    const lastSubmission = lastSubmissionRef.current;
+    if (lastSubmission.websiteName === websiteName && lastSubmission.timestamp) {
+      const elapsed = Date.now() - lastSubmission.timestamp;
+      if (elapsed < 5000) { // 5 seconds deduplication window
+        console.warn(`⚠️ [${executionId}] Duplicate submission blocked (${elapsed}ms since last attempt)`);
+        toast({
+          title: "Please wait",
+          description: "Your previous submission is still processing",
+          variant: "default",
+        });
+        return;
+      }
+    }
+
+    // Record this submission
+    lastSubmissionRef.current = {
+      websiteName: websiteName,
+      timestamp: Date.now()
+    };
+    
     setSubmissionInProgress(true);
 
     try {
@@ -79,6 +108,15 @@ export const useOnboardingSubmissionFlow = () => {
 
       onComplete(result.websiteId);
       console.log(`✅ [${executionId}] Website created successfully with ID: ${result.websiteId}`);
+
+      // If this is a deduplication result, show a notification to the user
+      if (result.deduplication) {
+        toast({
+          title: "Website Already Exists",
+          description: "We found an existing website with this name. Continuing with the existing website.",
+          variant: "default",
+        });
+      }
 
       // Prepare website data for initialization
       const websiteData: WebsiteInitializationData = {

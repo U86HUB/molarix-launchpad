@@ -44,6 +44,44 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          created_at: string
+          desired_datetime: string
+          id: string
+          patient_email: string
+          patient_name: string
+          site_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          desired_datetime: string
+          id?: string
+          patient_email: string
+          patient_name: string
+          site_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          desired_datetime?: string
+          id?: string
+          patient_email?: string
+          patient_name?: string
+          site_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinics: {
         Row: {
           address: string | null
@@ -80,6 +118,35 @@ export type Database = {
         }
         Relationships: []
       }
+      cookie_consent_logs: {
+        Row: {
+          consent_given: boolean
+          given_at: string
+          id: string
+          site_id: string
+        }
+        Insert: {
+          consent_given: boolean
+          given_at?: string
+          id?: string
+          site_id: string
+        }
+        Update: {
+          consent_given?: boolean
+          given_at?: string
+          id?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cookie_consent_logs_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnostic_logs: {
         Row: {
           created_at: string
@@ -106,6 +173,105 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      domains: {
+        Row: {
+          created_at: string
+          custom_domain: string
+          id: string
+          is_verified: boolean
+          site_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_domain: string
+          id?: string
+          is_verified?: boolean
+          site_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_domain?: string
+          id?: string
+          is_verified?: boolean
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domains_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          site_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          site_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          bot_response: string | null
+          created_at: string
+          id: string
+          site_id: string
+          user_message: string
+        }
+        Insert: {
+          bot_response?: string | null
+          created_at?: string
+          id?: string
+          site_id: string
+          user_message: string
+        }
+        Update: {
+          bot_response?: string | null
+          created_at?: string
+          id?: string
+          site_id?: string
+          user_message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       onboarding_sessions: {
         Row: {
@@ -249,6 +415,290 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_content: {
+        Row: {
+          content: Json | null
+          id: string
+          section_name: string
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json | null
+          id?: string
+          section_name: string
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json | null
+          id?: string
+          section_name?: string
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_content_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_sections: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          order_index: number
+          section_id: string
+          site_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          order_index: number
+          section_id: string
+          site_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          order_index?: number
+          section_id?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_sections_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_sections_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_status: {
+        Row: {
+          id: string
+          is_live: boolean
+          last_checked: string | null
+          site_id: string
+          uptime_percent: number | null
+        }
+        Insert: {
+          id?: string
+          is_live?: boolean
+          last_checked?: string | null
+          site_id: string
+          uptime_percent?: number | null
+        }
+        Update: {
+          id?: string
+          is_live?: boolean
+          last_checked?: string | null
+          site_id?: string
+          uptime_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_status_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          created_at: string
+          created_by: string
+          domain: string | null
+          font_style: string | null
+          id: string
+          name: string
+          primary_color: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          domain?: string | null
+          font_style?: string | null
+          id?: string
+          name: string
+          primary_color?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          domain?: string | null
+          font_style?: string | null
+          id?: string
+          name?: string
+          primary_color?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff: {
+        Row: {
+          bio: string | null
+          created_at: string
+          full_name: string
+          headshot_url: string | null
+          id: string
+          role: string | null
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          full_name: string
+          headshot_url?: string | null
+          id?: string
+          role?: string | null
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          full_name?: string
+          headshot_url?: string | null
+          id?: string
+          role?: string | null
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_sections: {
+        Row: {
+          component_path: string
+          created_at: string
+          default_props: Json | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          component_path: string
+          created_at?: string
+          default_props?: Json | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          component_path?: string
+          created_at?: string
+          default_props?: Json | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          created_at: string
+          default_section_order: Json | null
+          description: string | null
+          id: string
+          name: string
+          preview_image_url: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_section_order?: Json | null
+          description?: string | null
+          id?: string
+          name: string
+          preview_image_url?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_section_order?: Json | null
+          description?: string | null
+          id?: string
+          name?: string
+          preview_image_url?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       websites: {
         Row: {
