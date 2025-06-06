@@ -21,8 +21,17 @@ export interface InitializationProgress {
   completed: boolean;
 }
 
-// Enhanced tracking with timestamps
-const initializingWebsites = new Map<string, { timestamp: number; promise: Promise<boolean> }>();
+// Enhanced tracking with execution metadata and better isolation
+const initializingWebsites = new Map<string, { 
+  timestamp: number; 
+  promise: Promise<boolean>;
+  executionId: string;
+  status: 'initializing' | 'completed' | 'failed';
+}>();
+
+// Global initialization lock
+let globalInitLock = false;
+let globalInitLockTimestamp = 0;
 
 export class WebsiteInitializationService {
   private progressCallback: (progress: InitializationProgress) => void;
@@ -32,15 +41,38 @@ export class WebsiteInitializationService {
   }
 
   async initializeWebsite(data: WebsiteInitializationData): Promise<boolean> {
+    const executionId = `init-${Date.now()}-${Math.random()}`;
+    
     console.log('🔄 WebsiteInitializationService.initializeWebsite() called for:', data.websiteId);
+    console.log('🔍 Initialization execution ID:', executionId);
+    
+    // Check global initialization lock
+    if (globalInitLock) {
+      const lockAge = Date.now() - globalInitLockTimestamp;
+      if (lockAge < 30000) { // 30 second lock
+        console.warn('🚫 Global initialization lock active, blocking initialization');
+        this.progressCallback({
+          step: 4,
+          message: 'Another initialization is in progress',
+          completed: false
+        });
+        return false;
+      } else {
+        console.log('🔓 Releasing stale global initialization lock');
+        globalInitLock = false;
+      }
+    }
     
     // Check if this website is already being initialized
     const existingInit = initializingWebsites.get(data.websiteId);
-    if (existingInit) {
+    if (existingInit && existingInit.status === 'initializing') {
       const timeSinceStart = Date.now() - existingInit.timestamp;
-      console.warn('🚫 Website initialization already in progress for:', data.websiteId, 'Time since start:', timeSinceStart);
+      console.warn('🚫 Website initialization already in progress for:', data.websiteId);
+      console.log('⏱️ Time since start:', timeSinceStart, 'ms');
+      console.log('🔍 Original execution ID:', existingInit.executionId);
+      console.log('🔍 Current execution ID:', executionId);
       
-      if (timeSinceStart < 30000) { // Within 30 seconds
+      if (timeSinceStart < 60000) { // Within 60 seconds
         this.progressCallback({
           step: 4,
           message: 'Initialization already in progress',
@@ -53,27 +85,65 @@ export class WebsiteInitializationService {
       }
     }
 
+    // Set global lock
+    globalInitLock = true;
+    globalInitLockTimestamp = Date.now();
+    console.log('🔒 Global initialization lock acquired at:', globalInitLockTimestamp);
+
     // Create and store the initialization promise
-    const initPromise = this.executeInitialization(data);
+    const initPromise = this.executeInitialization(data, executionId);
     initializingWebsites.set(data.websiteId, {
       timestamp: Date.now(),
-      promise: initPromise
+      promise: initPromise,
+      executionId,
+      status: 'initializing'
     });
 
     try {
       const result = await initPromise;
+      
+      // Update status
+      const tracking = initializingWebsites.get(data.websiteId);
+      if (tracking && tracking.executionId === executionId) {
+        initializingWebsites.set(data.websiteId, {
+          ...tracking,
+          status: result ? 'completed' : 'failed'
+        });
+      }
+      
       return result;
+    } catch (error: any) {
+      console.error('❌ Website initialization error:', error);
+      
+      // Update status to failed
+      const tracking = initializingWebsites.get(data.websiteId);
+      if (tracking && tracking.executionId === executionId) {
+        initializingWebsites.set(data.websiteId, {
+          ...tracking,
+          status: 'failed'
+        });
+      }
+      
+      throw error;
     } finally {
+      // Release global lock
+      globalInitLock = false;
+      console.log('🔓 Global initialization lock released');
+      
       // Clean up tracking after a delay
       setTimeout(() => {
-        initializingWebsites.delete(data.websiteId);
-      }, 5000);
+        const current = initializingWebsites.get(data.websiteId);
+        if (current && current.executionId === executionId) {
+          initializingWebsites.delete(data.websiteId);
+          console.log('🧹 Cleaned up initialization tracking for:', data.websiteId);
+        }
+      }, 10000);
     }
   }
 
-  private async executeInitialization(data: WebsiteInitializationData): Promise<boolean> {
+  private async executeInitialization(data: WebsiteInitializationData, executionId: string): Promise<boolean> {
     try {
-      console.log('🔄 Starting website initialization for:', data.websiteId);
+      console.log('🔄 Starting website initialization for:', data.websiteId, 'Execution ID:', executionId);
 
       // Step 1: Verify website exists
       this.progressCallback({
@@ -89,8 +159,10 @@ export class WebsiteInitializationService {
         .single();
 
       if (websiteError || !website) {
-        throw new Error('Website not found');
+        throw new Error(`Website not found: ${websiteError?.message || 'Unknown error'}`);
       }
+
+      console.log('✅ Website verified for execution:', executionId);
 
       // Step 2: Apply template settings
       this.progressCallback({
@@ -113,7 +185,9 @@ export class WebsiteInitializationService {
         throw updateError;
       }
 
-      // Step 3: Create default sections if none exist
+      console.log('✅ Template settings applied for execution:', executionId);
+
+      // Step 3: Create default sections if none exist (with better duplicate handling)
       this.progressCallback({
         step: 3,
         message: 'Setting up website sections...',
@@ -122,8 +196,11 @@ export class WebsiteInitializationService {
 
       const { data: existingSections } = await supabase
         .from('sections')
-        .select('id')
-        .eq('website_id', data.websiteId);
+        .select('id, type, position')
+        .eq('website_id', data.websiteId)
+        .order('position');
+
+      console.log('🔍 Existing sections for website:', data.websiteId, 'Count:', existingSections?.length || 0);
 
       if (!existingSections || existingSections.length === 0) {
         const defaultSections = [
@@ -133,9 +210,24 @@ export class WebsiteInitializationService {
           { type: 'contact', position: 3 }
         ];
 
-        // Insert sections one by one to avoid conflicts with better error handling
+        console.log('📝 Creating default sections for execution:', executionId);
+
+        // Insert sections with better error handling and conflict resolution
         for (const section of defaultSections) {
           try {
+            // Check if section already exists at this position
+            const { data: existingSection } = await supabase
+              .from('sections')
+              .select('id')
+              .eq('website_id', data.websiteId)
+              .eq('position', section.position)
+              .maybeSingle();
+
+            if (existingSection) {
+              console.log(`⚠️ Section at position ${section.position} already exists, skipping`);
+              continue;
+            }
+
             const { error: sectionError } = await supabase
               .from('sections')
               .insert({
@@ -149,17 +241,21 @@ export class WebsiteInitializationService {
             if (sectionError) {
               // Check if it's a duplicate position error
               if (sectionError.code === '23505' && sectionError.message.includes('sections_website_position_unique')) {
-                console.warn(`⚠️ Section ${section.type} position ${section.position} already exists, skipping`);
+                console.warn(`⚠️ Section ${section.type} position ${section.position} already exists (race condition), continuing`);
               } else {
                 console.error(`❌ Section ${section.type} creation failed:`, sectionError);
+                // Don't fail the entire initialization for section creation errors
               }
             } else {
-              console.log(`✅ Section ${section.type} created successfully`);
+              console.log(`✅ Section ${section.type} created successfully for execution:`, executionId);
             }
           } catch (sectionError) {
             console.warn(`⚠️ Section ${section.type} creation failed:`, sectionError);
+            // Continue with other sections
           }
         }
+      } else {
+        console.log('✅ Website already has sections, skipping creation for execution:', executionId);
       }
 
       // Step 4: Complete initialization
@@ -169,9 +265,10 @@ export class WebsiteInitializationService {
         completed: true
       });
 
+      console.log('✅ Website initialization completed successfully for execution:', executionId);
       return true;
     } catch (error) {
-      console.error('❌ Website initialization failed:', error);
+      console.error('❌ Website initialization failed for execution:', executionId, 'Error:', error);
       this.progressCallback({
         step: 4,
         message: 'Initialization failed',

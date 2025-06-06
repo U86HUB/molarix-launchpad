@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
@@ -18,31 +18,90 @@ const UnifiedOnboardingNavigation = ({
   onBack,
   onNext
 }: UnifiedOnboardingNavigationProps) => {
+  // Add click tracking to prevent rapid double-clicks
+  const clickTrackingRef = useRef<{
+    lastClickTime: number;
+    isProcessing: boolean;
+  }>({
+    lastClickTime: 0,
+    isProcessing: false
+  });
+
   console.log('🔍 UnifiedOnboardingNavigation render:', { 
     currentStep, 
     canProceed, 
     isSubmitting,
+    isProcessing: clickTrackingRef.current.isProcessing,
     timestamp: Date.now()
   });
 
   const handleNextClick = () => {
-    console.log('🔘 Next button clicked at:', Date.now());
-    console.log('🔍 Current state before click:', { isSubmitting, canProceed });
+    const now = Date.now();
+    const timeSinceLastClick = now - clickTrackingRef.current.lastClickTime;
     
+    console.log('🔘 Next button clicked at:', now);
+    console.log('🔍 Click tracking state:', {
+      timeSinceLastClick,
+      isProcessing: clickTrackingRef.current.isProcessing,
+      isSubmitting,
+      canProceed
+    });
+    
+    // Prevent rapid double-clicks (within 1 second)
+    if (timeSinceLastClick < 1000) {
+      console.warn('🚫 Next click blocked - too rapid, time since last:', timeSinceLastClick, 'ms');
+      return;
+    }
+
+    // Prevent clicks if already processing
+    if (clickTrackingRef.current.isProcessing) {
+      console.warn('🚫 Next click blocked - already processing');
+      return;
+    }
+
+    // Check submission state
     if (isSubmitting || !canProceed) {
       console.warn('🚫 Next click blocked - isSubmitting:', isSubmitting, 'canProceed:', canProceed);
       return;
     }
     
-    onNext();
+    // Lock processing and update click time
+    clickTrackingRef.current = {
+      lastClickTime: now,
+      isProcessing: true
+    };
+
+    console.log('✅ Next click allowed, executing onNext()');
+    
+    try {
+      onNext();
+    } finally {
+      // Reset processing flag after a delay to prevent rapid succession
+      setTimeout(() => {
+        clickTrackingRef.current.isProcessing = false;
+        console.log('🔓 Next button processing unlocked');
+      }, 1000);
+    }
   };
 
   const handleBackClick = () => {
-    console.log('🔙 Back button clicked at:', Date.now());
+    const now = Date.now();
+    const timeSinceLastClick = now - clickTrackingRef.current.lastClickTime;
+    
+    console.log('🔙 Back button clicked at:', now);
+    
+    // Prevent rapid clicks
+    if (timeSinceLastClick < 500) {
+      console.warn('🚫 Back click blocked - too rapid');
+      return;
+    }
+
     if (isSubmitting) {
       console.warn('🚫 Back click blocked - isSubmitting:', isSubmitting);
       return;
     }
+
+    clickTrackingRef.current.lastClickTime = now;
     onBack();
   };
 
@@ -51,7 +110,7 @@ const UnifiedOnboardingNavigation = ({
       <Button
         variant="outline"
         onClick={handleBackClick}
-        disabled={currentStep === 1 || isSubmitting}
+        disabled={currentStep === 1 || isSubmitting || clickTrackingRef.current.isProcessing}
         className="flex items-center gap-2"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -60,7 +119,7 @@ const UnifiedOnboardingNavigation = ({
       
       <Button 
         onClick={handleNextClick}
-        disabled={!canProceed || isSubmitting}
+        disabled={!canProceed || isSubmitting || clickTrackingRef.current.isProcessing}
         className="flex items-center gap-2"
         type="button"
       >
