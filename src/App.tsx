@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -29,6 +28,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AdminPage from './pages/Admin';
 
 const queryClient = new QueryClient();
 
@@ -74,6 +74,9 @@ function App() {
                     <Route path="/website-preview/:websiteId" element={<ProtectedRoute><WebsitePreview /></ProtectedRoute>} />
                     <Route path="/website-builder/:websiteId" element={<ProtectedRoute><WebsiteBuilderPage /></ProtectedRoute>} />
                     <Route path="/ai-copy-preview/:sessionId" element={<ProtectedRoute><AiCopyPreview /></ProtectedRoute>} />
+                    
+                    {/* Admin route */}
+                    <Route path="/admin" element={<AdminPage />} />
                     
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

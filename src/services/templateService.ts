@@ -22,6 +22,32 @@ export const TemplateService = {
     }
   },
   
+  async fetchTemplateCategories(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('templates')
+        .select('category')
+        .order('category');
+      
+      if (error) throw error;
+      
+      // Extract unique categories
+      const categories = data
+        .map(item => item.category)
+        .filter((value, index, self) => 
+          value && self.indexOf(value) === index
+        );
+      
+      return categories || [];
+    } catch (error) {
+      ErrorService.handle(error, {
+        operation: 'fetch template categories',
+        component: 'templateService'
+      });
+      return [];
+    }
+  },
+  
   async fetchTemplateSections(): Promise<SectionTemplate[]> {
     try {
       const { data, error } = await supabase

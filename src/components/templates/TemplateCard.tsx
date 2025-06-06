@@ -1,63 +1,73 @@
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Eye, Star } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { Template } from '@/types/website';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface TemplateCardProps {
-  template: {
-    id: number;
-    name: string;
-    category: string;
-    description: string;
-    image: string;
-    badge: string | null;
-    badgeColor: string;
-  };
+  template: Template;
 }
 
 const TemplateCard = ({ template }: TemplateCardProps) => {
-  const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleSelectTemplate = () => {
+    navigate(`/onboarding?templateId=${template.id}`);
+  };
+
+  // Map badge colors based on badge text
+  const getBadgeColor = (badge?: string) => {
+    if (!badge) return '';
+    
+    const colorMap: Record<string, string> = {
+      'new': 'bg-green-500 hover:bg-green-600',
+      'popular': 'bg-blue-500 hover:bg-blue-600',
+      'featured': 'bg-purple-500 hover:bg-purple-600',
+      'premium': 'bg-amber-500 hover:bg-amber-600'
+    };
+    
+    return colorMap[badge.toLowerCase()] || 'bg-gray-500 hover:bg-gray-600';
+  };
 
   return (
-    <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group dark:bg-gray-800">
-      <div className="relative">
+    <Card className="overflow-hidden flex flex-col h-full transition-transform hover:scale-[1.01] hover:shadow-md">
+      <div className="relative aspect-[16/9] overflow-hidden">
         <img 
-          src={template.image} 
-          alt={t(template.name)}
-          className="w-full h-48 object-cover"
+          src={template.preview_image_url || '/placeholder.svg'} 
+          alt={template.name} 
+          className="w-full h-full object-cover"
         />
         {template.badge && (
-          <Badge className={`absolute top-4 ${template.badgeColor} ${
-            document.documentElement.dir === 'rtl' ? 'left-4' : 'right-4'
-          }`}>
-            {t(template.badge)}
+          <Badge 
+            className={`absolute top-2 right-2 ${getBadgeColor(template.badge)}`}
+          >
+            {template.badge}
           </Badge>
         )}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="flex space-x-2 rtl:space-x-reverse">
-            <Button size="sm" variant="secondary" className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              <Eye className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              {t('preview')}
-            </Button>
-          </div>
-        </div>
+        {template.category && (
+          <Badge 
+            variant="outline" 
+            className="absolute bottom-2 left-2 bg-white/80 dark:bg-black/50 text-xs"
+          >
+            {template.category}
+          </Badge>
+        )}
       </div>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t(template.name)}</h3>
-          <div className="flex items-center">
-            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-            <span className="text-sm text-gray-600 dark:text-gray-400 ml-1 rtl:mr-1 rtl:ml-0">4.8</span>
-          </div>
-        </div>
-        <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">{t(template.category)}</p>
-        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">{t(template.description)}</p>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
-          {t('spinUpTemplate')}
-        </Button>
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-lg">{template.name}</CardTitle>
+        <CardDescription className="line-clamp-2 h-10">
+          {template.description}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 flex-grow">
+        {/* Add any additional template info here */}
       </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-end">
+        <Button onClick={handleSelectTemplate}>
+          Select Template
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
