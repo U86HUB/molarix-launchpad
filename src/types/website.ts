@@ -1,4 +1,3 @@
-
 export interface Website {
   id: string;
   clinic_id: string;
@@ -28,8 +27,23 @@ export interface Section {
   updated_at: string;
 }
 
+export interface Template {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  preview_image_url?: string;
+  default_section_order?: any[];
+  category?: string;
+  tags?: string[];
+  badge?: string;
+  badgeColor?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface SectionTemplate {
-  type: Section['type'];
+  type: string;
   name: string;
   description: string;
   icon: string;
