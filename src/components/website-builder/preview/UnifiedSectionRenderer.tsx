@@ -97,6 +97,7 @@ const UnifiedSectionRenderer = ({
   );
 };
 
+// Helper function to get the appropriate copy data for a section type
 const getCopyForSectionType = (copy: GeneratedCopy, sectionType: string) => {
   switch (sectionType) {
     case 'hero':

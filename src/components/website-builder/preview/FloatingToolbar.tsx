@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Monitor, Smartphone, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Monitor, Smartphone, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Section } from '@/types/website';
 
 interface FloatingToolbarProps {
@@ -25,7 +25,7 @@ const FloatingToolbar = ({
   onCopyModeChange,
   onScrollToSection,
 }: FloatingToolbarProps) => {
-  const visibleSections = sections.filter(section => section.is_visible);
+  const visibleSections = sections.filter(section => section.is_visible !== false);
 
   return (
     <Card className="fixed top-20 right-6 z-50 p-3 shadow-lg border bg-white/95 backdrop-blur-sm">
