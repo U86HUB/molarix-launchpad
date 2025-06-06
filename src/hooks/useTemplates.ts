@@ -50,7 +50,7 @@ export const useTemplates = () => {
       toast({
         title: "Warning",
         description: "Using local template data",
-        variant: "warning",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

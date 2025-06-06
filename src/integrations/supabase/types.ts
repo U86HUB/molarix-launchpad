@@ -669,6 +669,9 @@ export type Database = {
       }
       templates: {
         Row: {
+          badge: string | null
+          badge_color: string | null
+          category: string | null
           created_at: string
           default_section_order: Json | null
           description: string | null
@@ -676,9 +679,13 @@ export type Database = {
           name: string
           preview_image_url: string | null
           slug: string
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
+          badge?: string | null
+          badge_color?: string | null
+          category?: string | null
           created_at?: string
           default_section_order?: Json | null
           description?: string | null
@@ -686,9 +693,13 @@ export type Database = {
           name: string
           preview_image_url?: string | null
           slug: string
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
+          badge?: string | null
+          badge_color?: string | null
+          category?: string | null
           created_at?: string
           default_section_order?: Json | null
           description?: string | null
@@ -696,6 +707,7 @@ export type Database = {
           name?: string
           preview_image_url?: string | null
           slug?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: []

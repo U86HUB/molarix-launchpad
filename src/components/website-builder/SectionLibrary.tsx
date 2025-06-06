@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTemplates } from '@/hooks/useTemplates';
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Layout } from "lucide-react";
 import * as Icons from "lucide-react";
 
 // Function to dynamically get Lucide icon component
 const getLucideIcon = (iconName: string): LucideIcon => {
-  return Icons[iconName as keyof typeof Icons] || Icons.Layout;
+  const IconComponent = Icons[iconName as keyof typeof Icons];
+  return (IconComponent && typeof IconComponent === 'function') ? IconComponent as LucideIcon : Layout;
 };
 
 interface SectionLibraryProps {

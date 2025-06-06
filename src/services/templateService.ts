@@ -12,7 +12,14 @@ export const TemplateService = {
         .order('name');
       
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our Template interface
+      return (data || []).map(template => ({
+        ...template,
+        default_section_order: Array.isArray(template.default_section_order) 
+          ? template.default_section_order 
+          : []
+      }));
     } catch (error) {
       ErrorService.handle(error, {
         operation: 'fetch templates',
@@ -56,13 +63,16 @@ export const TemplateService = {
         .order('name');
       
       if (error) throw error;
-      return data.map(section => ({
+      
+      return (data || []).map(section => ({
         type: section.slug,
         name: section.name,
         description: '',
         icon: 'Layout',
-        defaultSettings: section.default_props || {}
-      })) || [];
+        defaultSettings: (section.default_props && typeof section.default_props === 'object') 
+          ? section.default_props as Record<string, any>
+          : {}
+      }));
     } catch (error) {
       ErrorService.handle(error, {
         operation: 'fetch template sections',
@@ -81,7 +91,17 @@ export const TemplateService = {
         .maybeSingle();
       
       if (error) throw error;
-      return data;
+      
+      if (data) {
+        return {
+          ...data,
+          default_section_order: Array.isArray(data.default_section_order) 
+            ? data.default_section_order 
+            : []
+        };
+      }
+      
+      return null;
     } catch (error) {
       ErrorService.handle(error, {
         operation: 'get template',

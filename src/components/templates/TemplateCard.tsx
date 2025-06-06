@@ -40,7 +40,7 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
         />
         {template.badge && (
           <Badge 
-            className={`absolute top-2 right-2 ${getBadgeColor(template.badge)}`}
+            className={`absolute top-2 right-2 ${template.badge_color || getBadgeColor(template.badge)}`}
           >
             {template.badge}
           </Badge>

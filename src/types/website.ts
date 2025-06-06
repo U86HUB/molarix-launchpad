@@ -38,7 +38,7 @@ export interface Template {
   category?: string;
   tags?: string[];
   badge?: string;
-  badgeColor?: string;
+  badge_color?: string;
   created_at?: string;
   updated_at?: string;
 }
