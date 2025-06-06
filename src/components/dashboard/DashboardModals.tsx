@@ -1,6 +1,6 @@
 
 import PreviewModal from './PreviewModal';
-import { CreateWebsiteModal } from './CreateWebsiteModal';
+import { CreateWebsiteModal } from './create-website/CreateWebsiteModal';
 import { Website } from '@/types/website';
 
 interface Clinic {
