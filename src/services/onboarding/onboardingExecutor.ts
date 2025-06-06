@@ -6,6 +6,12 @@ import { createOnboardingSession } from "./sessionOperations";
 import { OnboardingResult } from "./onboardingOrchestrator";
 import { SupabaseService } from "../supabaseService";
 
+interface ExistingWebsite {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 export const executeOnboardingSteps = async (
   onboardingData: UnifiedOnboardingData,
   existingClinics: any[],
@@ -58,18 +64,19 @@ export const executeOnboardingSteps = async (
       }
     );
 
-    if (result.data && result.data.id) {
-      const creationAge = Date.now() - new Date(result.data.created_at).getTime();
+    if (result.data && (result.data as ExistingWebsite).id) {
+      const existingWebsite = result.data as ExistingWebsite;
+      const creationAge = Date.now() - new Date(existingWebsite.created_at).getTime();
       const isRecent = creationAge < 60000; // Less than 1 minute old
       
       console.log(`🔍 [${executionId}] Found existing website "${websiteName}" (age: ${creationAge}ms)`);
       
       if (isRecent) {
-        console.log(`✅ [${executionId}] Recent website already exists, returning early with ID: ${result.data.id}`);
+        console.log(`✅ [${executionId}] Recent website already exists, returning early with ID: ${existingWebsite.id}`);
         cleanup();
         return { 
           success: true, 
-          websiteId: result.data.id,
+          websiteId: existingWebsite.id,
           deduplication: true
         };
       }

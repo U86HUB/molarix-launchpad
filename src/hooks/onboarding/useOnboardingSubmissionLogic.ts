@@ -5,7 +5,7 @@ interface UseOnboardingSubmissionLogicProps {
   cancelledRef: React.MutableRefObject<boolean>;
   isCompleted: boolean;
   validateStateChecks: (submissionInProgress: boolean, isCreating: boolean, isInitializing: boolean) => boolean;
-  validateBeforeSubmission: (onboardingData: UnifiedOnboardingData, user: any, canCreate: boolean) => boolean;
+  validateBeforeSubmission: (onboardingData: UnifiedOnboardingData, user: any, canCreate: (websiteName: string) => boolean) => boolean;
   canExecute: (websiteName: string, userId: string) => boolean;
   startExecution: (websiteName: string) => string;
   startCreation: (websiteName: string) => void;
@@ -70,7 +70,10 @@ export const useOnboardingSubmissionLogic = ({
     // TODO: Get user from auth context
     const user = { id: 'temp-user-id' }; // This should come from useAuth
     
-    if (!validateBeforeSubmission(onboardingData, user, true)) {
+    // Fix: Create the canCreate function that validateBeforeSubmission expects
+    const canCreateFunction = (websiteName: string) => true; // This should be the actual canCreate logic
+    
+    if (!validateBeforeSubmission(onboardingData, user, canCreateFunction)) {
       return;
     }
 
