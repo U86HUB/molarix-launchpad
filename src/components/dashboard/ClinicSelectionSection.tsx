@@ -70,7 +70,7 @@ export const ClinicSelectionSection = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="clinic-select" className="text-sm font-medium">
+      <Label htmlFor="clinic-selection" className="text-sm font-medium">
         Assign to Clinic <span className="text-red-500">*</span>
       </Label>
       
@@ -83,56 +83,61 @@ export const ClinicSelectionSection = ({
       </Alert>
 
       {clinicsLoading ? (
-        <div className="flex items-center justify-center h-10 border rounded-md bg-gray-50">
+        <div className="flex items-center justify-center h-10 border rounded-md bg-gray-50" aria-label="Loading clinics">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="ml-2 text-sm text-gray-500">Loading clinics...</span>
         </div>
       ) : (
-        <Select
-          value={debouncedSelectedClinicId}
-          onValueChange={(value) => {
-            console.log('🔄 Select value changed to:', value);
-            if (value === 'add-new') {
-              console.log('🔄 Opening add new clinic form');
-              setShowAddNewClinic(true);
-            } else {
-              console.log('🔄 Selecting existing clinic:', value);
-              onClinicChange(value);
-              setShowAddNewClinic(false);
-            }
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a clinic" />
-          </SelectTrigger>
-          <SelectContent>
-            {clinics.length === 0 ? (
-              <SelectItem value="add-new" className="text-blue-600 font-medium">
-                <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Your First Clinic
-                </div>
-              </SelectItem>
-            ) : (
-              <>
-                {clinics.map((clinic) => (
-                  <SelectItem key={clinic.id} value={clinic.id}>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      {clinic.name}
-                    </div>
-                  </SelectItem>
-                ))}
+        <div>
+          <Select
+            value={debouncedSelectedClinicId}
+            onValueChange={(value) => {
+              console.log('🔄 Select value changed to:', value);
+              if (value === 'add-new') {
+                console.log('🔄 Opening add new clinic form');
+                setShowAddNewClinic(true);
+              } else {
+                console.log('🔄 Selecting existing clinic:', value);
+                onClinicChange(value);
+                setShowAddNewClinic(false);
+              }
+            }}
+          >
+            <SelectTrigger className="w-full" id="clinic-selection" aria-describedby="clinic-selection-description">
+              <SelectValue placeholder="Select a clinic" />
+            </SelectTrigger>
+            <SelectContent>
+              {clinics.length === 0 ? (
                 <SelectItem value="add-new" className="text-blue-600 font-medium">
                   <div className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    Add New Clinic
+                    Create Your First Clinic
                   </div>
                 </SelectItem>
-              </>
-            )}
-          </SelectContent>
-        </Select>
+              ) : (
+                <>
+                  {clinics.map((clinic) => (
+                    <SelectItem key={clinic.id} value={clinic.id}>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        {clinic.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="add-new" className="text-blue-600 font-medium">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add New Clinic
+                    </div>
+                  </SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+          <p id="clinic-selection-description" className="text-xs text-muted-foreground mt-1">
+            Choose the clinic this website will be associated with
+          </p>
+        </div>
       )}
       
       {selectedClinic && (

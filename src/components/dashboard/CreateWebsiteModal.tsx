@@ -250,20 +250,24 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="website-name">Website Name *</Label>
+                <Label htmlFor="create-website-name">Website Name *</Label>
                 <Input
-                  id="website-name"
+                  id="create-website-name"
                   placeholder="Enter website name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   disabled={isBusy}
+                  aria-describedby="create-website-name-description"
                 />
+                <p id="create-website-name-description" className="text-xs text-muted-foreground">
+                  Choose a descriptive name for your website
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="clinic-select">Select Clinic *</Label>
+                <Label htmlFor="create-website-clinic">Select Clinic *</Label>
                 <Select value={formData.clinicId} onValueChange={(value) => setFormData(prev => ({ ...prev, clinicId: value }))}>
-                  <SelectTrigger disabled={isBusy}>
+                  <SelectTrigger disabled={isBusy} id="create-website-clinic" aria-describedby="create-website-clinic-description">
                     <SelectValue placeholder="Choose a clinic" />
                   </SelectTrigger>
                   <SelectContent>
@@ -274,6 +278,9 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
                     ))}
                   </SelectContent>
                 </Select>
+                <p id="create-website-clinic-description" className="text-xs text-muted-foreground">
+                  The clinic this website will represent
+                </p>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -299,7 +306,7 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
 
               <div className="space-y-3">
                 <Label>Choose a Template *</Label>
-                <div className="grid gap-4">
+                <div className="grid gap-4" role="radiogroup" aria-label="Website template selection">
                   {templates.map((template) => (
                     <Card 
                       key={template.id} 
@@ -309,19 +316,28 @@ export const CreateWebsiteModal = ({ isOpen, onClose, onWebsiteCreate, clinics }
                           : ''
                       } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => !isBusy && handleTemplateSelect(template.id)}
+                      role="radio"
+                      aria-checked={formData.template === template.id}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          if (!isBusy) handleTemplateSelect(template.id);
+                        }
+                      }}
                     >
                       <CardContent className="p-4">
                         <div className="flex gap-4">
                           <img 
                             src={template.image} 
-                            alt={template.name}
+                            alt={`${template.name} template preview`}
                             className="w-20 h-16 rounded object-cover"
                           />
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium">{template.name}</h3>
                               {formData.template === template.id && (
-                                <Check className="h-4 w-4 text-primary" />
+                                <Check className="h-4 w-4 text-primary" aria-label="Selected" />
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-2">

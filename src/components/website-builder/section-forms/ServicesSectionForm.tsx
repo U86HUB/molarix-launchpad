@@ -11,32 +11,32 @@ const ServicesSectionForm = ({ settings, onSettingsChange }: ServicesSectionForm
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="services-title">Title</Label>
+        <Label htmlFor="services-section-title">Title</Label>
         <Input
-          id="services-title"
-          name="services-title"
+          id="services-section-title"
+          name="services-section-title"
           value={settings.title || ''}
           onChange={(e) => onSettingsChange('title', e.target.value)}
           placeholder="Enter section title"
           autoComplete="off"
-          aria-describedby="services-title-description"
+          aria-describedby="services-section-title-description"
         />
-        <p id="services-title-description" className="text-xs text-muted-foreground mt-1">
+        <p id="services-section-title-description" className="text-xs text-muted-foreground mt-1">
           Main heading for your services section
         </p>
       </div>
       <div>
-        <Label htmlFor="services-subtitle">Subtitle</Label>
+        <Label htmlFor="services-section-subtitle">Subtitle</Label>
         <Input
-          id="services-subtitle"
-          name="services-subtitle"
+          id="services-section-subtitle"
+          name="services-section-subtitle"
           value={settings.subtitle || ''}
           onChange={(e) => onSettingsChange('subtitle', e.target.value)}
           placeholder="Enter subtitle"
           autoComplete="off"
-          aria-describedby="services-subtitle-description"
+          aria-describedby="services-section-subtitle-description"
         />
-        <p id="services-subtitle-description" className="text-xs text-muted-foreground mt-1">
+        <p id="services-section-subtitle-description" className="text-xs text-muted-foreground mt-1">
           Supporting text that describes your services
         </p>
       </div>
