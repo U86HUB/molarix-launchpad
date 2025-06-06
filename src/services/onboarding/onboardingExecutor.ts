@@ -41,7 +41,7 @@ export const executeOnboardingSteps = async (
   // Check if there's an active onboarding for same user/website combo
   const websiteName = onboardingData.website.name.trim();
   try {
-    const { data: existingWebsite } = await SupabaseService.executeQuery(
+    const result = await SupabaseService.executeQuery(
       () => {
         return SupabaseService.fetchOne('websites', {
           name: websiteName,
@@ -58,18 +58,18 @@ export const executeOnboardingSteps = async (
       }
     );
 
-    if (existingWebsite && existingWebsite.id) {
-      const creationAge = Date.now() - new Date(existingWebsite.created_at).getTime();
+    if (result.data && result.data.id) {
+      const creationAge = Date.now() - new Date(result.data.created_at).getTime();
       const isRecent = creationAge < 60000; // Less than 1 minute old
       
       console.log(`🔍 [${executionId}] Found existing website "${websiteName}" (age: ${creationAge}ms)`);
       
       if (isRecent) {
-        console.log(`✅ [${executionId}] Recent website already exists, returning early with ID: ${existingWebsite.id}`);
+        console.log(`✅ [${executionId}] Recent website already exists, returning early with ID: ${result.data.id}`);
         cleanup();
         return { 
           success: true, 
-          websiteId: existingWebsite.id,
+          websiteId: result.data.id,
           deduplication: true
         };
       }
