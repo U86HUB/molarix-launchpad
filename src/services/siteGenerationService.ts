@@ -1,5 +1,4 @@
 
-import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { 
   fetchSiteData, 
@@ -12,26 +11,16 @@ import { generateHtmlDocument } from '@/utils/site-generator/htmlGenerator';
 import { ensureDirectoryExists, writeSiteFiles } from '@/utils/site-generator/fsUtils';
 import { triggerDeployHook } from '@/utils/site-generator/deploymentUtils';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+export interface SiteGenerationResult {
+  success: boolean;
+  message: string;
+  path?: string;
+  error?: string;
+  details?: string;
+}
 
-  // Set no-cache header
-  res.setHeader('Cache-Control', 'no-cache');
-
+export async function generateSite(siteId: string): Promise<SiteGenerationResult> {
   try {
-    // Extract siteId from request body
-    const { siteId } = req.body;
-
-    if (!siteId) {
-      return res.status(400).json({ error: 'Missing siteId parameter' });
-    }
-
     console.log(`Starting site generation for siteId: ${siteId}`);
     
     // 1. Fetch site metadata
@@ -45,7 +34,11 @@ export default async function handler(
     const sectionOrder = await fetchSiteSectionOrder(siteId);
 
     if (sectionOrder.length === 0) {
-      return res.status(400).json({ error: 'No sections defined for this site' });
+      return {
+        success: false,
+        message: 'No sections defined for this site',
+        error: 'No sections defined for this site'
+      };
     }
 
     // 4. Fetch content for all sections
@@ -82,20 +75,19 @@ export default async function handler(
       await triggerDeployHook(siteId);
     }
 
-    return res.status(200).json({ 
+    return {
       success: true,
       message: 'Site generated successfully',
       path: `/sites/${site.slug}/`
-    });
+    };
   } catch (error) {
     console.error('Error generating site:', error);
     
-    // Here you would log the error to Sentry if configured
-    // Sentry.captureException(error);
-    
-    return res.status(500).json({ 
+    return {
+      success: false,
+      message: 'Failed to generate site',
       error: 'Failed to generate site',
       details: error instanceof Error ? error.message : String(error)
-    });
+    };
   }
 }

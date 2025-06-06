@@ -46,29 +46,9 @@ export const fetchSiteSectionOrder = async (siteId: string): Promise<SiteSection
   let sectionOrder = siteSections || [];
   
   if (sectionOrder.length === 0) {
-    // Fetch template and its default section order
-    const { data: site } = await supabase
-      .from('sites')
-      .select('*')
-      .eq('id', siteId)
-      .single();
-
-    if (site?.template_type) {
-      const { data: template } = await supabase
-        .from('templates')
-        .select('default_section_order')
-        .eq('id', site.template_type)
-        .single();
-      
-      if (template?.default_section_order) {
-        // Convert the default order into the same format as site_sections
-        sectionOrder = (template.default_section_order as any[]).map((sectionId, index) => ({
-          section_id: sectionId,
-          order_index: index,
-          is_visible: true
-        }));
-      }
-    }
+    // For now, return an empty array if no sections are found
+    // In the future, you could implement template-based defaults here
+    console.warn(`No sections found for site ${siteId}`);
   }
 
   // Filter out invisible sections
@@ -87,7 +67,9 @@ export const fetchSiteContent = async (siteId: string): Promise<Map<string, Reco
   // Create a map of section content
   const contentMap = new Map<string, Record<string, any>>();
   siteContent?.forEach(content => {
-    contentMap.set(content.section_name, content.content);
+    // Safely cast Json to Record<string, any>
+    const contentData = content.content as Record<string, any> || {};
+    contentMap.set(content.section_name, contentData);
   });
 
   return contentMap;
@@ -107,7 +89,13 @@ export const fetchSectionTemplates = async (
   // Create a map of section templates by id
   const sectionTemplateMap = new Map<string, SectionTemplate>();
   sectionTemplates?.forEach(template => {
-    sectionTemplateMap.set(template.id, template);
+    // Safely cast Json to Record<string, any>
+    const defaultProps = template.default_props as Record<string, any> || {};
+    sectionTemplateMap.set(template.id, {
+      id: template.id,
+      slug: template.slug,
+      default_props: defaultProps
+    });
   });
 
   return sectionTemplateMap;

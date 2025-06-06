@@ -22,5 +22,4 @@ export interface Site {
   slug: string;
   primary_color?: string;
   font_style?: string;
-  template_type?: string;
 }
