@@ -12,6 +12,7 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
   const { user } = useAuth();
   const { toast } = useToast();
   const [lastWebsiteData, setLastWebsiteData] = useState<WebsiteInitializationData | null>(null);
+  const [submissionInProgress, setSubmissionInProgress] = useState(false);
   
   const {
     isInitializing,
@@ -32,12 +33,27 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
   } = useWebsiteCreationGuard();
 
   // Combined loading state
-  const isSubmitting = isCreating || isInitializing;
+  const isSubmitting = isCreating || isInitializing || submissionInProgress;
 
   const submitOnboarding = async (
     onboardingData: UnifiedOnboardingData,
     existingClinics: any[]
   ): Promise<void> => {
+    console.log('🚀 submitOnboarding() called at:', Date.now());
+    console.log('🔍 Current state:', { 
+      isSubmitting, 
+      isCreating, 
+      isInitializing, 
+      submissionInProgress,
+      websiteName: onboardingData.website.name 
+    });
+
+    // Prevent multiple simultaneous submissions
+    if (submissionInProgress) {
+      console.warn('🚫 Submission already in progress, blocking duplicate');
+      return;
+    }
+
     if (!user) {
       toast({
         title: "Authentication Error",
@@ -51,18 +67,24 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
     
     // Check if we can proceed with creation
     if (!canCreate(websiteName)) {
+      console.warn('🚫 Creation blocked by guard for:', websiteName);
       return;
     }
 
+    // Set submission in progress BEFORE any async operations
+    setSubmissionInProgress(true);
+    
     // Start creation guard
     startCreation(websiteName);
     console.log('🔄 Starting onboarding submission for user:', user.id, 'Website:', websiteName);
 
     try {
       // Execute the onboarding flow with duplicate protection
+      console.log('📞 Calling executeOnboardingFlow...');
       const result = await executeOnboardingFlow(onboardingData, existingClinics, user.id);
       
       if (!result.success) {
+        console.error('❌ Onboarding flow failed:', result.error);
         toast({
           title: "Setup Failed",
           description: result.error || "Failed to complete setup. Please try again.",
@@ -113,6 +135,8 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
         },
         'Failed to complete setup. Please try again or contact support if the problem persists.'
       );
+    } finally {
+      setSubmissionInProgress(false);
     }
   };
 

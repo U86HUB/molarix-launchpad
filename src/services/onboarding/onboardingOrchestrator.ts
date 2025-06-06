@@ -10,32 +10,63 @@ export interface OnboardingResult {
   error?: string;
 }
 
-// Track active creations to prevent duplicates
-const activeCreations = new Map<string, Promise<OnboardingResult>>();
+// Enhanced tracking with execution timestamps
+const activeCreations = new Map<string, { 
+  promise: Promise<OnboardingResult>; 
+  timestamp: number;
+  callStack: string;
+}>();
 
 export const executeOnboardingFlow = async (
   onboardingData: UnifiedOnboardingData,
   existingClinics: any[],
   userId: string
 ): Promise<OnboardingResult> => {
+  const callStack = new Error().stack || 'unknown';
+  console.log('🔄 executeOnboardingFlow() called at:', Date.now());
+  console.log('🔍 Call stack:', callStack.split('\n').slice(0, 5).join('\n'));
+  
   const creationKey = `${userId}-${onboardingData.website.name.trim().toLowerCase()}`;
   
   // Check if this exact creation is already in progress
-  if (activeCreations.has(creationKey)) {
-    console.warn('🚫 Duplicate onboarding flow detected, returning existing promise');
-    return activeCreations.get(creationKey)!;
+  const existingCreation = activeCreations.get(creationKey);
+  if (existingCreation) {
+    const timeSinceStart = Date.now() - existingCreation.timestamp;
+    console.warn('🚫 Duplicate onboarding flow detected for:', creationKey);
+    console.log('⏱️ Time since start:', timeSinceStart, 'ms');
+    console.log('📍 Original call stack:', existingCreation.callStack.split('\n').slice(0, 3).join('\n'));
+    console.log('📍 Current call stack:', callStack.split('\n').slice(0, 3).join('\n'));
+    
+    if (timeSinceStart < 30000) { // Within 30 seconds
+      console.log('🔄 Returning existing promise for:', creationKey);
+      return existingCreation.promise;
+    } else {
+      console.log('🧹 Cleaning up old creation promise (timeout)');
+      activeCreations.delete(creationKey);
+    }
   }
 
-  // Create the promise and store it
+  // Create the promise and store it with metadata
   const creationPromise = executeOnboardingFlowInternal(onboardingData, existingClinics, userId);
-  activeCreations.set(creationKey, creationPromise);
+  activeCreations.set(creationKey, {
+    promise: creationPromise,
+    timestamp: Date.now(),
+    callStack
+  });
 
   try {
     const result = await creationPromise;
+    console.log('✅ Onboarding flow completed for:', creationKey, 'Result:', result);
     return result;
   } finally {
-    // Clean up the active creation tracking
-    activeCreations.delete(creationKey);
+    // Clean up the active creation tracking after a delay
+    setTimeout(() => {
+      const current = activeCreations.get(creationKey);
+      if (current && current.timestamp === activeCreations.get(creationKey)?.timestamp) {
+        activeCreations.delete(creationKey);
+        console.log('🧹 Cleaned up creation tracking for:', creationKey);
+      }
+    }, 5000);
   }
 };
 
@@ -44,7 +75,7 @@ const executeOnboardingFlowInternal = async (
   existingClinics: any[],
   userId: string
 ): Promise<OnboardingResult> => {
-  console.log('🔄 Executing onboarding flow for website:', onboardingData.website.name);
+  console.log('🔄 Executing onboarding flow internal for website:', onboardingData.website.name);
   
   try {
     let clinicId = onboardingData.clinic.selectedClinicId;

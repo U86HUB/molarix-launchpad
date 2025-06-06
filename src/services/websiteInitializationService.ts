@@ -21,8 +21,8 @@ export interface InitializationProgress {
   completed: boolean;
 }
 
-// Track websites being initialized to prevent duplicates
-const initializingWebsites = new Set<string>();
+// Enhanced tracking with timestamps
+const initializingWebsites = new Map<string, { timestamp: number; promise: Promise<boolean> }>();
 
 export class WebsiteInitializationService {
   private progressCallback: (progress: InitializationProgress) => void;
@@ -32,19 +32,47 @@ export class WebsiteInitializationService {
   }
 
   async initializeWebsite(data: WebsiteInitializationData): Promise<boolean> {
+    console.log('🔄 WebsiteInitializationService.initializeWebsite() called for:', data.websiteId);
+    
     // Check if this website is already being initialized
-    if (initializingWebsites.has(data.websiteId)) {
-      console.warn('🚫 Website initialization already in progress for:', data.websiteId);
-      this.progressCallback({
-        step: 4,
-        message: 'Initialization already in progress',
-        completed: false
-      });
-      return false;
+    const existingInit = initializingWebsites.get(data.websiteId);
+    if (existingInit) {
+      const timeSinceStart = Date.now() - existingInit.timestamp;
+      console.warn('🚫 Website initialization already in progress for:', data.websiteId, 'Time since start:', timeSinceStart);
+      
+      if (timeSinceStart < 30000) { // Within 30 seconds
+        this.progressCallback({
+          step: 4,
+          message: 'Initialization already in progress',
+          completed: false
+        });
+        return existingInit.promise;
+      } else {
+        console.log('🧹 Cleaning up old initialization promise');
+        initializingWebsites.delete(data.websiteId);
+      }
     }
 
+    // Create and store the initialization promise
+    const initPromise = this.executeInitialization(data);
+    initializingWebsites.set(data.websiteId, {
+      timestamp: Date.now(),
+      promise: initPromise
+    });
+
     try {
-      initializingWebsites.add(data.websiteId);
+      const result = await initPromise;
+      return result;
+    } finally {
+      // Clean up tracking after a delay
+      setTimeout(() => {
+        initializingWebsites.delete(data.websiteId);
+      }, 5000);
+    }
+  }
+
+  private async executeInitialization(data: WebsiteInitializationData): Promise<boolean> {
+    try {
       console.log('🔄 Starting website initialization for:', data.websiteId);
 
       // Step 1: Verify website exists
@@ -105,10 +133,10 @@ export class WebsiteInitializationService {
           { type: 'contact', position: 3 }
         ];
 
-        // Insert sections one by one to avoid conflicts
+        // Insert sections one by one to avoid conflicts with better error handling
         for (const section of defaultSections) {
           try {
-            await supabase
+            const { error: sectionError } = await supabase
               .from('sections')
               .insert({
                 website_id: data.websiteId,
@@ -117,8 +145,19 @@ export class WebsiteInitializationService {
                 settings: {},
                 is_visible: true
               });
+
+            if (sectionError) {
+              // Check if it's a duplicate position error
+              if (sectionError.code === '23505' && sectionError.message.includes('sections_website_position_unique')) {
+                console.warn(`⚠️ Section ${section.type} position ${section.position} already exists, skipping`);
+              } else {
+                console.error(`❌ Section ${section.type} creation failed:`, sectionError);
+              }
+            } else {
+              console.log(`✅ Section ${section.type} created successfully`);
+            }
           } catch (sectionError) {
-            console.warn(`⚠️ Section ${section.type} creation failed (may already exist):`, sectionError);
+            console.warn(`⚠️ Section ${section.type} creation failed:`, sectionError);
           }
         }
       }
@@ -139,9 +178,6 @@ export class WebsiteInitializationService {
         completed: false
       });
       throw error;
-    } finally {
-      // Clean up tracking
-      initializingWebsites.delete(data.websiteId);
     }
   }
 }
