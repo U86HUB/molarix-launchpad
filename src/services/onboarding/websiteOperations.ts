@@ -22,10 +22,13 @@ export const createWebsite = async (
   console.log(`🔍 [${executionId}] Website name: "${websiteName}"`);
   console.log(`🔍 [${executionId}] Clinic ID: ${clinicId}`);
   console.log(`🔍 [${executionId}] User ID: ${userId}`);
+  console.log(`🔍 [${executionId}] Call stack:`, new Error().stack?.split('\n').slice(0, 3).join('\n'));
 
   // Check global cache first
   if (globalWebsiteCache.hasActiveCreation(websiteName, userId)) {
     console.warn(`🚫 [${executionId}] Duplicate website creation blocked by global cache`);
+    globalWebsiteCache.debugState();
+    
     const existingPromise = globalWebsiteCache.getActiveCreation(websiteName, userId);
     if (existingPromise) {
       console.log(`🔄 [${executionId}] Returning existing website creation promise`);
@@ -33,7 +36,7 @@ export const createWebsite = async (
     }
   }
 
-  // Check for recent database entries (within last 10 seconds)
+  // Check for recent database entries (within last 30 seconds to catch post-redirect duplicates)
   try {
     const { data: existingWebsites, error: checkError } = await supabase
       .from('websites')
@@ -41,12 +44,14 @@ export const createWebsite = async (
       .eq('name', websiteName)
       .eq('clinic_id', clinicId)
       .eq('created_by', userId)
-      .gte('created_at', new Date(Date.now() - 10000).toISOString());
+      .gte('created_at', new Date(Date.now() - 30000).toISOString());
 
     if (checkError) {
       console.error(`❌ [${executionId}] Error checking for existing websites:`, checkError);
     } else if (existingWebsites && existingWebsites.length > 0) {
       console.warn(`🚫 [${executionId}] Recent website with same name found:`, existingWebsites[0]);
+      console.log(`🔍 [${executionId}] Existing website age:`, Date.now() - new Date(existingWebsites[0].created_at).getTime(), 'ms');
+      
       return { 
         success: true, 
         websiteId: existingWebsites[0].id,
@@ -60,7 +65,7 @@ export const createWebsite = async (
   // Create the execution promise
   const creationPromise = executeWebsiteCreation(websiteData, clinicId, userId, executionId);
   
-  // Cache it globally
+  // Cache it globally to prevent duplicates
   globalWebsiteCache.setActiveCreation(websiteName, userId, creationPromise, executionId);
 
   return creationPromise;
@@ -127,6 +132,8 @@ const executeWebsiteCreation = async (
     }
 
     console.log(`✅ [${executionId}] Website created successfully with ID: ${website.id}`);
+    console.log(`🔍 [${executionId}] Website creation timestamp:`, website.created_at);
+    
     return { success: true, websiteId: website.id };
   } catch (error: any) {
     console.error(`❌ [${executionId}] Error creating website:`, error);

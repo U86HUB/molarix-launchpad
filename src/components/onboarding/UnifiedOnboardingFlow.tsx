@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WebsiteInitializationLoader from "../website-builder/WebsiteInitializationLoader";
 import UnifiedOnboardingHeader from "./UnifiedOnboardingHeader";
@@ -14,6 +14,13 @@ import { usePageRenderGuard } from "@/hooks/usePageRenderGuard";
 
 const UnifiedOnboardingFlow = () => {
   const renderGuard = usePageRenderGuard('UnifiedOnboardingFlow');
+  const submissionTracker = useRef<{
+    hasSubmitted: boolean;
+    submissionTime: number | null;
+  }>({
+    hasSubmitted: false,
+    submissionTime: null
+  });
   
   const {
     onboardingData,
@@ -51,20 +58,50 @@ const UnifiedOnboardingFlow = () => {
       currentStep,
       isSubmitting,
       isInitializing,
-      websiteName: onboardingData.website.name
+      websiteName: onboardingData.website.name,
+      hasSubmitted: submissionTracker.current.hasSubmitted
     });
   }, [renderGuard.renderCount, currentStep, isSubmitting, isInitializing, onboardingData.website.name]);
+
+  // Cleanup on unmount to prevent stale submissions
+  useEffect(() => {
+    return () => {
+      console.log('🧹 UnifiedOnboardingFlow unmounting, resetting submission tracker');
+      submissionTracker.current = {
+        hasSubmitted: false,
+        submissionTime: null
+      };
+    };
+  }, []);
 
   const handleSubmit = () => {
     console.log('🔄 UnifiedOnboardingFlow.handleSubmit() called');
     console.log('🔍 Current render count:', renderGuard.renderCount);
+    console.log('🔍 Submission tracker state:', submissionTracker.current);
     
     // Additional guard against rapid submissions
     if (renderGuard.isRapidRender()) {
       console.warn('⚠️ Blocked submit during rapid render');
       return;
     }
+
+    // Prevent duplicate submissions
+    if (submissionTracker.current.hasSubmitted) {
+      const timeSinceSubmission = submissionTracker.current.submissionTime 
+        ? Date.now() - submissionTracker.current.submissionTime
+        : 0;
+      
+      console.warn('⚠️ Submission already completed, blocking duplicate. Time since:', timeSinceSubmission, 'ms');
+      return;
+    }
+
+    // Mark as submitted
+    submissionTracker.current = {
+      hasSubmitted: true,
+      submissionTime: Date.now()
+    };
     
+    console.log('✅ Proceeding with onboarding submission');
     submitOnboarding(onboardingData, existingClinics);
   };
 
@@ -72,8 +109,21 @@ const UnifiedOnboardingFlow = () => {
     console.log('🔄 UnifiedOnboardingFlow.onNext() called');
     console.log('🔍 Current step:', currentStep);
     console.log('🔍 Render count:', renderGuard.renderCount);
+    console.log('🔍 Submission tracker:', submissionTracker.current);
     
     handleNext(onboardingData, handleSubmit);
+  };
+
+  const handleRetry = () => {
+    console.log('🔄 Explicit retry requested from UnifiedOnboardingFlow');
+    
+    // Reset submission tracker to allow retry
+    submissionTracker.current = {
+      hasSubmitted: false,
+      submissionTime: null
+    };
+    
+    retryInitialization();
   };
 
   return (
@@ -84,10 +134,7 @@ const UnifiedOnboardingFlow = () => {
         currentMessage={currentMessage}
         isCompleted={!!initCompleted}
         hasError={!!initError}
-        onRetry={() => {
-          console.log('🔄 Retry initialization requested from UnifiedOnboardingFlow');
-          retryInitialization();
-        }}
+        onRetry={handleRetry}
       />
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 py-12 px-4 sm:px-6 lg:px-8">
