@@ -47,25 +47,15 @@ export const executeOnboardingSteps = async (
   // Check if there's an active onboarding for same user/website combo
   const websiteName = onboardingData.website.name.trim();
   try {
-    const result = await SupabaseService.executeQuery(
-      () => {
-        return SupabaseService.fetchOne('websites', {
-          name: websiteName,
-          created_by: userId
-        }, {
-          select: 'id, name, created_at',
-          component: 'onboardingExecutor'
-        });
-      },
-      {
-        operation: 'check for existing onboarding',
-        component: 'onboardingExecutor',
-        throwOnError: false
-      }
-    );
+    const existingWebsite = await SupabaseService.fetchOne<ExistingWebsite>('websites', {
+      name: websiteName,
+      created_by: userId
+    }, {
+      select: 'id, name, created_at',
+      component: 'onboardingExecutor'
+    });
 
-    if (result.data && (result.data as ExistingWebsite).id) {
-      const existingWebsite = result.data as ExistingWebsite;
+    if (existingWebsite?.id) {
       const creationAge = Date.now() - new Date(existingWebsite.created_at).getTime();
       const isRecent = creationAge < 60000; // Less than 1 minute old
       
