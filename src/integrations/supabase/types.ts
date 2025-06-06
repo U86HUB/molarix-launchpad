@@ -562,36 +562,48 @@ export type Database = {
       }
       sites: {
         Row: {
+          calendly_url: string | null
           created_at: string
           created_by: string
           domain: string | null
           font_style: string | null
+          ga_measurement_id: string | null
           id: string
           name: string
+          patient_portal_url: string | null
           primary_color: string | null
           slug: string
+          tidio_key: string | null
           updated_at: string
         }
         Insert: {
+          calendly_url?: string | null
           created_at?: string
           created_by: string
           domain?: string | null
           font_style?: string | null
+          ga_measurement_id?: string | null
           id?: string
           name: string
+          patient_portal_url?: string | null
           primary_color?: string | null
           slug: string
+          tidio_key?: string | null
           updated_at?: string
         }
         Update: {
+          calendly_url?: string | null
           created_at?: string
           created_by?: string
           domain?: string | null
           font_style?: string | null
+          ga_measurement_id?: string | null
           id?: string
           name?: string
+          patient_portal_url?: string | null
           primary_color?: string | null
           slug?: string
+          tidio_key?: string | null
           updated_at?: string
         }
         Relationships: []
