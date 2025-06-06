@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { executeOnboardingFlow } from '@/services/onboarding/onboardingOrchestrator';
@@ -10,6 +10,15 @@ export const useOnboardingSubmissionFlow = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [submissionInProgress, setSubmissionInProgress] = useState(false);
+  const cancelledRef = useRef<boolean>(false);
+
+  // Cleanup on unmount to prevent stale operations
+  useEffect(() => {
+    return () => {
+      console.log('🧹 useOnboardingSubmissionFlow unmounting, cancelling operations');
+      cancelledRef.current = true;
+    };
+  }, []);
 
   const executeSubmission = async (
     onboardingData: UnifiedOnboardingData,
@@ -20,11 +29,32 @@ export const useOnboardingSubmissionFlow = () => {
   ): Promise<void> => {
     if (!user) return;
 
+    console.warn(`[DEBUG] [${executionId}] executeSubmission() called from:`, new Error().stack?.split('\n').slice(0, 3).join('\n'));
+
+    // Check if cancelled before starting
+    if (cancelledRef.current) {
+      console.warn(`⚠️ [${executionId}] Submission cancelled before start`);
+      return;
+    }
+
     setSubmissionInProgress(true);
 
     try {
       console.log(`📞 [${executionId}] Calling executeOnboardingFlow...`);
+      
+      // Check cancellation before major operation
+      if (cancelledRef.current) {
+        console.warn(`⚠️ [${executionId}] Submission cancelled before executeOnboardingFlow`);
+        return;
+      }
+
       const result = await executeOnboardingFlow(onboardingData, existingClinics, user.id);
+      
+      // Check cancellation after operation
+      if (cancelledRef.current) {
+        console.warn(`⚠️ [${executionId}] Submission cancelled after executeOnboardingFlow`);
+        return;
+      }
       
       if (!result.success) {
         console.error(`❌ [${executionId}] Onboarding flow failed:`, result.error);
@@ -38,6 +68,12 @@ export const useOnboardingSubmissionFlow = () => {
 
       if (!result.websiteId) {
         console.error(`❌ [${executionId}] No website ID returned from onboarding flow`);
+        return;
+      }
+
+      // Check cancellation before completing
+      if (cancelledRef.current) {
+        console.warn(`⚠️ [${executionId}] Submission cancelled before completion callbacks`);
         return;
       }
 
@@ -58,10 +94,21 @@ export const useOnboardingSubmissionFlow = () => {
         }
       };
       
+      // Final cancellation check before website initialization
+      if (cancelledRef.current) {
+        console.warn(`⚠️ [${executionId}] Submission cancelled before website initialization`);
+        return;
+      }
+      
       console.log(`🎬 [${executionId}] Starting website initialization...`);
       await onSuccess(websiteData);
 
     } catch (error: any) {
+      if (cancelledRef.current) {
+        console.warn(`⚠️ [${executionId}] Submission cancelled during error handling`);
+        return;
+      }
+      
       console.error(`❌ [${executionId}] Onboarding submission error:`, error);
       handleSupabaseError(
         error,
@@ -73,7 +120,9 @@ export const useOnboardingSubmissionFlow = () => {
         'Failed to complete setup. Please try again or contact support if the problem persists.'
       );
     } finally {
-      setSubmissionInProgress(false);
+      if (!cancelledRef.current) {
+        setSubmissionInProgress(false);
+      }
     }
   };
 
