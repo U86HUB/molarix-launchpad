@@ -3,6 +3,7 @@ import { UnifiedOnboardingData } from "@/hooks/useUnifiedOnboardingData";
 import { createClinic } from "./clinicOperations";
 import { createWebsite } from "./websiteOperations";
 import { createOnboardingSession } from "./sessionOperations";
+import { globalWebsiteCache } from "@/services/globalWebsiteCache";
 
 export interface OnboardingResult {
   success: boolean;
@@ -10,132 +11,49 @@ export interface OnboardingResult {
   error?: string;
 }
 
-// Enhanced tracking with execution metadata and stricter deduplication
-const activeCreations = new Map<string, { 
-  promise: Promise<OnboardingResult>; 
-  timestamp: number;
-  callStack: string;
-  executionId: string;
-  userId: string;
-  status: 'active' | 'completed' | 'failed';
-}>();
-
-// Global execution lock to prevent cross-instance race conditions
-let globalExecutionLock = false;
-let globalLockTimestamp = 0;
-
 export const executeOnboardingFlow = async (
   onboardingData: UnifiedOnboardingData,
   existingClinics: any[],
   userId: string
 ): Promise<OnboardingResult> => {
-  const executionId = `${Date.now()}-${Math.random()}`;
-  const callStack = new Error().stack || 'unknown';
-  const websiteName = onboardingData.website.name.trim().toLowerCase();
+  const executionId = globalWebsiteCache.generateExecutionId();
+  const websiteName = onboardingData.website.name.trim();
   
-  console.log('🔄 executeOnboardingFlow() called at:', Date.now());
-  console.log('🔍 Execution ID:', executionId);
-  console.log('🔍 User ID:', userId);
-  console.log('🔍 Website name:', websiteName);
-  console.log('🔍 Call stack:', callStack.split('\n').slice(0, 3).join('\n'));
+  console.log(`🚀 [${executionId}] executeOnboardingFlow() START`);
+  console.log(`🔍 [${executionId}] User ID: ${userId}`);
+  console.log(`🔍 [${executionId}] Website name: "${websiteName}"`);
+  console.log(`🔍 [${executionId}] Call stack:`, new Error().stack?.split('\n').slice(0, 5).join('\n'));
   
-  const creationKey = `${userId}-${websiteName}`;
-  
-  // CRITICAL: Check global execution lock first
-  if (globalExecutionLock) {
-    const lockAge = Date.now() - globalLockTimestamp;
-    if (lockAge < 30000) { // 30 second lock
-      console.warn('🚫 Global execution lock active, blocking execution');
-      console.warn('🔒 Lock age:', lockAge, 'ms');
-      return { success: false, error: 'Another onboarding process is currently running' };
-    } else {
-      console.log('🔓 Releasing stale global lock');
-      globalExecutionLock = false;
-    }
-  }
-  
-  // Check if this exact creation is already in progress
-  const existingCreation = activeCreations.get(creationKey);
-  if (existingCreation && existingCreation.status === 'active') {
-    const timeSinceStart = Date.now() - existingCreation.timestamp;
-    console.warn('🚫 Duplicate onboarding flow detected for:', creationKey);
-    console.log('⏱️ Time since start:', timeSinceStart, 'ms');
-    console.log('📍 Original execution ID:', existingCreation.executionId);
-    console.log('📍 Original call stack:', existingCreation.callStack.split('\n').slice(0, 3).join('\n'));
-    console.log('📍 Current execution ID:', executionId);
-    console.log('📍 Current call stack:', callStack.split('\n').slice(0, 3).join('\n'));
+  // Check if this exact creation is already active
+  if (globalWebsiteCache.hasActiveCreation(websiteName, userId)) {
+    console.warn(`🚫 [${executionId}] Duplicate onboarding flow blocked - already in progress`);
+    globalWebsiteCache.debugState();
     
-    if (timeSinceStart < 60000) { // Within 60 seconds
-      console.log('🔄 Returning existing promise for:', creationKey);
-      return existingCreation.promise;
-    } else {
-      console.log('🧹 Cleaning up old creation promise (timeout)');
-      activeCreations.delete(creationKey);
+    const existingPromise = globalWebsiteCache.getActiveCreation(websiteName, userId);
+    if (existingPromise) {
+      console.log(`🔄 [${executionId}] Returning existing onboarding promise`);
+      return existingPromise;
     }
   }
 
-  // Set global lock to prevent other executions
-  globalExecutionLock = true;
-  globalLockTimestamp = Date.now();
-  console.log('🔒 Global execution lock acquired at:', globalLockTimestamp);
-
-  // Create the promise and store it with enhanced metadata
-  const creationPromise = executeOnboardingFlowInternal(
+  // Create the execution promise
+  const executionPromise = executeOnboardingFlowInternal(
     onboardingData, 
     existingClinics, 
     userId, 
     executionId
   );
-  
-  activeCreations.set(creationKey, {
-    promise: creationPromise,
-    timestamp: Date.now(),
-    callStack,
-    executionId,
-    userId,
-    status: 'active'
-  });
+
+  // Cache the promise to prevent duplicates
+  globalWebsiteCache.setActiveCreation(websiteName, userId, executionPromise, executionId);
 
   try {
-    const result = await creationPromise;
-    console.log('✅ Onboarding flow completed for:', creationKey, 'Result:', result);
-    
-    // Update status
-    const tracking = activeCreations.get(creationKey);
-    if (tracking) {
-      activeCreations.set(creationKey, {
-        ...tracking,
-        status: result.success ? 'completed' : 'failed'
-      });
-    }
-    
+    const result = await executionPromise;
+    console.log(`✅ [${executionId}] executeOnboardingFlow() SUCCESS:`, result);
     return result;
   } catch (error: any) {
-    console.error('❌ Onboarding flow execution error:', error);
-    
-    // Update status to failed
-    const tracking = activeCreations.get(creationKey);
-    if (tracking) {
-      activeCreations.set(creationKey, {
-        ...tracking,
-        status: 'failed'
-      });
-    }
-    
+    console.error(`❌ [${executionId}] executeOnboardingFlow() ERROR:`, error);
     return { success: false, error: error.message };
-  } finally {
-    // Release global lock
-    globalExecutionLock = false;
-    console.log('🔓 Global execution lock released');
-    
-    // Clean up the active creation tracking after a delay
-    setTimeout(() => {
-      const current = activeCreations.get(creationKey);
-      if (current && current.executionId === executionId) {
-        activeCreations.delete(creationKey);
-        console.log('🧹 Cleaned up creation tracking for:', creationKey);
-      }
-    }, 10000); // Keep for 10 seconds to prevent immediate duplicates
   }
 };
 
@@ -145,24 +63,23 @@ const executeOnboardingFlowInternal = async (
   userId: string,
   executionId: string
 ): Promise<OnboardingResult> => {
-  console.log('🔄 Executing onboarding flow internal for website:', onboardingData.website.name);
-  console.log('🔍 Internal execution ID:', executionId);
+  console.log(`🔄 [${executionId}] Internal execution START`);
   
   try {
     let clinicId = onboardingData.clinic.selectedClinicId;
 
     // Step 1: Create clinic if not using existing one
     if (!onboardingData.clinic.skipClinic) {
-      console.log('🏥 Creating new clinic...');
+      console.log(`🏥 [${executionId}] Creating new clinic...`);
       const clinicResult = await createClinic(onboardingData.clinic, userId);
       if (!clinicResult.success) {
-        console.error('❌ Clinic creation failed:', clinicResult.error);
+        console.error(`❌ [${executionId}] Clinic creation failed:`, clinicResult.error);
         return { success: false, error: clinicResult.error };
       }
       clinicId = clinicResult.clinicId;
-      console.log('✅ Clinic created with ID:', clinicId);
+      console.log(`✅ [${executionId}] Clinic created with ID: ${clinicId}`);
     } else {
-      console.log('🏥 Using existing clinic ID:', clinicId);
+      console.log(`🏥 [${executionId}] Using existing clinic ID: ${clinicId}`);
     }
 
     if (!clinicId) {
@@ -170,14 +87,14 @@ const executeOnboardingFlowInternal = async (
     }
 
     // Step 2: Create website with enhanced logging
-    console.log('🌐 Creating website with execution ID:', executionId);
+    console.log(`🌐 [${executionId}] Creating website...`);
     const websiteResult = await createWebsite(onboardingData.website, clinicId, userId);
     if (!websiteResult.success) {
-      console.error('❌ Website creation failed for execution:', executionId, 'Error:', websiteResult.error);
+      console.error(`❌ [${executionId}] Website creation failed:`, websiteResult.error);
       return { success: false, error: websiteResult.error };
     }
 
-    console.log('✅ Website created with ID:', websiteResult.websiteId, 'for execution:', executionId);
+    console.log(`✅ [${executionId}] Website created with ID: ${websiteResult.websiteId}`);
 
     // Step 3: Create onboarding session (non-critical)
     try {
@@ -189,18 +106,19 @@ const executeOnboardingFlowInternal = async (
       );
 
       if (!sessionResult.success) {
-        console.warn('⚠️ Session creation failed but website was created:', sessionResult.error);
+        console.warn(`⚠️ [${executionId}] Session creation failed but website was created:`, sessionResult.error);
       }
     } catch (sessionError) {
-      console.warn('⚠️ Session creation error (non-critical):', sessionError);
+      console.warn(`⚠️ [${executionId}] Session creation error (non-critical):`, sessionError);
     }
 
+    console.log(`🎉 [${executionId}] Onboarding flow completed successfully`);
     return { 
       success: true, 
       websiteId: websiteResult.websiteId 
     };
   } catch (error: any) {
-    console.error('❌ Onboarding orchestration error for execution:', executionId, 'Error:', error);
+    console.error(`❌ [${executionId}] Onboarding orchestration error:`, error);
     return { success: false, error: error.message };
   }
 };

@@ -35,30 +35,30 @@ export const WebsiteBasicInfoStep = ({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="create-website-name">Website Name *</Label>
+        <Label htmlFor="website-name-input">Website Name *</Label>
         <Input
-          id="create-website-name"
+          id="website-name-input"
           placeholder="Enter website name"
           value={formData.name}
           onChange={(e) => onFormDataUpdate({ name: e.target.value })}
           disabled={isBusy}
-          aria-describedby="create-website-name-description"
+          aria-describedby="website-name-description"
         />
-        <p id="create-website-name-description" className="text-xs text-muted-foreground">
+        <p id="website-name-description" className="text-xs text-muted-foreground">
           Choose a descriptive name for your website
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="create-website-clinic">Select Clinic *</Label>
+        <Label htmlFor="clinic-select">Select Clinic *</Label>
         <Select 
           value={formData.clinicId} 
           onValueChange={(value) => onFormDataUpdate({ clinicId: value })}
         >
           <SelectTrigger 
             disabled={isBusy} 
-            id="create-website-clinic" 
-            aria-describedby="create-website-clinic-description"
+            id="clinic-select" 
+            aria-describedby="clinic-select-description"
           >
             <SelectValue placeholder="Choose a clinic" />
           </SelectTrigger>
@@ -70,7 +70,7 @@ export const WebsiteBasicInfoStep = ({
             ))}
           </SelectContent>
         </Select>
-        <p id="create-website-clinic-description" className="text-xs text-muted-foreground">
+        <p id="clinic-select-description" className="text-xs text-muted-foreground">
           The clinic this website will represent
         </p>
       </div>

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import WebsiteInitializationLoader from "../website-builder/WebsiteInitializationLoader";
 import UnifiedOnboardingHeader from "./UnifiedOnboardingHeader";
@@ -10,8 +10,11 @@ import { useUnifiedOnboardingData } from "@/hooks/useUnifiedOnboardingData";
 import { useUnifiedOnboardingSubmission } from "@/hooks/useUnifiedOnboardingSubmission";
 import { useUnifiedOnboardingNavigation } from "@/hooks/useUnifiedOnboardingNavigation";
 import { useUnifiedOnboardingClinics } from "@/hooks/useUnifiedOnboardingClinics";
+import { usePageRenderGuard } from "@/hooks/usePageRenderGuard";
 
 const UnifiedOnboardingFlow = () => {
+  const renderGuard = usePageRenderGuard('UnifiedOnboardingFlow');
+  
   const {
     onboardingData,
     updateClinicData,
@@ -41,11 +44,35 @@ const UnifiedOnboardingFlow = () => {
 
   const { existingClinics } = useUnifiedOnboardingClinics();
 
+  // Log render information for debugging
+  useEffect(() => {
+    console.log('🔍 UnifiedOnboardingFlow render:', {
+      renderCount: renderGuard.renderCount,
+      currentStep,
+      isSubmitting,
+      isInitializing,
+      websiteName: onboardingData.website.name
+    });
+  }, [renderGuard.renderCount, currentStep, isSubmitting, isInitializing, onboardingData.website.name]);
+
   const handleSubmit = () => {
+    console.log('🔄 UnifiedOnboardingFlow.handleSubmit() called');
+    console.log('🔍 Current render count:', renderGuard.renderCount);
+    
+    // Additional guard against rapid submissions
+    if (renderGuard.isRapidRender()) {
+      console.warn('⚠️ Blocked submit during rapid render');
+      return;
+    }
+    
     submitOnboarding(onboardingData, existingClinics);
   };
 
   const onNext = () => {
+    console.log('🔄 UnifiedOnboardingFlow.onNext() called');
+    console.log('🔍 Current step:', currentStep);
+    console.log('🔍 Render count:', renderGuard.renderCount);
+    
     handleNext(onboardingData, handleSubmit);
   };
 
@@ -58,7 +85,8 @@ const UnifiedOnboardingFlow = () => {
         isCompleted={!!initCompleted}
         hasError={!!initError}
         onRetry={() => {
-          console.log('Retry initialization requested');
+          console.log('🔄 Retry initialization requested from UnifiedOnboardingFlow');
+          retryInitialization();
         }}
       />
 

@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleSupabaseError } from "@/utils/errorHandling";
 import { UnifiedOnboardingData } from "@/hooks/useUnifiedOnboardingData";
+import { globalWebsiteCache } from "@/services/globalWebsiteCache";
 
 export interface WebsiteCreationResult {
   success: boolean;
@@ -9,52 +10,43 @@ export interface WebsiteCreationResult {
   error?: string;
 }
 
-// Enhanced tracking with timestamps
-const creatingWebsites = new Map<string, { timestamp: number; promise: Promise<WebsiteCreationResult> }>();
-
 export const createWebsite = async (
   websiteData: UnifiedOnboardingData['website'],
   clinicId: string,
   userId: string
 ): Promise<WebsiteCreationResult> => {
-  console.log('🔄 createWebsite() called with:', { 
-    websiteName: websiteData.name, 
-    clinicId, 
-    userId,
-    timestamp: Date.now()
-  });
-
-  const websiteKey = `${userId}-${clinicId}-${websiteData.name.trim().toLowerCase()}`;
+  const executionId = globalWebsiteCache.generateExecutionId();
+  const websiteName = websiteData.name.trim();
   
-  // Check if this exact website is already being created
-  const existingCreation = creatingWebsites.get(websiteKey);
-  if (existingCreation) {
-    const timeSinceStart = Date.now() - existingCreation.timestamp;
-    console.warn('🚫 Duplicate website creation detected for:', websiteKey, 'Time since start:', timeSinceStart);
-    
-    if (timeSinceStart < 30000) { // Within 30 seconds
-      console.log('🔄 Returning existing promise for:', websiteKey);
-      return existingCreation.promise;
-    } else {
-      console.log('🧹 Cleaning up old creation promise for:', websiteKey);
-      creatingWebsites.delete(websiteKey);
+  console.log(`🔄 [${executionId}] createWebsite() called`);
+  console.log(`🔍 [${executionId}] Website name: "${websiteName}"`);
+  console.log(`🔍 [${executionId}] Clinic ID: ${clinicId}`);
+  console.log(`🔍 [${executionId}] User ID: ${userId}`);
+
+  // Check global cache first
+  if (globalWebsiteCache.hasActiveCreation(websiteName, userId)) {
+    console.warn(`🚫 [${executionId}] Duplicate website creation blocked by global cache`);
+    const existingPromise = globalWebsiteCache.getActiveCreation(websiteName, userId);
+    if (existingPromise) {
+      console.log(`🔄 [${executionId}] Returning existing website creation promise`);
+      return existingPromise;
     }
   }
 
-  // Check for recent database entries
+  // Check for recent database entries (within last 10 seconds)
   try {
     const { data: existingWebsites, error: checkError } = await supabase
       .from('websites')
       .select('id, name, created_at')
-      .eq('name', websiteData.name.trim())
+      .eq('name', websiteName)
       .eq('clinic_id', clinicId)
       .eq('created_by', userId)
-      .gte('created_at', new Date(Date.now() - 10000).toISOString()); // Last 10 seconds
+      .gte('created_at', new Date(Date.now() - 10000).toISOString());
 
     if (checkError) {
-      console.error('❌ Error checking for existing websites:', checkError);
+      console.error(`❌ [${executionId}] Error checking for existing websites:`, checkError);
     } else if (existingWebsites && existingWebsites.length > 0) {
-      console.warn('🚫 Recent website with same name found:', existingWebsites[0]);
+      console.warn(`🚫 [${executionId}] Recent website with same name found:`, existingWebsites[0]);
       return { 
         success: true, 
         websiteId: existingWebsites[0].id,
@@ -62,35 +54,26 @@ export const createWebsite = async (
       };
     }
   } catch (error) {
-    console.error('❌ Error during duplicate check:', error);
+    console.error(`❌ [${executionId}] Error during duplicate check:`, error);
   }
 
-  // Create and store the promise
-  const creationPromise = executeWebsiteCreation(websiteData, clinicId, userId, websiteKey);
-  creatingWebsites.set(websiteKey, {
-    timestamp: Date.now(),
-    promise: creationPromise
-  });
+  // Create the execution promise
+  const creationPromise = executeWebsiteCreation(websiteData, clinicId, userId, executionId);
+  
+  // Cache it globally
+  globalWebsiteCache.setActiveCreation(websiteName, userId, creationPromise, executionId);
 
-  try {
-    const result = await creationPromise;
-    return result;
-  } finally {
-    // Clean up tracking after a delay
-    setTimeout(() => {
-      creatingWebsites.delete(websiteKey);
-    }, 5000);
-  }
+  return creationPromise;
 };
 
 const executeWebsiteCreation = async (
   websiteData: UnifiedOnboardingData['website'],
   clinicId: string,
   userId: string,
-  websiteKey: string
+  executionId: string
 ): Promise<WebsiteCreationResult> => {
   try {
-    console.log('📝 Executing website creation for:', websiteKey);
+    console.log(`📝 [${executionId}] Executing website creation in database...`);
     
     const { data: website, error: websiteError } = await supabase
       .from('websites')
@@ -107,11 +90,11 @@ const executeWebsiteCreation = async (
       .single();
 
     if (websiteError) {
-      console.error('❌ Website creation error:', websiteError);
+      console.error(`❌ [${executionId}] Website creation error:`, websiteError);
       
       // Check if it's a duplicate key error
       if (websiteError.code === '23505') {
-        console.log('🔍 Duplicate key error, checking for existing website...');
+        console.log(`🔍 [${executionId}] Duplicate key error, checking for existing website...`);
         const { data: existingWebsite } = await supabase
           .from('websites')
           .select('id')
@@ -121,7 +104,7 @@ const executeWebsiteCreation = async (
           .single();
         
         if (existingWebsite) {
-          console.log('✅ Found existing website with ID:', existingWebsite.id);
+          console.log(`✅ [${executionId}] Found existing website with ID: ${existingWebsite.id}`);
           return { success: true, websiteId: existingWebsite.id };
         }
       }
@@ -134,7 +117,8 @@ const executeWebsiteCreation = async (
           userId,
           additionalData: { 
             websiteName: websiteData.name,
-            clinicId 
+            clinicId,
+            executionId 
           }
         },
         'Failed to create website. Please try again.'
@@ -142,10 +126,10 @@ const executeWebsiteCreation = async (
       return { success: false, error: websiteError.message };
     }
 
-    console.log('✅ Website created successfully:', website.id);
+    console.log(`✅ [${executionId}] Website created successfully with ID: ${website.id}`);
     return { success: true, websiteId: website.id };
   } catch (error: any) {
-    console.error('❌ Error creating website:', error);
+    console.error(`❌ [${executionId}] Error creating website:`, error);
     return { success: false, error: error.message };
   }
 };

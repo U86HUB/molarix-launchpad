@@ -6,6 +6,7 @@ import { useWebsiteInitialization } from "@/hooks/useWebsiteInitialization";
 import { useWebsiteCreationGuard } from "@/hooks/useWebsiteCreationGuard";
 import { handleSupabaseError } from "@/utils/errorHandling";
 import { executeOnboardingFlow } from "@/services/onboarding/onboardingOrchestrator";
+import { globalWebsiteCache } from "@/services/globalWebsiteCache";
 import { UseUnifiedOnboardingSubmissionResult, WebsiteInitializationData, UnifiedOnboardingData } from "@/types/onboarding";
 
 export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmissionResult => {
@@ -14,17 +15,19 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
   const [lastWebsiteData, setLastWebsiteData] = useState<WebsiteInitializationData | null>(null);
   const [submissionInProgress, setSubmissionInProgress] = useState(false);
   
-  // Add execution tracking to prevent duplicate calls
+  // Enhanced execution tracking with stricter controls
   const executionRef = useRef<{
     isExecuting: boolean;
     currentWebsiteName: string | null;
     executionId: string | null;
     lastExecution: number;
+    submissionCount: number;
   }>({
     isExecuting: false,
     currentWebsiteName: null,
     executionId: null,
-    lastExecution: 0
+    lastExecution: 0,
+    submissionCount: 0
   });
 
   const {
@@ -52,12 +55,12 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
     onboardingData: UnifiedOnboardingData,
     existingClinics: any[]
   ): Promise<void> => {
-    const executionId = `${Date.now()}-${Math.random()}`;
+    const executionId = globalWebsiteCache.generateExecutionId();
     const websiteName = onboardingData.website.name.trim();
     
-    console.log('🚀 submitOnboarding() called at:', Date.now(), 'ExecutionID:', executionId);
-    console.log('🔍 Current execution state:', executionRef.current);
-    console.log('🔍 Current submission state:', { 
+    console.log(`🚀 [${executionId}] submitOnboarding() ENTRY POINT`);
+    console.log(`🔍 [${executionId}] Current execution state:`, executionRef.current);
+    console.log(`🔍 [${executionId}] Current submission state:`, { 
       isSubmitting, 
       isCreating, 
       isInitializing, 
@@ -65,18 +68,19 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       websiteName 
     });
 
-    // CRITICAL: Check for duplicate execution with strict timing
+    // CRITICAL: Multiple layer protection against duplicates
     const timeSinceLastExecution = Date.now() - executionRef.current.lastExecution;
+    
+    // Layer 1: Check if currently executing
     if (executionRef.current.isExecuting) {
-      console.warn('🚫 Submission already in progress, blocking duplicate execution');
-      console.warn('🚫 Current execution ID:', executionRef.current.executionId);
-      console.warn('🚫 Current website name:', executionRef.current.currentWebsiteName);
+      console.warn(`🚫 [${executionId}] BLOCKED - Submission already in progress`);
+      console.warn(`🚫 [${executionId}] Current execution: ${executionRef.current.executionId}`);
       return;
     }
 
-    // Prevent rapid-fire submissions (within 2 seconds)
-    if (timeSinceLastExecution < 2000) {
-      console.warn('🚫 Submission blocked - too soon after last execution:', timeSinceLastExecution, 'ms');
+    // Layer 2: Prevent rapid-fire submissions (within 3 seconds)
+    if (timeSinceLastExecution < 3000) {
+      console.warn(`🚫 [${executionId}] BLOCKED - Too soon after last execution: ${timeSinceLastExecution}ms`);
       toast({
         title: "Please Wait",
         description: "Please wait a moment before submitting again.",
@@ -85,15 +89,22 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       return;
     }
 
-    // Check if same website is being processed
-    if (executionRef.current.currentWebsiteName === websiteName) {
-      console.warn('🚫 Same website already being processed:', websiteName);
+    // Layer 3: Check global cache
+    if (globalWebsiteCache.hasActiveCreation(websiteName, user?.id || '')) {
+      console.warn(`🚫 [${executionId}] BLOCKED - Global cache shows creation in progress`);
+      globalWebsiteCache.debugState();
       return;
     }
 
-    // Prevent multiple simultaneous submissions at all levels
+    // Layer 4: Same website name protection
+    if (executionRef.current.currentWebsiteName === websiteName) {
+      console.warn(`🚫 [${executionId}] BLOCKED - Same website already being processed: ${websiteName}`);
+      return;
+    }
+
+    // Layer 5: Multiple state checks
     if (submissionInProgress || isCreating || isInitializing) {
-      console.warn('🚫 System busy - blocking submission');
+      console.warn(`🚫 [${executionId}] BLOCKED - System busy`);
       toast({
         title: "System Busy",
         description: "Please wait for the current operation to complete.",
@@ -102,6 +113,7 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       return;
     }
 
+    // Layer 6: Authentication check
     if (!user) {
       toast({
         title: "Authentication Error",
@@ -111,32 +123,35 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       return;
     }
 
-    // Check creation guard before any state changes
+    // Layer 7: Creation guard check
     if (!canCreate(websiteName)) {
-      console.warn('🚫 Creation blocked by guard for:', websiteName);
+      console.warn(`🚫 [${executionId}] BLOCKED - Creation guard rejected: ${websiteName}`);
       return;
     }
 
-    // LOCK EXECUTION - Set all flags before any async operations
+    // ALL CHECKS PASSED - PROCEED WITH EXECUTION
     executionRef.current = {
       isExecuting: true,
       currentWebsiteName: websiteName,
       executionId: executionId,
-      lastExecution: Date.now()
+      lastExecution: Date.now(),
+      submissionCount: executionRef.current.submissionCount + 1
     };
 
     setSubmissionInProgress(true);
     startCreation(websiteName);
     
-    console.log('🔄 Starting onboarding submission for user:', user.id, 'Website:', websiteName, 'ExecutionID:', executionId);
+    console.log(`🔄 [${executionId}] PROCEEDING with onboarding submission`);
+    console.log(`🔍 [${executionId}] Submission count: ${executionRef.current.submissionCount}`);
+    console.log(`🔍 [${executionId}] User ID: ${user.id}`);
 
     try {
-      // Execute the onboarding flow with duplicate protection
-      console.log('📞 Calling executeOnboardingFlow...');
+      // Execute the onboarding flow with all protections in place
+      console.log(`📞 [${executionId}] Calling executeOnboardingFlow...`);
       const result = await executeOnboardingFlow(onboardingData, existingClinics, user.id);
       
       if (!result.success) {
-        console.error('❌ Onboarding flow failed:', result.error);
+        console.error(`❌ [${executionId}] Onboarding flow failed:`, result.error);
         toast({
           title: "Setup Failed",
           description: result.error || "Failed to complete setup. Please try again.",
@@ -146,15 +161,15 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       }
 
       if (!result.websiteId) {
-        console.error('❌ No website ID returned from onboarding flow');
+        console.error(`❌ [${executionId}] No website ID returned from onboarding flow`);
         return;
       }
 
       // Mark creation as complete
       completeCreation(result.websiteId);
-      console.log('✅ Website created successfully with ID:', result.websiteId);
+      console.log(`✅ [${executionId}] Website created successfully with ID: ${result.websiteId}`);
 
-      // Initialize website with loading screen
+      // Prepare website data for initialization
       const websiteData: WebsiteInitializationData = {
         websiteId: result.websiteId,
         templateType: onboardingData.website.selectedTemplate,
@@ -171,36 +186,40 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
       // Store the website data for potential retry
       setLastWebsiteData(websiteData);
       
-      // Initialize website (this should be the final step)
+      // Initialize website (this should trigger the loading screen and redirect)
+      console.log(`🎬 [${executionId}] Starting website initialization...`);
       await initializeWebsite(websiteData);
 
     } catch (error: any) {
-      console.error('❌ Onboarding submission error:', error);
+      console.error(`❌ [${executionId}] Onboarding submission error:`, error);
       handleSupabaseError(
         error,
         {
           operation: 'complete onboarding',
           userId: user.id,
-          additionalData: onboardingData
+          additionalData: { ...onboardingData, executionId }
         },
         'Failed to complete setup. Please try again or contact support if the problem persists.'
       );
     } finally {
       // CRITICAL: Reset all states in finally block to ensure cleanup
-      console.log('🧹 Cleaning up submission state for execution:', executionId);
+      console.log(`🧹 [${executionId}] Cleaning up submission state`);
       
       setSubmissionInProgress(false);
       
-      // Reset execution tracking
-      executionRef.current = {
-        isExecuting: false,
-        currentWebsiteName: null,
-        executionId: null,
-        lastExecution: Date.now()
-      };
+      // Reset execution tracking with delay to prevent immediate re-submission
+      setTimeout(() => {
+        executionRef.current = {
+          isExecuting: false,
+          currentWebsiteName: null,
+          executionId: null,
+          lastExecution: Date.now(),
+          submissionCount: executionRef.current.submissionCount
+        };
+        console.log(`🔓 [${executionId}] Execution lock released`);
+      }, 2000);
       
       // Only reset creation guard if there was an error
-      // Let the guard handle its own cleanup on success
       if (!createdWebsiteId) {
         resetCreation();
       }
@@ -210,6 +229,7 @@ export const useUnifiedOnboardingSubmission = (): UseUnifiedOnboardingSubmission
   // Create a no-parameter retry function with fallback logging
   const retryInitialization = (): void => {
     if (lastWebsiteData) {
+      console.log('🔄 Retrying website initialization with stored data:', lastWebsiteData.websiteId);
       initializeWebsite(lastWebsiteData);
     } else {
       console.warn("⚠️ Cannot retry: No previous website data available.");
