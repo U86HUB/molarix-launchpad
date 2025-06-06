@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { CreateWebsiteModal } from './CreateWebsiteModal';
+import { CreateWebsiteModal } from './create-website/CreateWebsiteModal';
 import { WebsiteManagementHeader } from './website/WebsiteManagementHeader';
 import { QuickActions } from './website/QuickActions';
 import { WebsitesList } from './website/WebsitesList';

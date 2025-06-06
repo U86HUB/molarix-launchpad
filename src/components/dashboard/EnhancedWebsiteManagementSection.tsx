@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Plus, RefreshCw, Building, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CreateWebsiteModal } from './CreateWebsiteModal';
+import { CreateWebsiteModal } from './create-website/CreateWebsiteModal';
 import { WebsiteManagementHeader } from './website/WebsiteManagementHeader';
 import { QuickActions } from './website/QuickActions';
 import { WebsitesList } from './website/WebsitesList';
