@@ -102,6 +102,7 @@ const ServicesPage = () => {
           <TiptapEditor
             initialContent={initialContent}
             onUpdate={setEditorJSON}
+            sectionType="services"
           />
           <Button 
             onClick={handleSave} 

@@ -102,6 +102,7 @@ const AboutPage = () => {
           <TiptapEditor
             initialContent={initialContent}
             onUpdate={setEditorJSON}
+            sectionType="about"
           />
           <Button 
             onClick={handleSave} 
