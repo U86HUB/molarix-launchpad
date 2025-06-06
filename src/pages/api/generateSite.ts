@@ -148,7 +148,7 @@ export default async function handler(
         
         // Render the section component to HTML
         const sectionHtml = renderToStaticMarkup(
-          <SectionComponent {...sectionContent} primaryColor={site.primary_color} />
+          React.createElement(SectionComponent, { ...sectionContent, primaryColor: site.primary_color })
         );
 
         sectionsHtml += sectionHtml;
